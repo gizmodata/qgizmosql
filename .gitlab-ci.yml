@@ -20,6 +20,8 @@ cache:
 git-hooks:
   stage: 🐍 lint
   image: python:3.9
+  tags:
+    - docker
   variables:
     PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
   cache:
@@ -38,10 +40,11 @@ git-hooks:
   script:
     - pre-commit run --from-ref "origin/$CI_DEFAULT_BRANCH" --to-ref "$CI_COMMIT_SHA";
 
-
 flake8:
   stage: 🐍 lint
   image: python:3.9-slim-bullseye
+  tags:
+    - docker
   only:
     changes:
       - "**/*.py"
@@ -51,11 +54,12 @@ flake8:
     - flake8 $PROJECT_FOLDER --count --select=E9,F63,F7,F82 --show-source --statistics
     - flake8 $PROJECT_FOLDER --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-
 # -- TEST JOBS --------------------------------------------------------------------------
 tests:unit:
   stage: 🤞 test
   image: python:3.9-slim-bullseye
+  tags:
+    - docker
   only:
     changes:
       - "**/*.py"
@@ -76,6 +80,8 @@ tests:unit:
 tests:qgis:
   stage: 🤞 test
   image: qgis/qgis:release-3_28
+  tags:
+    - docker
   variables:
     DISPLAY: ":1"
     PYTHONPATH: "/usr/share/qgis/python/plugins:/usr/share/qgis/python:."
@@ -102,6 +108,8 @@ tests:qgis:
 build:translation:
   stage: 📦 build
   image: python:3.9-slim-buster
+  tags:
+    - docker
   only:
     refs:
       - main
@@ -122,6 +130,8 @@ build:translation:
 builder:
   stage: 📦 build
   image: python:3.9
+  tags:
+    - docker
   only:
     refs:
       - main
@@ -150,6 +160,8 @@ builder:
 documentation:
   stage: 📦 build
   image: python:3.9-slim-bullseye
+  tags:
+    - docker
   only:
     refs:
       - main
@@ -167,6 +179,8 @@ documentation:
 # -- DEPLOYMENT JOBS -------------------------------------------------------------------
 pages:
   stage: 🚀 deploy
+  tags:
+    - docker
   variables:
     GIT_STRATEGY: none
   only:
@@ -182,7 +196,7 @@ pages:
   needs:
     - builder
     - documentation
-    
+
   script:
     - mkdir -p public
     # copy generated plugin
@@ -190,7 +204,7 @@ pages:
     - cp plugins.xml public/
     # copy HTML documentation
     - cp -rf target/docs/* public/
-    
+
   artifacts:
     paths:
       - public
@@ -251,5 +265,5 @@ deploy:qgis-repository:
     - echo "Deploying the version ${CI_COMMIT_TAG} plugin to QGIS Plugins Repository with the user ${OSGEO_USER_NAME}"
     - python ${PROJECT_FOLDER}/__about__.py
     - qgis-plugin-ci release ${CI_COMMIT_TAG}
-        --osgeo-username $OSGEO_USER_NAME
-        --osgeo-password $OSGEO_USER_PASSWORD
+      --osgeo-username $OSGEO_USER_NAME
+      --osgeo-password $OSGEO_USER_PASSWORD
