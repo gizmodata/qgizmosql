@@ -237,6 +237,8 @@ release:prepare:
 release:publish:
   stage: 🚀 deploy
   image: registry.gitlab.com/gitlab-org/release-cli:latest
+  tags:
+    - docker
   variables:
     GIT_STRATEGY: none
   only:
@@ -258,6 +260,8 @@ release:publish:
 deploy:qgis-repository:
   stage: 🚀 deploy
   image: python:3.11
+  tags:
+    - docker
   only:
     - tags
   before_script:
