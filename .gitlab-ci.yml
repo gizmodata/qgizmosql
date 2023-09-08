@@ -7,7 +7,7 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_FOLDER/.cache/pip"
   PROJECT_FOLDER: "qduckdb"
-  REPO_PLUGIN_URL: "https://gitlab.com/Oslandia/qgis/qduckdb"
+  REPO_PLUGIN_URL: https://oslandia.gitlab.io/qgis/qduckdb"
 
 cache:
   key:
@@ -147,7 +147,7 @@ builder:
     - git add $PROJECT_FOLDER/resources/i18n/*.qm
 
     # Package the latest version listed in the changelog
-    - qgis-plugin-ci package latest --plugin-repo-url $REPO_PLUGIN_URL
+    - qgis-plugin-ci package latest --allow-uncommitted-changes --plugin-repo-url $REPO_PLUGIN_URL
     - qgis-plugin-ci changelog latest >> RELEASE_DESCRIPTION.md
   artifacts:
     name: "$PROJECT_FOLDER_b$CI_COMMIT_REF_NAME-c$CI_COMMIT_SHORT_SHA-j$CI_JOB_ID"
