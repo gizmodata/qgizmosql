@@ -1,0 +1,255 @@
+stages:
+  - 🐍 lint
+  - 🤞 test
+  - 📦 build
+  - 🚀 deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_FOLDER/.cache/pip"
+  PROJECT_FOLDER: "qduckdb"
+  REPO_PLUGIN_URL: "https://gitlab.com/Oslandia/qgis/qduckdb"
+
+cache:
+  key:
+    files:
+      - requirements/*.txt
+  paths:
+    - .cache/pip
+
+# -- LINT JOBS -------------------------------------------------------------------------
+git-hooks:
+  stage: 🐍 lint
+  image: python:3.9
+  variables:
+    PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
+  cache:
+    paths:
+      - ${PRE_COMMIT_HOME}
+  only:
+    refs:
+      - merge_requests
+  before_script:
+    - apt install git
+    - python3 -m pip install -U pip
+    - python3 -m pip install -U setuptools wheel
+    - python3 -m pip install -U pre-commit
+    - pre-commit install
+    - git fetch origin
+  script:
+    - pre-commit run --from-ref "origin/$CI_DEFAULT_BRANCH" --to-ref "$CI_COMMIT_SHA";
+
+
+flake8:
+  stage: 🐍 lint
+  image: python:3.9-slim-bullseye
+  only:
+    changes:
+      - "**/*.py"
+  before_script:
+    - python -m pip install -U flake8
+  script:
+    - flake8 $PROJECT_FOLDER --count --select=E9,F63,F7,F82 --show-source --statistics
+    - flake8 $PROJECT_FOLDER --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+
+# -- TEST JOBS --------------------------------------------------------------------------
+tests:unit:
+  stage: 🤞 test
+  image: python:3.9-slim-bullseye
+  only:
+    changes:
+      - "**/*.py"
+      - ".gitlab-ci.yml"
+  before_script:
+    - python3 -m pip install -U -r requirements/development.txt
+    - python3 -m pip install -U -r requirements/testing.txt
+  script:
+    - env PYTHONPATH=/usr/share/qgis/python:. pytest -p no:qgis tests/unit
+  artifacts:
+    when: always
+    reports:
+      junit: junit/test-results.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+tests:qgis:
+  stage: 🤞 test
+  image: qgis/qgis:release-3_28
+  variables:
+    DISPLAY: ":1"
+    PYTHONPATH: "/usr/share/qgis/python/plugins:/usr/share/qgis/python:."
+  only:
+    changes:
+      - "**/*.py"
+      - ".gitlab-ci.yml"
+    refs:
+      - main
+  before_script:
+    - python3 -m pip install -U -r requirements/testing.txt
+    - Xvfb :1 &
+  script:
+    - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis
+  artifacts:
+    when: always
+    reports:
+      junit: junit/test-results.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+# -- BUILD JOBS -------------------------------------------------------------------------
+build:translation:
+  stage: 📦 build
+  image: python:3.9-slim-buster
+  only:
+    refs:
+      - main
+      - tags
+  before_script:
+    - apt update
+    - apt install -y qttools5-dev-tools qt5-default g++
+    - python -m pip install -U pyqt5-tools
+  script:
+    - pylupdate5 -noobsolete -verbose $PROJECT_FOLDER/resources/i18n/plugin_translation.pro
+    - lrelease $PROJECT_FOLDER/resources/i18n/*.ts
+  artifacts:
+    name: ui-translation
+    paths:
+      - $PROJECT_FOLDER/resources/i18n/*qm
+    when: always
+
+builder:
+  stage: 📦 build
+  image: python:3.9
+  only:
+    refs:
+      - main
+      - tags
+  needs:
+    - build:translation
+  before_script:
+    - apt install git
+    - python -m pip install -U -r requirements/packaging.txt
+  script:
+    # Amend gitignore to include translation with qgis-plugin-ci
+    - sed -i "s|^*.qm.*| |" .gitignore
+    - git add $PROJECT_FOLDER/resources/i18n/*.qm
+
+    # Package the latest version listed in the changelog
+    - qgis-plugin-ci package latest --plugin-repo-url $REPO_PLUGIN_URL
+    - qgis-plugin-ci changelog latest >> RELEASE_DESCRIPTION.md
+  artifacts:
+    name: "$PROJECT_FOLDER_b$CI_COMMIT_REF_NAME-c$CI_COMMIT_SHORT_SHA-j$CI_JOB_ID"
+    paths:
+      - "${PROJECT_FOLDER}.*.zip"
+      - plugins.xml
+      - RELEASE_DESCRIPTION.md
+    expire_in: never
+
+documentation:
+  stage: 📦 build
+  image: python:3.9-slim-bullseye
+  only:
+    refs:
+      - main
+  before_script:
+    - python -m pip install -U -r requirements/documentation.txt
+  script:
+    - sphinx-build -b html docs target/docs
+  artifacts:
+    name: documentation
+    expose_as: "Built documentation static website"
+    paths:
+      - target/docs
+    when: always
+
+# -- DEPLOYMENT JOBS -------------------------------------------------------------------
+pages:
+  stage: 🚀 deploy
+  variables:
+    GIT_STRATEGY: none
+  only:
+    changes:
+      - "**/*.md"
+      - "**/*.rst"
+      - ".gitlab-ci.yml"
+      - "$PROJECT_FOLDER/**/*"
+      - requirements/documentation.txt
+      - requirements/packaging.txt
+    refs:
+      - main
+  needs:
+    - builder
+    - documentation
+    
+  script:
+    - mkdir -p public
+    # copy generated plugin
+    - cp ${PROJECT_FOLDER}.*.zip public/
+    - cp plugins.xml public/
+    # copy HTML documentation
+    - cp -rf target/docs/* public/
+    
+  artifacts:
+    paths:
+      - public
+    when: always
+
+release:prepare:
+  stage: 🚀 deploy
+  image:
+    name: alpine/git:latest
+    entrypoint: [""]
+  only:
+    - tags
+  allow_failure: true
+  needs:
+    - job: builder
+      artifacts: true
+  script:
+    - echo -e '\n\n## Technical changelog\n' >> RELEASE_DESCRIPTION.md
+    - git tag -l -n9 $CI_COMMIT_TAG >> RELEASE_DESCRIPTION.md
+    - echo -e '\n### Merges\n' >> RELEASE_DESCRIPTION.md
+    - git log --merges --pretty="- %s (%h)" $(git tag --sort=-creatordate | head -2)...$(git tag --sort=-creatordate | head -1) >> RELEASE_DESCRIPTION.md
+    - echo -e '\n### AUTHORS\n' >> RELEASE_DESCRIPTION.md
+    - git log --pretty="- %an%n- %cn" $(git tag --sort=-creatordate | head -2)...$(git tag --sort=-creatordate | head -1) | sort | uniq >> RELEASE_DESCRIPTION.md
+  artifacts:
+    paths:
+      - RELEASE_DESCRIPTION.md
+
+release:publish:
+  stage: 🚀 deploy
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  variables:
+    GIT_STRATEGY: none
+  only:
+    - tags
+  needs:
+    - job: release:prepare
+      artifacts: true
+  script:
+    - echo "Creating release from $CI_COMMIT_TAG"
+  release: # See https://docs.gitlab.com/ee/ci/yaml/#release for available properties
+    description: RELEASE_DESCRIPTION.md
+    name: $CI_COMMIT_TAG
+    tag_name: "$CI_COMMIT_TAG"
+    assets:
+      links:
+        - name: "Packaged plugin"
+          url: "https://gitlab.com/Oslandia/qgis/qduckdb/-/jobs/${ARTIFACT_JOB_ID}/artifacts/download?job=builder"
+
+deploy:qgis-repository:
+  stage: 🚀 deploy
+  image: python:3.11
+  only:
+    - tags
+  before_script:
+    - apt install git
+    - python -m pip install -U -r requirements/packaging.txt
+  script:
+    - echo "Deploying the version ${CI_COMMIT_TAG} plugin to QGIS Plugins Repository with the user ${OSGEO_USER_NAME}"
+    - python ${PROJECT_FOLDER}/__about__.py
+    - qgis-plugin-ci release ${CI_COMMIT_TAG}
+        --osgeo-username $OSGEO_USER_NAME
+        --osgeo-password $OSGEO_USER_PASSWORD

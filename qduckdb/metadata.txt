@@ -1,0 +1,25 @@
+[general]
+name=QDuckDB
+about=Plugin for using DuckDB databases in QGIS.
+category=Database
+hasProcessingProvider=False
+description=This plugin adds a new data prodivder that can read DuckDB databases and display their tables as a layer in QGIS.
+icon=resources/images/default_icon.png
+tags=duckdb,database,parquet,sql
+
+# credits and contact
+author=Oslandia
+email=qgis@oslandia.com
+homepage=https://gitlab.com/Oslandia/qgis/qduckdb
+repository=https://gitlab.com/Oslandia/qgis/qduckdb
+tracker=https://gitlab.com/Oslandia/qgis/qduckdb/-/issues
+
+# experimental flag
+deprecated=False
+experimental=True
+qgisMinimumVersion=3.28
+qgisMaximumVersion=3.99
+
+# versioning
+version=0.1.0
+changelog=
