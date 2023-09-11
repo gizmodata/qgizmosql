@@ -41,6 +41,7 @@ extensions = [
     "sphinx.ext.viewcode",
     # 3rd party
     "myst_parser",
+    "sphinx_design",
     "sphinx_copybutton",
     "sphinx_rtd_theme",
 ]
