@@ -31,3 +31,11 @@ development/packaging
 development/testing
 development/history
 ```
+
+```{toctree}
+---
+caption: Miscellaneous
+maxdepth: 1
+---
+misc/funding
+```
