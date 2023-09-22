@@ -9,7 +9,12 @@ from functools import partial
 from pathlib import Path
 
 # PyQGIS
-from qgis.core import QgsApplication, QgsSettings
+from qgis.core import (
+    QgsApplication,
+    QgsProviderMetadata,
+    QgsProviderRegistry,
+    QgsSettings,
+)
 from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QLocale, QTranslator, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
@@ -22,8 +27,8 @@ from qduckdb.__about__ import (
     __title__,
     __uri_homepage__,
 )
+from qduckdb.duckdb_provider import DuckdbProvider
 from qduckdb.gui.dlg_settings import PlgOptionsFactory
-
 from qduckdb.toolbelt import PlgLogger
 
 # ############################################################################
@@ -41,7 +46,6 @@ class QduckdbPlugin:
         """
         self.iface = iface
         self.log = PlgLogger().log
-        
 
         # translation
         # initialize the locale
@@ -56,6 +60,14 @@ class QduckdbPlugin:
             self.translator = QTranslator()
             self.translator.load(str(locale_path.resolve()))
             QCoreApplication.installTranslator(self.translator)
+
+        r = QgsProviderRegistry.instance()
+        metadata = QgsProviderMetadata(
+            DuckdbProvider.providerKey(),
+            DuckdbProvider.description(),
+            DuckdbProvider.createProvider,
+        )
+        assert r.registerProvider(metadata)
 
     def initGui(self):
         """Set up plugin UI elements."""
@@ -89,8 +101,6 @@ class QduckdbPlugin:
         self.iface.addPluginToMenu(__title__, self.action_settings)
         self.iface.addPluginToMenu(__title__, self.action_help)
 
-        
-
         # -- Help menu
 
         # documentation
@@ -107,8 +117,6 @@ class QduckdbPlugin:
         self.iface.pluginHelpMenu().addAction(
             self.action_help_plugin_menu_documentation
         )
-
-    
 
     def tr(self, message: str) -> str:
         """Get the translation for a string using Qt translation API.
@@ -129,8 +137,6 @@ class QduckdbPlugin:
 
         # -- Clean up preferences panel in QGIS settings
         self.iface.unregisterOptionsWidgetFactory(self.options_factory)
-
-        
 
         # remove from QGIS help/extensions menu
         if self.action_help_plugin_menu_documentation:
