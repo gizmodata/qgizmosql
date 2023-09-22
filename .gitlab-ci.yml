@@ -94,6 +94,7 @@ tests:qgis:
       - merge_requests
   before_script:
     - python3 -m pip install -U -r requirements/testing.txt
+    - python3 -m pip install -U -r requirements/dependencies.txt
     - Xvfb :1 &
   script:
     - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis
