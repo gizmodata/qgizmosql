@@ -228,7 +228,7 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         return path, table
 
-    def dataSourceUri(self):
+    def dataSourceUri(self, expandAuthConfig=False):
         return self._uri
 
     def crs(self):
