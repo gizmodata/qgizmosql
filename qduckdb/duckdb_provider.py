@@ -229,6 +229,12 @@ class DuckdbProvider(QgsVectorDataProvider):
         return path, table
 
     def dataSourceUri(self, expandAuthConfig=False):
+        """Returns the data source specification: database path and
+        table name.
+
+        :param bool expandAuthConfig: expand credentials (unused)
+        :returns: the data source uri
+        """
         return self._uri
 
     def crs(self):
