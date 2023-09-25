@@ -32,10 +32,9 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_get_capabilities(self):
         provider = DuckdbProvider()
-        assert (
-            provider.capabilities()
-            == QgsVectorDataProvider.CreateSpatialIndex
-            | QgsVectorDataProvider.SelectAtId
+        self.assertEqual(
+            provider.capabilities(),
+            QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId,
         )
 
     def test_register_same_provider_twice(self):
