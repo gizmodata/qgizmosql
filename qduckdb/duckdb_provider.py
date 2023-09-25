@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import weakref
 from pathlib import Path
 
@@ -8,8 +10,16 @@ from qgis.core import (
     QgsAbstractFeatureSource,
     QgsCoordinateReferenceSystem,
     QgsDataProvider,
+    QgsExpression,
+    QgsExpressionContext,
+    QgsExpressionContextUtils,
+    QgsFeature,
+    QgsFeatureIterator,
+    QgsFeatureRequest,
     QgsField,
     QgsFields,
+    QgsGeometry,
+    QgsProject,
     QgsRectangle,
     QgsVectorDataProvider,
     QgsWkbTypes,
@@ -248,12 +258,21 @@ class DuckdbProvider(QgsVectorDataProvider):
         return QgsCoordinateReferenceSystem()
 
     def featureSource(self):
-        return DuckDBFeatureSource(self)
+        return DuckdbFeatureSource(self)
 
     def storageType(self):
         return "DuckDB local database"
 
-    def uniqueValues(self, fieldIndex):
+    @property
+    def get_table(self) -> str:
+        """Get the table name
+
+        :return: table name
+        :rtype: str
+        """
+        return self._table
+
+    def uniqueValues(self, fieldIndex) -> list:
         """Returns the unique values of a field
 
         :param fieldIndex: Index of field
@@ -268,10 +287,116 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         return results
 
+    def getFeatures(self, request=QgsFeatureRequest()) -> QgsFeature:
+        """Return next feature"""
+        return QgsFeatureIterator(
+            DuckdbFeatureIterator(DuckdbFeatureSource(self), request)
+        )
 
-class DuckDBFeatureIterator(QgsAbstractFeatureIterator):
-    pass
+    @property
+    def con(self) -> duckdb.DuckDBPyConnection:
+        """Start DuckDB cursor"""
+        if not self._is_valid:
+            return None
+
+        return self._con.cursor()
 
 
-class DuckDBFeatureSource(QgsAbstractFeatureSource):
-    pass
+class DuckdbFeatureSource(QgsAbstractFeatureSource):
+    def __init__(self, provider):
+        """Constructor"""
+        super().__init__()
+        self._provider = provider
+
+        self._expression_context = QgsExpressionContext()
+        self._expression_context.appendScope(QgsExpressionContextUtils.globalScope())
+        self._expression_context.appendScope(
+            QgsExpressionContextUtils.projectScope(QgsProject.instance())
+        )
+        self._expression_context.setFields(self._provider.fields())
+        if self._provider.subsetString():
+            self._subset_expression = QgsExpression(self._provider.subsetString())
+            self._subset_expression.prepare(self._expression_context)
+        else:
+            self._subset_expression = None
+
+    def getFeatures(self, request) -> QgsFeatureIterator:
+        return QgsFeatureIterator(DuckdbFeatureIterator(self, request))
+
+    def get_provider(self):
+        return self._provider
+
+
+class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
+    def __init__(self, source: DuckdbFeatureSource, request):
+        """Constructor"""
+        # TODO Request has not yet been implemented
+        super().__init__(request)
+        self._provider = source.get_provider()
+        table = self._provider.get_table
+        geom_column = self._provider.get_geometry_column()
+
+        list_field_names = []
+        for field in self._provider.fields():
+            list_field_names.append(field.name())
+
+        fields_name_for_query = ", ".join(list_field_names)
+        self.index_geom_column = len(list_field_names)
+
+        self._result = self._provider.con.execute(
+            f"select {fields_name_for_query}, st_astext({geom_column}) from {table}"
+        )
+        self._index = 0
+
+    def fetchFeature(self, f: QgsFeature) -> bool:
+        """fetch next feature, return true on success
+
+        :param f: Next feature
+        :type f: QgsFeature
+        :return: True if success
+        :rtype: bool
+        """
+        next_result = self._result.fetchone()
+
+        if not next_result or not self._provider.isValid():
+            f.setValid(False)
+            return False
+
+        self._index += 1
+        f.setFields(self._provider.fields())
+        f.setValid(self._provider.isValid())
+        geometry = QgsGeometry.fromWkt(next_result[self.index_geom_column])
+        f.setGeometry(geometry)
+        f.setId(self._index)
+
+        for enum in range(self.index_geom_column):
+            f.setAttribute(enum, next_result[enum])
+
+        return True
+
+    def __iter__(self) -> DuckdbFeatureIterator:
+        """Returns self as an iterator object"""
+        self._index = 0
+        return self
+
+    def __next__(self) -> QgsFeature:
+        """Returns the next value till current is lower than high"""
+        f = QgsFeature()
+        if not self.nextFeature(f):
+            raise StopIteration
+        else:
+            return f
+
+    def rewind(self) -> bool:
+        """reset the iterator to the starting position"""
+        # virtual bool rewind() = 0;
+        if self._index < 0:
+            return False
+        self._index = 0
+        return True
+
+    def close(self) -> bool:
+        """end of iterating: free the resources / lock"""
+        # virtual bool close() = 0;
+        self._index = -1
+        return True
