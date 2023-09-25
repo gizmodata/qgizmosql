@@ -51,8 +51,10 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_valid(self):
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
 
-        provider = DuckdbProvider(uri=f"path={db_path} table=cities")
-        assert provider.isValid()
+        correct_uri = f"path={db_path} table=cities"
+        provider = DuckdbProvider(uri=correct_uri)
+        self.assertTrue(provider.isValid())
+        self.assertEqual(provider.dataSourceUri(), correct_uri)
 
         # Test table without geom
         provider = DuckdbProvider(uri=f"path={db_path} table=table_no_geom")
