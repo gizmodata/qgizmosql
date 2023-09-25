@@ -45,6 +45,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._uri = uri
         self._wkb_type = None
         self._extent = None
+        self._column_geom = None
         self._fields = None
         self._feature_count = None
         self._path, self._table = self._parse_uri(uri)
@@ -67,12 +68,9 @@ class DuckdbProvider(QgsVectorDataProvider):
             return
 
         self.connect_database()
-
-        geometryColumns = self.get_geometry_column()
-        if not geometryColumns:
+        self.get_geometry_column()
+        if not self._column_geom:
             return
-        else:
-            self._column_geom = geometryColumns[0]
 
         self._provider_options = providerOptions
         self._flags = flags
@@ -186,10 +184,15 @@ class DuckdbProvider(QgsVectorDataProvider):
 
     def get_geometry_column(self) -> str:
         """Returns the name of the geometry column"""
-        return self._con.sql(
-            "select column_name from information_schema.columns "
-            f"WHERE table_name = '{self._table}' AND data_type = 'GEOMETRY'"
-        ).fetchone()
+        if not self._column_geom:
+            cols = self._con.sql(
+                "SELECT column_name FROM information_schema.columns "
+                f"WHERE table_name = '{self._table}' AND data_type = 'GEOMETRY'"
+            ).fetchone()
+            if cols:
+                self._column_geom = cols[0]
+
+        return self._column_geom
 
     def fields(self) -> QgsFields:
         """Detects field name and type. Converts the type into a QVariant, and returns a"""

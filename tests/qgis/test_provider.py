@@ -137,7 +137,7 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_get_geometry_column(self):
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=cities")
-        self.assertEqual(provider.get_geometry_column()[0], "geom")
+        self.assertEqual(provider.get_geometry_column(), "geom")
 
     def test_table_without_geom_column(self):
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
