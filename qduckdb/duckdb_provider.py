@@ -124,6 +124,9 @@ class DuckdbProvider(QgsVectorDataProvider):
             self._con.close()
             self._con = None
 
+    def name(self) -> str:
+        return self.providerKey()
+
     def isValid(self):
         return self._is_valid
 
