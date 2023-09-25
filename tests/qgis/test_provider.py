@@ -7,8 +7,10 @@ from qgis.core import (
     QgsProviderRegistry,
     QgsRectangle,
     QgsVectorDataProvider,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.PyQt.Qt import QVariant
 
 from qduckdb.duckdb_provider import DuckdbProvider
 
@@ -30,14 +32,14 @@ class TestQDuckDBProvider(unittest.TestCase):
         assert r.registerProvider(metadata)
         assert r.providerMetadata(DuckdbProvider.providerKey()) == metadata
 
-    def test_get_capabilities(self):
+    def test_get_capabilities(self) -> None:
         provider = DuckdbProvider()
         self.assertEqual(
             provider.capabilities(),
             QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId,
         )
 
-    def test_register_same_provider_twice(self):
+    def test_register_same_provider_twice(self) -> None:
         """Test that a provider cannot be registered twice"""
         r = QgsProviderRegistry.instance()
         metadata = QgsProviderMetadata(
@@ -47,7 +49,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertFalse(r.registerProvider(metadata))
 
-    def test_valid(self):
+    def test_valid(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
 
         correct_uri = f"path={db_path} table=cities"
@@ -59,11 +61,11 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(uri=f"path={db_path} table=table_no_geom")
         self.assertFalse(provider.isValid())
 
-    def test_wrong_uri(self):
+    def test_wrong_uri(self) -> None:
         provider = DuckdbProvider(uri="zidane")
         self.assertFalse(provider.isValid())
 
-    def test_geom_mapping(self):
+    def test_geom_mapping(self) -> None:
         # Point
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=cities")
@@ -88,7 +90,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(uri=f"path={db_path} table=tabke_no_geom")
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
 
-    def test_extent(self):
+    def test_extent(self) -> None:
         # Test linestring layer
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=highway")
@@ -123,23 +125,23 @@ class TestQDuckDBProvider(unittest.TestCase):
             provider.extent().asWktPolygon(), "POLYGON((0 0, 0 0, 0 0, 0 0, 0 0))"
         )
 
-    def test_fields(self):
+    def test_fields(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=cities")
         self.assertIsInstance(provider.fields(), QgsFields)
-        self.assertEqual(provider.fields().field(0).name(), "geoname_id")
+        self.assertEqual(provider.fields().field(0).name(), "id")
         self.assertEqual(provider.fields().field(0).type(), 2)
 
         # Fields with wrong uri
         provider = DuckdbProvider(uri="path=wrong/uri/biuycdzohd.db table=zidane")
         self.assertEqual(provider.fields().count(), 0)
 
-    def test_get_geometry_column(self):
+    def test_get_geometry_column(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=cities")
         self.assertEqual(provider.get_geometry_column(), "geom")
 
-    def test_table_without_geom_column(self):
+    def test_table_without_geom_column(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=table_no_geom")
         self.assertEqual(provider.get_geometry_column(), None)
@@ -148,7 +150,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
 
-    def test_featureCount(self):
+    def test_featureCount(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=cities")
         self.assertEqual(provider.featureCount(), 3)
@@ -156,6 +158,26 @@ class TestQDuckDBProvider(unittest.TestCase):
         # Count with wrong uri
         provider = DuckdbProvider(uri="path=wrong/uri/biuycdzohd.db table=zidane")
         self.assertEqual(provider.featureCount(), 0)
+
+    def test_get_features(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+
+        vl = QgsVectorLayer(f"path={db_path} table=cities", "test", "duckdb")
+        self.assertTrue(vl.isValid())
+
+        features = vl.getFeatures()
+
+        count_feature = 0
+        for feature in features:
+            count_feature += 1
+            self.assertEqual(feature.geometry().wkbType(), QgsWkbTypes.Point)
+            list_type_field = []
+            for field in feature.fields():
+                list_type_field.append(field.type())
+            self.assertEqual(list_type_field[0], QVariant.Int)
+            self.assertEqual(list_type_field[1], QVariant.String)
+
+        self.assertEqual(count_feature, 3)
 
 
 if __name__ == "__main__":
