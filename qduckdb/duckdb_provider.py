@@ -89,12 +89,12 @@ class DuckdbProvider(QgsVectorDataProvider):
         weakref.finalize(self, self.disconnect_database)
 
     @classmethod
-    def providerKey(cls):
+    def providerKey(cls) -> str:
         """Returns the memory provider key"""
         return "duckdb"
 
     @classmethod
-    def description(cls):
+    def description(cls) -> str:
         """Returns the memory provider description"""
         return "DuckDB"
 
@@ -107,7 +107,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId
         )
 
-    def featureCount(self):
+    def featureCount(self) -> int:
         """returns the number of entities in the table"""
         if not self._feature_count:
             if not self._is_valid:
@@ -126,9 +126,14 @@ class DuckdbProvider(QgsVectorDataProvider):
             self._con = None
 
     def name(self) -> str:
+        """Return the name of provider
+
+        :return: Name of provider
+        :rtype: str
+        """
         return self.providerKey()
 
-    def isValid(self):
+    def isValid(self) -> bool:
         return self._is_valid
 
     def connect_database(self):
@@ -194,7 +199,7 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         return self._extent
 
-    def updateExtents(self):
+    def updateExtents(self) -> None:
         """Update extent"""
         return self._extent.setMinimal()
 
