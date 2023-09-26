@@ -119,7 +119,7 @@ class DuckdbProvider(QgsVectorDataProvider):
 
     def connect_database(self):
         """Connects the database and loads the spatial extension"""
-        self._con = duckdb.connect(self._path)
+        self._con = duckdb.connect(self._path, read_only=True)
         self._con.sql("LOAD spatial ;")
 
     def wkbType(self) -> QgsWkbTypes:
