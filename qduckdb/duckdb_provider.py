@@ -110,7 +110,9 @@ class DuckdbProvider(QgsVectorDataProvider):
 
     def disconnect_database(self):
         """Disconnects the database"""
-        self._con.close()
+        if self._con:
+            self._con.close()
+            self._con = None
 
     def isValid(self):
         return self._is_valid

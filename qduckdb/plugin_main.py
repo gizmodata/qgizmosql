@@ -11,6 +11,7 @@ from pathlib import Path
 # PyQGIS
 from qgis.core import (
     QgsApplication,
+    QgsProject,
     QgsProviderMetadata,
     QgsProviderRegistry,
     QgsSettings,
@@ -68,6 +69,7 @@ class QduckdbPlugin:
             DuckdbProvider.createProvider,
         )
         assert r.registerProvider(metadata)
+        QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
 
     def initGui(self):
         """Set up plugin UI elements."""
@@ -165,3 +167,16 @@ class QduckdbPlugin:
                 log_level=2,
                 push=True,
             )
+
+    def _on_layers_removal(self, layer_ids: list[str]) -> None:
+        """Disconnect duckdb database on duckdb provider removal
+
+        :param list[str] layer_ids: list of removed layer ids
+        """
+        # This ensures to disconnect from a duckdb database when a
+        # layer with a duckdb provider is removed.
+        for layer_id in layer_ids:
+            layer = QgsProject.instance().mapLayer(layer_id)
+            provider = layer.dataProvider()
+            if provider.providerKey() == "duckdb":
+                provider.disconnect_database()
