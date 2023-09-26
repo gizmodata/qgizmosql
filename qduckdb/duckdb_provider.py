@@ -75,7 +75,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._provider_options = providerOptions
         self._flags = flags
         self._is_valid = True
-        weakref.finalize(self, self.disconnect)
+        weakref.finalize(self, self.disconnect_database)
 
     @classmethod
     def providerKey(cls):
@@ -108,7 +108,7 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         return self._feature_count
 
-    def disconnect(self):
+    def disconnect_database(self):
         """Disconnects the database"""
         self._con.close()
 
