@@ -178,5 +178,5 @@ class QduckdbPlugin:
         for layer_id in layer_ids:
             layer = QgsProject.instance().mapLayer(layer_id)
             provider = layer.dataProvider()
-            if provider.providerKey() == "duckdb":
+            if provider.name() == "duckdb":
                 provider.disconnect_database()
