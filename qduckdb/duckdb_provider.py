@@ -337,6 +337,10 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         # TODO Request has not yet been implemented
         super().__init__(request)
         self._provider = source.get_provider()
+
+        if not self._provider.isValid():
+            return
+
         table = self._provider.get_table
         geom_column = self._provider.get_geometry_column()
 
