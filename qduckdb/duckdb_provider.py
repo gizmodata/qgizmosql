@@ -37,6 +37,7 @@ mapping_duckdb_qgis_geometry = {
 
 mapping_duckdb_qgis_type = {
     "BIGINT": QVariant.Int,
+    "INTEGER": QVariant.Int,
     "VARCHAR": QVariant.String,
     "DOUBLE": QVariant.Double,
 }
