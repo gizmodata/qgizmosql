@@ -223,7 +223,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         return self._fields
 
     @staticmethod
-    def _parse_uri(uri: str) -> [str | None, str | None]:
+    def _parse_uri(uri: str) -> tuple[str | None, str | None]:
         """Parse the uri and return the path to the database and the name of the table"""
         path = None
         table = None
@@ -268,7 +268,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         """
         return self._table
 
-    def uniqueValues(self, fieldIndex) -> list:
+    def uniqueValues(self, fieldIndex) -> set:
         """Returns the unique values of a field
 
         :param fieldIndex: Index of field
@@ -290,7 +290,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         )
 
     @property
-    def con(self) -> duckdb.DuckDBPyConnection:
+    def con(self) -> duckdb.DuckDBPyConnection | None:
         """Start DuckDB cursor"""
         if not self._is_valid:
             return None
