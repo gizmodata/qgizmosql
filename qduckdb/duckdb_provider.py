@@ -24,23 +24,10 @@ from qgis.core import (
     QgsVectorDataProvider,
     QgsWkbTypes,
 )
-from qgis.PyQt.Qt import QVariant
 
+from qduckdb.resources.mapping.field_type import mapping_duckdb_qgis_type
+from qduckdb.resources.mapping.geometry import mapping_duckdb_qgis_geometry
 from qduckdb.toolbelt.log_handler import PlgLogger
-
-mapping_duckdb_qgis_geometry = {
-    "POINT": QgsWkbTypes.Point,
-    "LINESTRING": QgsWkbTypes.LineString,
-    "POLYGON": QgsWkbTypes.Polygon,
-    # ...
-}
-
-mapping_duckdb_qgis_type = {
-    "BIGINT": QVariant.Int,
-    "INTEGER": QVariant.Int,
-    "VARCHAR": QVariant.String,
-    "DOUBLE": QVariant.Double,
-}
 
 
 class DuckdbProvider(QgsVectorDataProvider):
