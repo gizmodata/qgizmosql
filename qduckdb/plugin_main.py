@@ -29,6 +29,7 @@ from qduckdb.__about__ import (
     __uri_homepage__,
 )
 from qduckdb.duckdb_provider import DuckdbProvider
+from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
 from qduckdb.gui.dlg_settings import PlgOptionsFactory
 from qduckdb.toolbelt import PlgLogger
 
@@ -71,6 +72,9 @@ class QduckdbPlugin:
         assert r.registerProvider(metadata)
         QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
 
+        # dialogs placeholders
+        self._dlg_add_layer = None
+
     def initGui(self):
         """Set up plugin UI elements."""
 
@@ -98,6 +102,14 @@ class QduckdbPlugin:
                 currentPage="mOptionsPage{}".format(__title__)
             )
         )
+        self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
+        self._icon = QAction(
+            QIcon(str(Path(DIR_PLUGIN_ROOT / "resources/images/default_icon.png"))),
+            self.tr("DuckDB"),
+            self.iface.mainWindow(),
+        )
+        self.iface.addToolBarIcon(self._icon)
+        self._icon.triggered.connect(self.display_duckdb_dialog)
 
         # -- Menu
         self.iface.addPluginToMenu(__title__, self.action_settings)
@@ -180,3 +192,8 @@ class QduckdbPlugin:
             provider = layer.dataProvider()
             if provider.name() == "duckdb":
                 provider.disconnect_database()
+
+    def display_duckdb_dialog(self) -> None:
+        """Display instance duckdb add layer dialog"""
+        if self._dlg_add_layer is not None:
+            self._dlg_add_layer.show()
