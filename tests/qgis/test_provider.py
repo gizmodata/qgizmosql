@@ -81,6 +81,11 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(uri=f"path={db_path} table=building")
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
 
+        # MultiPolygon
+        db_path = Path(__file__).parent.joinpath("data/base_test2.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=test_multi")
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.MultiPolygon)
+
         # Geom with wrong uri
         provider = DuckdbProvider(uri="path=wrong/uri/biuycdzohd.db table=zidane")
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
@@ -131,6 +136,17 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertIsInstance(provider.fields(), QgsFields)
         self.assertEqual(provider.fields().field(0).name(), "id")
         self.assertEqual(provider.fields().field(0).type(), 2)
+
+        db_path = Path(__file__).parent.joinpath("data/base_test2.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=test_multi")
+        self.assertIsInstance(provider.fields(), QgsFields)
+        fields = provider.fields()
+        self.assertEqual(fields[0].name(), "id")
+        self.assertEqual(fields[0].type(), QVariant.Int)
+        self.assertEqual(fields[1].type(), QVariant.Int)
+        self.assertEqual(fields[2].type(), QVariant.String)
+        self.assertEqual(fields[3].type(), QVariant.Double)
+        self.assertEqual(fields[4].type(), QVariant.Bool)
 
         # Fields with wrong uri
         provider = DuckdbProvider(uri="path=wrong/uri/biuycdzohd.db table=zidane")
