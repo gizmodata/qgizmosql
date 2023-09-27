@@ -101,7 +101,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 self._feature_count = 0
             else:
                 self._feature_count = self._con.sql(
-                    "select count(*) from cities"
+                    f"select count(*) from {self._table}"
                 ).fetchone()[0]
 
         return self._feature_count
