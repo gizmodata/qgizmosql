@@ -7,7 +7,7 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_FOLDER/.cache/pip"
   PROJECT_FOLDER: "qduckdb"
-  REPO_PLUGIN_URL: https://oslandia.gitlab.io/qgis/qduckdb"
+  REPO_PLUGIN_URL: "https://oslandia.gitlab.io/qgis/qduckdb/"
 
 cache:
   key:
