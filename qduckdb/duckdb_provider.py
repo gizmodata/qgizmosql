@@ -161,28 +161,23 @@ class DuckdbProvider(QgsVectorDataProvider):
             if not self._is_valid:
                 self._extent = QgsRectangle()
             else:
-                list_x = []
-                list_y = []
-
-                str_geom_duckdb = self._con.sql(
-                    f"select st_geometrytype({self._column_geom}) from {self._table}"
+                x_min = self._con.sql(
+                    f"select min(st_xmin({self._column_geom})) from {self._table}"
                 ).fetchone()[0]
 
-                geom_wkt = self._con.sql(
-                    f"select st_astext({self._column_geom}) from {self._table}"
-                ).fetchall()
+                x_max = self._con.sql(
+                    f"select max(st_xmax({self._column_geom})) from {self._table}"
+                ).fetchone()[0]
 
-                for tuples in geom_wkt:
-                    for elem in tuples[0].split(", "):
-                        elem = elem.replace(f"{str_geom_duckdb} (", "")
-                        elem = elem.replace("(", "")
-                        elem = elem.replace(")", "")
-                        list_x.append(float(elem.split(" ")[0]))
-                        list_y.append(float(elem.split(" ")[1]))
+                y_min = self._con.sql(
+                    f"select min(st_ymin({self._column_geom})) from {self._table}"
+                ).fetchone()[0]
 
-                self._extent = QgsRectangle(
-                    min(list_x), min(list_y), max(list_x), max(list_y)
-                )
+                y_max = self._con.sql(
+                    f"select max(st_ymax({self._column_geom})) from {self._table}"
+                ).fetchone()[0]
+
+                self._extent = QgsRectangle(x_min, y_min, x_max, y_max)
 
         return self._extent
 
