@@ -82,7 +82,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
 
         # MultiPolygon
-        db_path = Path(__file__).parent.joinpath("data/base_test2.db")
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=test_multi")
         self.assertEqual(provider.wkbType(), QgsWkbTypes.MultiPolygon)
 
@@ -103,10 +103,10 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(
             provider.extent(),
             QgsRectangle(
-                -0.75798929999999998,
-                48.08263490000000218,
-                -0.75523320000000005,
-                48.08447269999999918,
+                -0.7579893469810486,
+                48.084476470947266,
+                -0.7552331686019897,
+                48.08263397216797,
             ),
         )
 
@@ -137,7 +137,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(provider.fields().field(0).name(), "id")
         self.assertEqual(provider.fields().field(0).type(), 2)
 
-        db_path = Path(__file__).parent.joinpath("data/base_test2.db")
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=test_multi")
         self.assertIsInstance(provider.fields(), QgsFields)
         fields = provider.fields()
