@@ -46,7 +46,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._column_geom = None
         self._fields = None
         self._feature_count = None
-        self._path, self._table = self._parse_uri(uri)
+        self._path, self._table, self._epsg = self._parse_uri(uri)
         if not self._path or not self._table:
             PlgLogger.log(
                 'Wrong uri. Excepted : "path=/home/path/my_db table=the_table"',
@@ -64,7 +64,10 @@ class DuckdbProvider(QgsVectorDataProvider):
                 push=False,
             )
             return
-
+        if self._epsg:
+            self._crs = QgsCoordinateReferenceSystem.fromEpsgId(int(self._epsg))
+        else:
+            self._crs = QgsCoordinateReferenceSystem()
         self.connect_database()
         self.get_geometry_column()
         if not self._column_geom:
@@ -222,6 +225,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         """Parse the uri and return the path to the database and the name of the table"""
         path = None
         table = None
+        epsg = None
         for variable in uri.split(" "):
             try:
                 key, value = variable.split("=")
@@ -229,10 +233,12 @@ class DuckdbProvider(QgsVectorDataProvider):
                     path = value
                 elif key == "table":
                     table = value
+                elif key == "epsg":
+                    epsg = value
             except ValueError:
                 pass
 
-        return path, table
+        return path, table, epsg
 
     def dataSourceUri(self, expandAuthConfig=False):
         """Returns the data source specification: database path and
@@ -244,9 +250,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         return self._uri
 
     def crs(self):
-        # Duckdb does not currently allow you to provide a crs, the user will have to
-        # indicate the crs.
-        return QgsCoordinateReferenceSystem()
+        return self._crs
 
     def featureSource(self):
         return DuckdbFeatureSource(self)
