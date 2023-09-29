@@ -79,10 +79,10 @@ class LoadDuckDBLayerDialog(QDialog):
                 push=True,
             )
             return
-
-        uri = f"path={self.db_path} table={self._table_combobox.currentText()}"
+        epsg = self.crs.authid()
+        epsg = epsg.replace("EPSG:", "")
+        uri = f"path={self.db_path} table={self._table_combobox.currentText()} epsg={epsg}"
         layer = QgsVectorLayer(uri, self._table_combobox.currentText(), "duckdb")
-        layer.setCrs(self.crs, True)
         QgsProject.instance().addMapLayer(layer)
 
     def _unlock_add_layer(self) -> None:
