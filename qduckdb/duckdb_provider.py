@@ -46,6 +46,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._column_geom = None
         self._fields = None
         self._feature_count = None
+        self._primary_key = None
         self._path, self._table, self._epsg = self._parse_uri(uri)
         if not self._path or not self._table:
             PlgLogger.log(
@@ -199,6 +200,22 @@ class DuckdbProvider(QgsVectorDataProvider):
                 self._column_geom = cols[0]
 
         return self._column_geom
+
+    @property
+    def primary_key(self) -> int:
+        if not self._primary_key:
+            res = self._con.sql(
+                "SELECT constraint_column_indexes FROM duckdb_constraints() "
+                f"WHERE table_name='{self.get_table}' "
+                "AND constraint_type = 'PRIMARY KEY';"
+            ).fetchone()
+
+            if res:
+                self._primary_key = res[0][0]
+            else:
+                self._primary_key = -1
+
+        return self._primary_key
 
     def fields(self) -> QgsFields:
         """Detects field name and type. Converts the type into a QVariant, and returns a"""
@@ -366,7 +383,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setValid(self._provider.isValid())
         geometry = QgsGeometry.fromWkt(next_result[self.index_geom_column])
         f.setGeometry(geometry)
-        f.setId(self._index)
+
+        if self._provider.primary_key == -1:
+            f.setId(self._index)
+        else:
+            f.setId(next_result[self.next_result[self._provider.primary_key]])
 
         for enum in range(self.index_geom_column):
             f.setAttribute(enum, next_result[enum])
