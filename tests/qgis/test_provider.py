@@ -3,7 +3,11 @@ from pathlib import Path
 
 from qgis.core import (
     QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsFeatureRequest,
     QgsFields,
+    QgsGeometry,
+    QgsProject,
     QgsProviderMetadata,
     QgsProviderRegistry,
     QgsRectangle,
@@ -237,6 +241,37 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(features[1].id(), 2)
         self.assertEqual(features[2].id(), 3)
         self.assertEqual(features[3].id(), 4)
+
+    def test_output_crs(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+        liste_point = [
+            "Point (5.38107000000000024 43.29695000000000249)",
+            "Point (2.15899000000000019 41.38879000000000019)",
+            "Point (7.68681999999999999 45.0704899999999995)",
+        ]
+
+        feats = provider.getFeatures()
+        for i, feat in enumerate(feats):
+            self.assertEqual(feat.geometry().asWkt(), liste_point[i])
+
+        request = QgsFeatureRequest()
+        request.setDestinationCrs(
+            QgsCoordinateReferenceSystem.fromEpsgId(3857),
+            QgsProject.instance().transformContext(),
+        )
+        transform = QgsCoordinateTransform(
+            QgsCoordinateReferenceSystem.fromEpsgId(4326),
+            QgsCoordinateReferenceSystem.fromEpsgId(3857),
+            QgsProject.instance().transformContext(),
+        )
+
+        feats = provider.getFeatures(request)
+        for i, feat in enumerate(feats):
+            geom = QgsGeometry.fromWkt(liste_point[i])
+            geom.transform(transform)
+            self.assertNotEqual(feat.geometry().asWkt(), liste_point[i])
+            self.assertEqual(feat.geometry().asWkt(), geom.asWkt())
 
     def test_subset_string(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")

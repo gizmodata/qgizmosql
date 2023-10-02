@@ -9,6 +9,7 @@ from qgis.core import (
     QgsAbstractFeatureIterator,
     QgsAbstractFeatureSource,
     QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
     QgsDataProvider,
     QgsExpression,
     QgsExpressionContext,
@@ -353,11 +354,23 @@ class DuckdbFeatureSource(QgsAbstractFeatureSource):
 
 
 class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
-    def __init__(self, source: DuckdbFeatureSource, request):
+    def __init__(self, source: DuckdbFeatureSource, request: QgsFeatureRequest):
         """Constructor"""
-        # TODO Request has not yet been implemented
         super().__init__(request)
         self._provider = source.get_provider()
+
+        self._request = request if request is not None else QgsFeatureRequest()
+        self._transform = QgsCoordinateTransform()
+
+        if (
+            self._request.destinationCrs().isValid()
+            and self._request.destinationCrs() != source._provider.crs()
+        ):
+            self._transform = QgsCoordinateTransform(
+                source._provider.crs(),
+                self._request.destinationCrs(),
+                self._request.transformContext(),
+            )
 
         if not self._provider.isValid():
             return
@@ -395,6 +408,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setValid(self._provider.isValid())
         geometry = QgsGeometry.fromWkt(next_result[self.index_geom_column])
         f.setGeometry(geometry)
+        self.geometryToDestinationCrs(f, self._transform)
 
         if self._provider.primary_key == -1:
             f.setId(self._index + 1)
