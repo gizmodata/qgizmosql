@@ -69,7 +69,10 @@ class QduckdbPlugin:
             DuckdbProvider.description(),
             DuckdbProvider.createProvider,
         )
-        assert r.registerProvider(metadata)
+        # FIXME: It is not possible to remove unregister a provider
+        # Is it the correct approach?
+        # assert r.registerProvider(metadata)
+        r.registerProvider(metadata)
         QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
 
         # dialogs placeholders
