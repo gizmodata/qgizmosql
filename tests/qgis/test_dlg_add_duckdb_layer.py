@@ -32,7 +32,14 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
         self.dialog._db_path_input.setFilePath(self.db_path_test)
         self.assertEqual(
             self.dialog.list_table_in_db,
-            ["test_multi", "building", "highway", "cities", "table_no_geom"],
+            [
+                "table_with_primary_key",
+                "table_no_geom",
+                "cities",
+                "highway",
+                "building",
+                "test_multi",
+            ],
         )
 
     def test_push_add_layer_button(self) -> None:

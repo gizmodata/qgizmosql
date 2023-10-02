@@ -213,6 +213,17 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(provider._table, "cities")
         self.assertEqual(provider._epsg, "4326")
 
+    def test_primary_key(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+        self.assertEqual(provider.primary_key, -1)
+
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(
+            uri=f"path={db_path} table=table_with_primary_key epsg=4326"
+        )
+        self.assertEqual(provider.primary_key, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
