@@ -224,6 +224,13 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertEqual(provider.primary_key, 0)
 
+    def test_subset_string(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(
+            uri=f"path={db_path} table=table_with_primary_key epsg=4326"
+        )
+        self.assertFalse(provider.supportsSubsetString())
+
 
 if __name__ == "__main__":
     unittest.main()

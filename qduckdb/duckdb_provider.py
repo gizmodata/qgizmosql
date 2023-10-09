@@ -313,6 +313,16 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         return self._con.cursor()
 
+    def subsetString(self) -> str:
+        return ""
+
+    def setSubsetString(self, subsetString: str) -> bool:
+        return False
+
+    def supportsSubsetString(self) -> bool:
+        # FIXME: the provider does not handle subsets at the moment
+        return False
+
 
 class DuckdbFeatureSource(QgsAbstractFeatureSource):
     def __init__(self, provider):
