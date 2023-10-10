@@ -10,6 +10,7 @@ from qgis.core import (
     QgsAbstractFeatureSource,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
+    QgsCsException,
     QgsDataProvider,
     QgsExpression,
     QgsExpressionContext,
@@ -372,6 +373,12 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 self._request.transformContext(),
             )
 
+        try:
+            filter_rect = self.filterRectToSourceCrs(self._transform)
+        except QgsCsException:
+            self.close()
+            return
+
         if not self._provider.isValid():
             return
 
@@ -385,8 +392,18 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         fields_name_for_query = ", ".join(list_field_names)
         self.index_geom_column = len(list_field_names)
 
+        where_clause = ""
+
+        if not filter_rect.isNull():
+            where_clause = (
+                f"where st_intersects({geom_column}, "
+                f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
+            )
+
         self._result = self._provider.con.execute(
-            f"select {fields_name_for_query}, st_astext({geom_column}) from {table}"
+            f"select {fields_name_for_query}, "
+            f"st_astext({geom_column}), row_number() over() as index from {table}) "
+            f"{where_clause} order by index"
         )
         self._index = 0
 
@@ -411,7 +428,8 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         self.geometryToDestinationCrs(f, self._transform)
 
         if self._provider.primary_key == -1:
-            f.setId(self._index + 1)
+            # the table does not have a primary key, use the row number as fallback
+            f.setId(next_result[-1])
         else:
             f.setId(next_result[self._provider.primary_key])
 

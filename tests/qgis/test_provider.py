@@ -273,6 +273,20 @@ class TestQDuckDBProvider(unittest.TestCase):
             self.assertNotEqual(feat.geometry().asWkt(), liste_point[i])
             self.assertEqual(feat.geometry().asWkt(), geom.asWkt())
 
+    def test_filter_rect(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+        request = QgsFeatureRequest()
+        # All features
+        request.setFilterRect(QgsRectangle(1, 40, 8, 46))
+        self.assertEqual(len(list(provider.getFeatures(request))), 3)
+        # Only one
+        request.setFilterRect(QgsRectangle(4, 42, 6, 44))
+        self.assertEqual(len(list(provider.getFeatures(request))), 1)
+        # Empty
+        request.setFilterRect(QgsRectangle(20, 92, 21, 93))
+        self.assertEqual(len(list(provider.getFeatures(request))), 0)
+
     def test_subset_string(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(
