@@ -106,15 +106,16 @@ class QduckdbPlugin:
             )
         )
         self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
-        self._icon = QAction(
-            QIcon(str(Path(DIR_PLUGIN_ROOT / "resources/images/default_icon.png"))),
+        self.action_main = QAction(
+            QIcon(str(__icon_path__.resolve())),
             self.tr("DuckDB"),
             self.iface.mainWindow(),
         )
-        self.iface.addToolBarIcon(self._icon)
-        self._icon.triggered.connect(self.display_duckdb_dialog)
+        self.iface.addToolBarIcon(self.action_main)
+        self.action_main.triggered.connect(self.display_duckdb_dialog)
 
         # -- Menu
+        self.iface.addPluginToMenu(__title__, self.action_main)
         self.iface.addPluginToMenu(__title__, self.action_settings)
         self.iface.addPluginToMenu(__title__, self.action_help)
 
@@ -149,8 +150,12 @@ class QduckdbPlugin:
     def unload(self):
         """Cleans up when plugin is disabled/uninstalled."""
         # -- Clean up menu
+        self.iface.removePluginMenu(__title__, self.action_main)
         self.iface.removePluginMenu(__title__, self.action_help)
         self.iface.removePluginMenu(__title__, self.action_settings)
+
+        # -- Clean up toolbar
+        self.iface.removeToolBarIcon(self.action_main)
 
         # -- Clean up preferences panel in QGIS settings
         self.iface.unregisterOptionsWidgetFactory(self.options_factory)
