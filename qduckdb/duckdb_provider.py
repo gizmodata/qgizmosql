@@ -133,7 +133,9 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._con.sql("LOAD spatial ;")
 
     def wkbType(self) -> QgsWkbTypes:
-        """Detects the geometry type of the table, converts and return it to QgsWkbTypes"""
+        """Detects the geometry type of the table, converts and return it to
+        QgsWkbTypes.
+        """
         if not self._wkb_type:
             if not self._is_valid:
                 self._wkb_type = QgsWkbTypes.Unknown
@@ -218,8 +220,9 @@ class DuckdbProvider(QgsVectorDataProvider):
         return self._primary_key
 
     def fields(self) -> QgsFields:
-        """Detects field name and type. Converts the type into a QVariant, and returns a"""
-        """ QgsFields containing Qgs Fields."""
+        """Detects field name and type. Converts the type into a QVariant, and returns a
+        QgsFields containing QgsFields.
+        """
         if not self._fields:
             self._fields = QgsFields()
             if self._is_valid:

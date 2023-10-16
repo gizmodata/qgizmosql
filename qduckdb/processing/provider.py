@@ -19,7 +19,7 @@ from qduckdb.__about__ import __icon_path__, __title__, __version__
 
 class QduckdbProvider(QgsProcessingProvider):
     """
-        Processing provider class.
+    Processing provider class.
     """
 
     def loadAlgorithms(self):
@@ -47,8 +47,9 @@ class QduckdbProvider(QgsProcessingProvider):
 
     def longName(self) -> str:
         """Longer version of the provider name, which can include
-        extra details such as version numbers. E.g. "Lastools LIDAR tools". This string should be localised. The default
-        implementation returns the same string as name().
+            extra details such as version numbers. E.g. "Lastools LIDAR tools".
+            This string should be localized. The default implementation returns the
+            same string as name().
 
         :return: provider long name
         :rtype: str
