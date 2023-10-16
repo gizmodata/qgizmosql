@@ -115,6 +115,7 @@ class QduckdbPlugin:
         self.action_main.triggered.connect(self.display_duckdb_dialog)
 
         # -- Menu
+        self.iface.addPluginToMenu(__title__, self.action_main)
         self.iface.addPluginToMenu(__title__, self.action_settings)
         self.iface.addPluginToMenu(__title__, self.action_help)
 
