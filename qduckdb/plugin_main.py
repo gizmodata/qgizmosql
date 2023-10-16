@@ -150,6 +150,7 @@ class QduckdbPlugin:
     def unload(self):
         """Cleans up when plugin is disabled/uninstalled."""
         # -- Clean up menu
+        self.iface.removePluginMenu(__title__, self.action_main)
         self.iface.removePluginMenu(__title__, self.action_help)
         self.iface.removePluginMenu(__title__, self.action_settings)
 
