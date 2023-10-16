@@ -24,7 +24,7 @@ Related to #
 ### Author's checklist
 
 - [ ] I've read the contribution guidelines and affirm:
-  - [ ] my branch has been created from master
+  - [ ] my branch has been created from main
   - [ ] if the code is not completely achieved, I apply the Draft/WIP prefix
   - [ ] the DOD is satisfied specially tests
 - [ ] assign myself (the MR creator will automatically be assigned)
@@ -33,7 +33,6 @@ Related to #
 ### Reviewer's checklist
 
 - [ ] assign yourself as Reviewer and remember that others developers can comment too
-
 
 <!-- GitLab quick actions -->
 /assign me
