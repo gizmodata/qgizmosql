@@ -170,24 +170,6 @@ class QduckdbPlugin:
         del self.action_settings
         del self.action_help
 
-    def run(self):
-        """Main process.
-
-        :raises Exception: if there is no item in the feed
-        """
-        try:
-            self.log(
-                message=self.tr("Everything ran OK."),
-                log_level=3,
-                push=False,
-            )
-        except Exception as err:
-            self.log(
-                message=self.tr("Houston, we've got a problem: {}".format(err)),
-                log_level=2,
-                push=True,
-            )
-
     def _on_layers_removal(self, layer_ids: list[str]) -> None:
         """Disconnect duckdb database on duckdb provider removal
 
