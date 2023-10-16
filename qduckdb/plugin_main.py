@@ -153,6 +153,9 @@ class QduckdbPlugin:
         self.iface.removePluginMenu(__title__, self.action_help)
         self.iface.removePluginMenu(__title__, self.action_settings)
 
+        # -- Clean up toolbar
+        self.iface.removeToolBarIcon(self.action_main)
+
         # -- Clean up preferences panel in QGIS settings
         self.iface.unregisterOptionsWidgetFactory(self.options_factory)
 
