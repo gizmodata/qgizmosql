@@ -10,7 +10,7 @@ tags=duckdb,database,parquet,sql
 # credits and contact
 author=Oslandia
 email=qgis@oslandia.com
-homepage=https://gitlab.com/Oslandia/qgis/qduckdb
+homepage=https://oslandia.gitlab.io/qgis/qduckdb
 repository=https://gitlab.com/Oslandia/qgis/qduckdb
 tracker=https://gitlab.com/Oslandia/qgis/qduckdb/-/issues
 
