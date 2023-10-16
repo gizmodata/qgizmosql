@@ -106,13 +106,13 @@ class QduckdbPlugin:
             )
         )
         self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
-        self._icon = QAction(
-            QIcon(str(Path(DIR_PLUGIN_ROOT / "resources/images/default_icon.png"))),
+        self.action_main = QAction(
+            QIcon(str(__icon_path__.resolve())),
             self.tr("DuckDB"),
             self.iface.mainWindow(),
         )
-        self.iface.addToolBarIcon(self._icon)
-        self._icon.triggered.connect(self.display_duckdb_dialog)
+        self.iface.addToolBarIcon(self.action_main)
+        self.action_main.triggered.connect(self.display_duckdb_dialog)
 
         # -- Menu
         self.iface.addPluginToMenu(__title__, self.action_settings)
