@@ -294,6 +294,27 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertFalse(provider.supportsSubsetString())
 
+    def test_filter_fid_and_fids(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+
+        # Fid
+        req = QgsFeatureRequest()
+        req.setFilterFid(2)
+        self.assertEqual(req.filterType(), req.FilterFid)
+        features = list(provider.getFeatures(req))
+        self.assertEqual(len(features), 1)
+        self.assertEqual(features[0].id(), 2)
+
+        # Fids
+        req = QgsFeatureRequest()
+        req.setFilterFids([1, 2])
+        self.assertEqual(req.filterType(), req.FilterFids)
+        features = list(provider.getFeatures(req))
+        self.assertEqual(len(features), 2)
+        self.assertEqual(features[0].id(), 1)
+        self.assertEqual(features[1].id(), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
