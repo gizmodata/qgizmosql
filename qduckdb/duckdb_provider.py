@@ -397,7 +397,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setGeometry(geometry)
 
         if self._provider.primary_key == -1:
-            f.setId(self._index)
+            f.setId(self._index + 1)
         else:
             f.setId(next_result[self.next_result[self._provider.primary_key]])
 

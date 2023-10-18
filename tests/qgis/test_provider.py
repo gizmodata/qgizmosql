@@ -197,6 +197,7 @@ class TestQDuckDBProvider(unittest.TestCase):
                 list_type_field.append(field.type())
             self.assertEqual(list_type_field[0], QVariant.Int)
             self.assertEqual(list_type_field[1], QVariant.String)
+            self.assertEqual(feature.id(), count_feature)
 
         self.assertEqual(count_feature, 3)
 
