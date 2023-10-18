@@ -3,7 +3,11 @@ from pathlib import Path
 
 from qgis.core import (
     QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsFeatureRequest,
     QgsFields,
+    QgsGeometry,
+    QgsProject,
     QgsProviderMetadata,
     QgsProviderRegistry,
     QgsRectangle,
@@ -238,12 +242,78 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(features[2].id(), 3)
         self.assertEqual(features[3].id(), 4)
 
+    def test_output_crs(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+        liste_point = [
+            "Point (5.38107000000000024 43.29695000000000249)",
+            "Point (2.15899000000000019 41.38879000000000019)",
+            "Point (7.68681999999999999 45.0704899999999995)",
+        ]
+
+        feats = provider.getFeatures()
+        for i, feat in enumerate(feats):
+            self.assertEqual(feat.geometry().asWkt(), liste_point[i])
+
+        request = QgsFeatureRequest()
+        request.setDestinationCrs(
+            QgsCoordinateReferenceSystem.fromEpsgId(3857),
+            QgsProject.instance().transformContext(),
+        )
+        transform = QgsCoordinateTransform(
+            QgsCoordinateReferenceSystem.fromEpsgId(4326),
+            QgsCoordinateReferenceSystem.fromEpsgId(3857),
+            QgsProject.instance().transformContext(),
+        )
+
+        feats = provider.getFeatures(request)
+        for i, feat in enumerate(feats):
+            geom = QgsGeometry.fromWkt(liste_point[i])
+            geom.transform(transform)
+            self.assertNotEqual(feat.geometry().asWkt(), liste_point[i])
+            self.assertEqual(feat.geometry().asWkt(), geom.asWkt())
+
+    def test_filter_rect(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+        request = QgsFeatureRequest()
+        # All features
+        request.setFilterRect(QgsRectangle(1, 40, 8, 46))
+        self.assertEqual(len(list(provider.getFeatures(request))), 3)
+        # Only one
+        request.setFilterRect(QgsRectangle(4, 42, 6, 44))
+        self.assertEqual(len(list(provider.getFeatures(request))), 1)
+        # Empty
+        request.setFilterRect(QgsRectangle(20, 92, 21, 93))
+        self.assertEqual(len(list(provider.getFeatures(request))), 0)
+
     def test_subset_string(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(
             uri=f"path={db_path} table=table_with_primary_key epsg=4326"
         )
         self.assertFalse(provider.supportsSubsetString())
+
+    def test_filter_fid_and_fids(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+
+        # Fid
+        req = QgsFeatureRequest()
+        req.setFilterFid(2)
+        self.assertEqual(req.filterType(), req.FilterFid)
+        features = list(provider.getFeatures(req))
+        self.assertEqual(len(features), 1)
+        self.assertEqual(features[0].id(), 2)
+
+        # Fids
+        req = QgsFeatureRequest()
+        req.setFilterFids([1, 2])
+        self.assertEqual(req.filterType(), req.FilterFids)
+        features = list(provider.getFeatures(req))
+        self.assertEqual(len(features), 2)
+        self.assertEqual(features[0].id(), 1)
+        self.assertEqual(features[1].id(), 2)
 
 
 if __name__ == "__main__":

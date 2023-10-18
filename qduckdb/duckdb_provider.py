@@ -9,6 +9,8 @@ from qgis.core import (
     QgsAbstractFeatureIterator,
     QgsAbstractFeatureSource,
     QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsCsException,
     QgsDataProvider,
     QgsExpression,
     QgsExpressionContext,
@@ -353,11 +355,30 @@ class DuckdbFeatureSource(QgsAbstractFeatureSource):
 
 
 class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
-    def __init__(self, source: DuckdbFeatureSource, request):
+    def __init__(self, source: DuckdbFeatureSource, request: QgsFeatureRequest):
         """Constructor"""
-        # TODO Request has not yet been implemented
+        # FIXME: Handle QgsFeatureRequest.FilterExpression
         super().__init__(request)
         self._provider = source.get_provider()
+
+        self._request = request if request is not None else QgsFeatureRequest()
+        self._transform = QgsCoordinateTransform()
+
+        if (
+            self._request.destinationCrs().isValid()
+            and self._request.destinationCrs() != source._provider.crs()
+        ):
+            self._transform = QgsCoordinateTransform(
+                source._provider.crs(),
+                self._request.destinationCrs(),
+                self._request.transformContext(),
+            )
+
+        try:
+            filter_rect = self.filterRectToSourceCrs(self._transform)
+        except QgsCsException:
+            self.close()
+            return
 
         if not self._provider.isValid():
             return
@@ -372,8 +393,54 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         fields_name_for_query = ", ".join(list_field_names)
         self.index_geom_column = len(list_field_names)
 
+        # Create fid/fids list
+        feature_id_list = None
+        if (
+            self._request.filterType() == self._request.FilterFid
+            or self._request.filterType() == self._request.FilterFids
+        ):
+            feature_id_list = (
+                [self._request.filterFid()]
+                if self._request.filterType() == self._request.FilterFid
+                else self._request.filterFids()
+            )
+
+        where_clause = ""
+
+        if feature_id_list and not filter_rect.isNull():
+            if self._provider.primary_key == -1:
+                where_clause = (
+                    f"where st_intersects({geom_column}, "
+                    f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
+                    f"and index in {tuple(feature_id_list)}"
+                )
+
+            else:
+                primary_key_name = list_field_names[self._provider.primary_key]
+                where_clause = (
+                    f"where st_intersects({geom_column}, "
+                    f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
+                    f"and {primary_key_name} in {tuple(feature_id_list)}"
+                )
+
+        if feature_id_list and filter_rect.isNull():
+            if self._provider.primary_key == -1:
+                where_clause = f"where index in {tuple(feature_id_list)}"
+
+            else:
+                primary_key_name = list_field_names[self._provider.primary_key]
+                where_clause = f"where {primary_key_name} in {tuple(feature_id_list)}"
+
+        if not filter_rect.isNull() and not feature_id_list:
+            where_clause = (
+                f"where st_intersects({geom_column}, "
+                f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
+            )
+
         self._result = self._provider.con.execute(
-            f"select {fields_name_for_query}, st_astext({geom_column}) from {table}"
+            f"select * from (select {fields_name_for_query}, "
+            f"st_astext({geom_column}), {geom_column}, row_number() over() as index from {table}) "
+            f"{where_clause} order by index"
         )
         self._index = 0
 
@@ -395,9 +462,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setValid(self._provider.isValid())
         geometry = QgsGeometry.fromWkt(next_result[self.index_geom_column])
         f.setGeometry(geometry)
+        self.geometryToDestinationCrs(f, self._transform)
 
         if self._provider.primary_key == -1:
-            f.setId(self._index + 1)
+            # the table does not have a primary key, use the row number as fallback
+            f.setId(next_result[-1])
         else:
             f.setId(next_result[self._provider.primary_key])
 
