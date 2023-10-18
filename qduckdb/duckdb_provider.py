@@ -391,7 +391,6 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             f.setValid(False)
             return False
 
-        self._index += 1
         f.setFields(self._provider.fields())
         f.setValid(self._provider.isValid())
         geometry = QgsGeometry.fromWkt(next_result[self.index_geom_column])
@@ -405,6 +404,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         for enum in range(self.index_geom_column):
             f.setAttribute(enum, next_result[enum])
 
+        self._index += 1
         return True
 
     def __iter__(self) -> DuckdbFeatureIterator:
