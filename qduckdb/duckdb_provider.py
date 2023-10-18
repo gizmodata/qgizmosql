@@ -399,7 +399,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         if self._provider.primary_key == -1:
             f.setId(self._index + 1)
         else:
-            f.setId(next_result[self.next_result[self._provider.primary_key]])
+            f.setId(next_result[self._provider.primary_key])
 
         for enum in range(self.index_geom_column):
             f.setAttribute(enum, next_result[enum])

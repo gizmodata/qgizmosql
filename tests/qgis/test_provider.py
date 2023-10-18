@@ -215,15 +215,28 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(provider._epsg, "4326")
 
     def test_primary_key(self) -> None:
+        # table does not have a primary key
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
         self.assertEqual(provider.primary_key, -1)
+        features = list(provider.getFeatures())
+        self.assertEqual(len(features), 3)
+        self.assertEqual(features[0].id(), 1)
+        self.assertEqual(features[1].id(), 2)
+        self.assertEqual(features[2].id(), 3)
 
+        # table has a primary key
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(
             uri=f"path={db_path} table=table_with_primary_key epsg=4326"
         )
         self.assertEqual(provider.primary_key, 0)
+        features = list(provider.getFeatures())
+        self.assertEqual(len(features), 4)
+        self.assertEqual(features[0].id(), 1)
+        self.assertEqual(features[1].id(), 2)
+        self.assertEqual(features[2].id(), 3)
+        self.assertEqual(features[3].id(), 4)
 
     def test_subset_string(self) -> None:
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
