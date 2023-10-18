@@ -315,6 +315,36 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(features[0].id(), 1)
         self.assertEqual(features[1].id(), 2)
 
+    def test_filter_fids_and_rect(self) -> None:
+        db_path = Path(__file__).parent.joinpath("data/base_test.db")
+        provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
+        request = QgsFeatureRequest()
+
+        request.setFilterFids([3])
+        features = list(provider.getFeatures(request))
+        self.assertEqual(len(features), 1)
+        self.assertEqual(features[0].id(), 3)
+
+        # only the first city is in this extent
+        # the request should not return any result
+        request.setFilterRect(QgsRectangle(4, 42, 6, 44))
+        features = list(provider.getFeatures(request))
+        self.assertEqual(len(features), 0)
+
+        # only the first city is returned
+        request.setFilterFids([1, 2])
+        features = list(provider.getFeatures(request))
+        self.assertEqual(len(features), 1)
+        self.assertEqual(features[0].id(), 1)
+
+        # this extent covers the 3 cities
+        # The request should retrieve city 1 and 2
+        request.setFilterRect(QgsRectangle(0, 0, 50, 50))
+        features = list(provider.getFeatures(request))
+        self.assertEqual(len(features), 2)
+        self.assertEqual(features[0].id(), 1)
+        self.assertEqual(features[1].id(), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
