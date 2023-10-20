@@ -41,6 +41,17 @@ class DuckdbProvider(QgsVectorDataProvider):
         flags=QgsDataProvider.ReadFlags(),
     ):
         super().__init__(uri)
+
+        # Test spatial extension
+        list_extension = []
+        for extension in duckdb.sql(
+            "select extension_name FROM duckdb_extensions();"
+        ).fetchall():
+            list_extension.append(extension[0])
+
+        if "spatial" not in list_extension:
+            duckdb.sql("INSTALL spatial ; ")
+
         self._is_valid = False
         self._uri = uri
         self._wkb_type = None
