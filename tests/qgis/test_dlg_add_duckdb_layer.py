@@ -1,8 +1,7 @@
-import unittest
 from pathlib import Path
 
 from qgis.core import QgsProject
-from qgis.testing import start_app
+from qgis.testing import start_app, unittest
 
 from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
 

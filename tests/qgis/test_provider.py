@@ -1,4 +1,3 @@
-import unittest
 from pathlib import Path
 
 from qgis.core import (
@@ -16,6 +15,7 @@ from qgis.core import (
     QgsWkbTypes,
 )
 from qgis.PyQt.Qt import QVariant
+from qgis.testing import unittest
 
 from qduckdb.duckdb_provider import DuckdbProvider
 
