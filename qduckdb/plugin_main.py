@@ -105,7 +105,7 @@ class QduckdbPlugin:
                 currentPage="mOptionsPage{}".format(__title__)
             )
         )
-        self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
+
         self.action_main = QAction(
             QIcon(str(__icon_path__.resolve())),
             self.tr("DuckDB"),
@@ -185,5 +185,7 @@ class QduckdbPlugin:
 
     def display_duckdb_dialog(self) -> None:
         """Display instance duckdb add layer dialog"""
-        if self._dlg_add_layer is not None:
-            self._dlg_add_layer.show()
+        if self._dlg_add_layer is None:
+            self._dlg_add_layer = LoadDuckDBLayerDialog()
+
+        self._dlg_add_layer.show()
