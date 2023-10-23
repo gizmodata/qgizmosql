@@ -1,17 +1,14 @@
-import unittest
 from pathlib import Path
 
 from qgis.core import QgsProject
-from qgis.testing import start_app
+from qgis.testing import start_app, unittest
 
 from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
 
-start_app()
-
 
 class TestDlgAddDuckdbLayer(unittest.TestCase):
-    def __init__(self, methodName: str) -> None:
-        super().__init__(methodName)
+    def setUp(self):
+        start_app()
         self.dialog = LoadDuckDBLayerDialog()
         self.db_path_test = (
             Path(__file__).parent.joinpath("data/base_test.db").as_posix()
@@ -29,6 +26,7 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
 
     def test_list_table_in_db(self) -> None:
         """We test that the list of tables in the database is correctly returned"""
+        self.assertIsInstance(self.dialog, LoadDuckDBLayerDialog)
         self.dialog._db_path_input.setFilePath(self.db_path_test)
         self.assertEqual(
             self.dialog.list_table_in_db,
