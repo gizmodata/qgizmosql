@@ -20,17 +20,14 @@ class LoadDuckDBLayerDialog(QDialog):
         self._add_layer_btn.clicked.connect(self._push_add_layer_button)
         self._add_layer_btn.setEnabled(False)
 
-    @property
     def db_path(self) -> str:
         """Return the db path specified entered in the appropriate field"""
         return self._db_path_input.filePath()
 
-    @property
     def crs(self) -> QgsCoordinateReferenceSystem:
         """Return the crs will"""
         return self.projection.crs()
 
-    @property
     def list_table_in_db(self) -> list[str]:
         """return list of table
 
@@ -38,7 +35,7 @@ class LoadDuckDBLayerDialog(QDialog):
         :rtype: list
         """
         try:
-            con = duckdb.connect(self.db_path)
+            con = duckdb.connect(self.db_path())
         except duckdb.IOException:
             PlgLogger.log(
                 "This is not a valid database DuckDB",
@@ -60,10 +57,10 @@ class LoadDuckDBLayerDialog(QDialog):
     def _add_list_table_name_to_combobox(self) -> None:
         """Add list of table to combobox"""
         self._table_combobox.clear()
-        self._table_combobox.addItems(self.list_table_in_db)
+        self._table_combobox.addItems(self.list_table_in_db())
 
     def _push_add_layer_button(self) -> None:
-        if not Path(self.db_path).exists():
+        if not Path(self.db_path()).exists():
             PlgLogger.log(
                 "The database does not exist.",
                 log_level=Qgis.Critical,
@@ -79,15 +76,15 @@ class LoadDuckDBLayerDialog(QDialog):
                 push=True,
             )
             return
-        epsg = self.crs.authid()
+        epsg = self.crs().authid()
         epsg = epsg.replace("EPSG:", "")
-        uri = f"path={self.db_path} table={self._table_combobox.currentText()} epsg={epsg}"
+        uri = f"path={self.db_path()} table={self._table_combobox.currentText()} epsg={epsg}"
         layer = QgsVectorLayer(uri, self._table_combobox.currentText(), "duckdb")
         QgsProject.instance().addMapLayer(layer)
 
     def _unlock_add_layer(self) -> None:
         """Unlock the add layer button if a database is valid and a table is selected"""
-        if self._table_combobox.currentText() and Path(self.db_path).exists():
+        if self._table_combobox.currentText() and Path(self.db_path()).exists():
             self._add_layer_btn.setEnabled(True)
         else:
             self._add_layer_btn.setEnabled(False)
