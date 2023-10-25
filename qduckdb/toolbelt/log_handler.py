@@ -109,7 +109,7 @@ class PlgLogger(logging.Handler):
         )
 
         # optionally, display message on QGIS Message bar (above the map canvas)
-        if push:
+        if push and iface is not None:
             msg_bar = None
 
             # QGIS or custom dialog
