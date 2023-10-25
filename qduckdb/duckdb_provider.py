@@ -182,10 +182,12 @@ class DuckdbProvider(QgsVectorDataProvider):
                     geometry_type = mapping_duckdb_qgis_geometry[str_geom_duckdb]
                 else:
                     PlgLogger.log(
-                        f"Geometry type {str_geom_duckdb} not supported",
+                        self.tr(
+                            "Geometry type {} not supported".format(str_geom_duckdb)
+                        ),
                         log_level=2,
-                        duration=10,
-                        push=False,
+                        duration=15,
+                        push=True,
                     )
                     self._wkb_type = QgsWkbTypes.Unknown
                     return self._wkb_type

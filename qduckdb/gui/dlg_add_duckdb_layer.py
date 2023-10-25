@@ -39,7 +39,7 @@ class LoadDuckDBLayerDialog(QDialog):
             con = duckdb.connect(self.db_path())
         except duckdb.IOException:
             PlgLogger.log(
-                "This is not a valid database DuckDB",
+                self.tr("{} is not a valid database DuckDB".format(self.db_path())),
                 log_level=2,
                 duration=10,
                 push=True,
@@ -63,7 +63,7 @@ class LoadDuckDBLayerDialog(QDialog):
     def _push_add_layer_button(self) -> None:
         if not Path(self.db_path()).exists():
             PlgLogger.log(
-                "The database does not exist.",
+                self.tr("The database {} does not exist.".format(self.db_path())),
                 log_level=2,
                 duration=10,
                 push=True,
