@@ -14,7 +14,7 @@ class LoadDuckDBLayerDialog(QDialog):
         duckdb provider"""
         # init module and ui
         super().__init__(parent)
-        self.log = PlgLogger().log
+
         uic.loadUi(Path(__file__).parent / f"{Path(__file__).stem}.ui", self)
         self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
         self._table_combobox.currentTextChanged.connect(self._unlock_add_layer)
@@ -38,7 +38,7 @@ class LoadDuckDBLayerDialog(QDialog):
         try:
             con = duckdb.connect(self.db_path())
         except duckdb.IOException:
-            self.log(
+            PlgLogger.log(
                 "This is not a valid database DuckDB",
                 log_level=2,
                 duration=10,
@@ -62,7 +62,7 @@ class LoadDuckDBLayerDialog(QDialog):
 
     def _push_add_layer_button(self) -> None:
         if not Path(self.db_path()).exists():
-            self.log(
+            PlgLogger.log(
                 "The database does not exist.",
                 log_level=2,
                 duration=10,
@@ -70,7 +70,7 @@ class LoadDuckDBLayerDialog(QDialog):
             )
             return
         if not self._table_combobox.currentText():
-            self.log(
+            PlgLogger.log(
                 "No table selected.",
                 log_level=2,
                 duration=10,

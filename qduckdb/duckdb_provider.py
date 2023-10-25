@@ -40,7 +40,6 @@ class DuckdbProvider(QgsVectorDataProvider):
         flags=QgsDataProvider.ReadFlags(),
     ):
         super().__init__(uri)
-        self.log = PlgLogger().log
 
         # Test spatial extension
         list_extension = []
@@ -51,7 +50,7 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         if "spatial" not in list_extension:
             duckdb.sql("INSTALL spatial ; ")
-            self.log(
+            PlgLogger.log(
                 message=self.tr(
                     "Spatial extension has been installed in DuckDB engine."
                 ),
@@ -69,7 +68,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._primary_key = None
         self._path, self._table, self._epsg = self._parse_uri(uri)
         if not self._path or not self._table:
-            self.log(
+            PlgLogger.log(
                 message=self.tr(
                     "Wrong URI. Excepted: path={} table={} pesg={}".format(
                         self._path, self._table, self._epsg
@@ -82,7 +81,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             return
 
         if not Path(self._path).exists():
-            self.log(
+            PlgLogger.log(
                 message=self.tr(
                     "Database does not exists at the specified path: {}".format(
                         self._path
@@ -159,7 +158,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         """Connects the database and loads the spatial extension"""
         self._con = duckdb.connect(self._path, read_only=True)
         self._con.sql("LOAD spatial ;")
-        self.log(
+        PlgLogger.log(
             message=self.tr(
                 "Connection to {} database and loading spatial extension succeeded".format(
                     self._path
@@ -182,7 +181,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 if str_geom_duckdb in mapping_duckdb_qgis_geometry:
                     geometry_type = mapping_duckdb_qgis_geometry[str_geom_duckdb]
                 else:
-                    self.log(
+                    PlgLogger.log(
                         f"Geometry type {str_geom_duckdb} not supported",
                         log_level=2,
                         duration=10,
