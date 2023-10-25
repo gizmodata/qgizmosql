@@ -28,9 +28,9 @@ from qduckdb.__about__ import (
     __title__,
     __uri_homepage__,
 )
-from qduckdb.duckdb_provider import DuckdbProvider
 from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
 from qduckdb.gui.dlg_settings import PlgOptionsFactory
+from qduckdb.provider.duckdb_provider import DuckdbProvider
 from qduckdb.toolbelt import PlgLogger
 
 # ############################################################################
