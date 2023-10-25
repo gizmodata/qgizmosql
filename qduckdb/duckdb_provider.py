@@ -70,7 +70,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         if not self._path or not self._table:
             PlgLogger.log(
                 message=self.tr(
-                    "Wrong URI. Excepted: path={} table={} pesg={}".format(
+                    "Wrong URI. Excepted: path={} table={} epsg={}".format(
                         self._path, self._table, self._epsg
                     )
                 ),
