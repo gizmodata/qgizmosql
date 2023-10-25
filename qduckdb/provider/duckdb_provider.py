@@ -6,26 +6,22 @@ from pathlib import Path
 import duckdb
 from qgis.core import (
     QgsAbstractFeatureIterator,
-    QgsAbstractFeatureSource,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
     QgsCsException,
     QgsDataProvider,
-    QgsExpression,
-    QgsExpressionContext,
-    QgsExpressionContextUtils,
     QgsFeature,
     QgsFeatureIterator,
     QgsFeatureRequest,
     QgsField,
     QgsFields,
     QgsGeometry,
-    QgsProject,
     QgsRectangle,
     QgsVectorDataProvider,
     QgsWkbTypes,
 )
 
+from qduckdb.provider.duckdb_feature_source import DuckdbFeatureSource
 from qduckdb.resources.mapping.field_type import mapping_duckdb_qgis_type
 from qduckdb.resources.mapping.geometry import mapping_duckdb_qgis_geometry
 from qduckdb.toolbelt.log_handler import PlgLogger
@@ -361,31 +357,6 @@ class DuckdbProvider(QgsVectorDataProvider):
     def supportsSubsetString(self) -> bool:
         # FIXME: the provider does not handle subsets at the moment
         return False
-
-
-class DuckdbFeatureSource(QgsAbstractFeatureSource):
-    def __init__(self, provider):
-        """Constructor"""
-        super().__init__()
-        self._provider = provider
-
-        self._expression_context = QgsExpressionContext()
-        self._expression_context.appendScope(QgsExpressionContextUtils.globalScope())
-        self._expression_context.appendScope(
-            QgsExpressionContextUtils.projectScope(QgsProject.instance())
-        )
-        self._expression_context.setFields(self._provider.fields())
-        if self._provider.subsetString():
-            self._subset_expression = QgsExpression(self._provider.subsetString())
-            self._subset_expression.prepare(self._expression_context)
-        else:
-            self._subset_expression = None
-
-    def getFeatures(self, request) -> QgsFeatureIterator:
-        return QgsFeatureIterator(DuckdbFeatureIterator(self, request))
-
-    def get_provider(self):
-        return self._provider
 
 
 class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
