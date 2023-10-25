@@ -7,7 +7,7 @@ from qgis.core import (
     QgsProject,
 )
 
-from qduckdb.provider.duckdb_provider import DuckdbFeatureIterator
+from qduckdb.provider import duckdb_feature_iterator
 
 
 class DuckdbFeatureSource(QgsAbstractFeatureSource):
@@ -29,7 +29,9 @@ class DuckdbFeatureSource(QgsAbstractFeatureSource):
             self._subset_expression = None
 
     def getFeatures(self, request) -> QgsFeatureIterator:
-        return QgsFeatureIterator(DuckdbFeatureIterator(self, request))
+        return QgsFeatureIterator(
+            duckdb_feature_iterator.DuckdbFeatureIterator(self, request)
+        )
 
     def get_provider(self):
         return self._provider
