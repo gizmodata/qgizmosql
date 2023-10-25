@@ -5,7 +5,6 @@ from pathlib import Path
 
 import duckdb
 from qgis.core import (
-    Qgis,
     QgsAbstractFeatureIterator,
     QgsAbstractFeatureSource,
     QgsCoordinateReferenceSystem,
@@ -41,6 +40,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         flags=QgsDataProvider.ReadFlags(),
     ):
         super().__init__(uri)
+        self.log = PlgLogger().log
 
         # Test spatial extension
         list_extension = []
@@ -51,6 +51,13 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         if "spatial" not in list_extension:
             duckdb.sql("INSTALL spatial ; ")
+            self.log(
+                message=self.tr(
+                    "Spatial extension has been installed in DuckDB engine."
+                ),
+                log_level=0,
+                push=False,
+            )
 
         self._is_valid = False
         self._uri = uri
@@ -62,19 +69,27 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._primary_key = None
         self._path, self._table, self._epsg = self._parse_uri(uri)
         if not self._path or not self._table:
-            PlgLogger.log(
-                'Wrong uri. Excepted : "path=/home/path/my_db table=the_table"',
-                log_level=Qgis.Critical,
-                duration=10,
-                push=False,
+            self.log(
+                message=self.tr(
+                    "Wrong URI. Excepted: path={} table={}".format(
+                        self.__path__, self._table
+                    )
+                ),
+                log_level=2,
+                duration=25,
+                push=True,
             )
             return
 
         if not Path(self._path).exists():
-            PlgLogger.log(
-                "Databse not exists, wrong path",
-                log_level=Qgis.Critical,
-                duration=10,
+            self.log(
+                message=self.tr(
+                    "Database does not exists at the specified path: {}".format(
+                        self._path
+                    )
+                ),
+                log_level=2,
+                duration=25,
                 push=False,
             )
             return
@@ -144,6 +159,13 @@ class DuckdbProvider(QgsVectorDataProvider):
         """Connects the database and loads the spatial extension"""
         self._con = duckdb.connect(self._path, read_only=True)
         self._con.sql("LOAD spatial ;")
+        self.log(
+            message=self.tr(
+                "Connection to {} database and loading spatial extension succeeded".format(
+                    self._path
+                )
+            )
+        )
 
     def wkbType(self) -> QgsWkbTypes:
         """Detects the geometry type of the table, converts and return it to
@@ -160,9 +182,9 @@ class DuckdbProvider(QgsVectorDataProvider):
                 if str_geom_duckdb in mapping_duckdb_qgis_geometry:
                     geometry_type = mapping_duckdb_qgis_geometry[str_geom_duckdb]
                 else:
-                    PlgLogger.log(
+                    self.log(
                         f"Geometry type {str_geom_duckdb} not supported",
-                        log_level=Qgis.Critical,
+                        log_level=2,
                         duration=10,
                         push=False,
                     )

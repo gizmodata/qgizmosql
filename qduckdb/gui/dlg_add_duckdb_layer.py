@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import duckdb
-from qgis.core import Qgis, QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer
+from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog
 
@@ -14,6 +14,7 @@ class LoadDuckDBLayerDialog(QDialog):
         duckdb provider"""
         # init module and ui
         super().__init__(parent)
+        self.log = PlgLogger().log
         uic.loadUi(Path(__file__).parent / f"{Path(__file__).stem}.ui", self)
         self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
         self._table_combobox.currentTextChanged.connect(self._unlock_add_layer)
@@ -37,9 +38,9 @@ class LoadDuckDBLayerDialog(QDialog):
         try:
             con = duckdb.connect(self.db_path())
         except duckdb.IOException:
-            PlgLogger.log(
+            self.log(
                 "This is not a valid database DuckDB",
-                log_level=Qgis.Critical,
+                log_level=2,
                 duration=10,
                 push=True,
             )
@@ -61,17 +62,17 @@ class LoadDuckDBLayerDialog(QDialog):
 
     def _push_add_layer_button(self) -> None:
         if not Path(self.db_path()).exists():
-            PlgLogger.log(
+            self.log(
                 "The database does not exist.",
-                log_level=Qgis.Critical,
+                log_level=2,
                 duration=10,
                 push=True,
             )
             return
         if not self._table_combobox.currentText():
-            PlgLogger.log(
+            self.log(
                 "No table selected.",
-                log_level=Qgis.Critical,
+                log_level=2,
                 duration=10,
                 push=True,
             )
