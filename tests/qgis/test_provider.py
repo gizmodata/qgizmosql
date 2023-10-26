@@ -17,7 +17,7 @@ from qgis.core import (
 from qgis.PyQt.Qt import QVariant
 from qgis.testing import unittest
 
-from qduckdb.duckdb_provider import DuckdbProvider
+from qduckdb.provider.duckdb_provider import DuckdbProvider
 
 db_path = Path(__file__).parent.joinpath("data/base_test.db")
 
