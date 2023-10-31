@@ -222,7 +222,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         # table does not have a primary key
         db_path = Path(__file__).parent.joinpath("data/base_test.db")
         provider = DuckdbProvider(uri=f"path={db_path} table=cities epsg=4326")
-        self.assertEqual(provider.primary_key, -1)
+        self.assertEqual(provider.primary_key(), -1)
         features = list(provider.getFeatures())
         self.assertEqual(len(features), 3)
         self.assertEqual(features[0].id(), 1)
@@ -234,7 +234,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f"path={db_path} table=table_with_primary_key epsg=4326"
         )
-        self.assertEqual(provider.primary_key, 0)
+        self.assertEqual(provider.primary_key(), 0)
         features = list(provider.getFeatures())
         self.assertEqual(len(features), 4)
         self.assertEqual(features[0].id(), 1)

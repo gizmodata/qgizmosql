@@ -75,7 +75,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         where_clause = ""
 
         if feature_id_list and not filter_rect.isNull():
-            if self._provider.primary_key == -1:
+            if self._provider.primary_key() == -1:
                 where_clause = (
                     f"where st_intersects({geom_column}, "
                     f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
@@ -83,7 +83,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 )
 
             else:
-                primary_key_name = list_field_names[self._provider.primary_key]
+                primary_key_name = list_field_names[self._provider.primary_key()]
                 where_clause = (
                     f"where st_intersects({geom_column}, "
                     f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
@@ -91,11 +91,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 )
 
         if feature_id_list and filter_rect.isNull():
-            if self._provider.primary_key == -1:
+            if self._provider.primary_key() == -1:
                 where_clause = f"where index in {tuple(feature_id_list)}"
 
             else:
-                primary_key_name = list_field_names[self._provider.primary_key]
+                primary_key_name = list_field_names[self._provider.primary_key()]
                 where_clause = f"where {primary_key_name} in {tuple(feature_id_list)}"
 
         if not filter_rect.isNull() and not feature_id_list:
@@ -131,11 +131,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setGeometry(geometry)
         self.geometryToDestinationCrs(f, self._transform)
 
-        if self._provider.primary_key == -1:
+        if self._provider.primary_key() == -1:
             # the table does not have a primary key, use the row number as fallback
             f.setId(next_result[-1])
         else:
-            f.setId(next_result[self._provider.primary_key])
+            f.setId(next_result[self._provider.primary_key()])
 
         for enum in range(self.index_geom_column):
             f.setAttribute(enum, next_result[enum])

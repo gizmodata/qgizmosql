@@ -237,7 +237,6 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         return self._column_geom
 
-    @property
     def primary_key(self) -> int:
         if not self._primary_key:
             res = self._con.sql(
