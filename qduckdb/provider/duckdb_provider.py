@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import weakref
 
-import duckdb
 from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsDataProvider,
@@ -17,12 +16,38 @@ from qgis.core import (
 )
 
 from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
-from qduckdb.provider.duckdb_wrapper import DuckDbTools
 from qduckdb.provider.mappings import (
     mapping_duckdb_qgis_geometry,
     mapping_duckdb_qgis_type,
 )
 from qduckdb.toolbelt.log_handler import PlgLogger
+
+# conditional imports
+try:
+    import duckdb
+
+    from qduckdb.provider.duckdb_wrapper import DuckDbTools
+
+    PlgLogger.log(message="Dependencies loaded from Python installation.")
+except Exception:
+    PlgLogger.log(
+        message="Import from Python installation failed. Trying to load from "
+        "embedded external libs.",
+        log_level=0,
+        push=False,
+    )
+    import site
+
+    from qduckdb.__about__ import DIR_PLUGIN_ROOT
+
+    site.addsitedir(DIR_PLUGIN_ROOT / "embedded_external_libs")
+    import duckdb
+
+    from qduckdb.provider.duckdb_wrapper import DuckDbTools
+
+    PlgLogger.log(
+        message=f"Dependencies loaded from embedded external libs: {duckdb.__version__=}"
+    )
 
 
 class DuckdbProvider(QgsVectorDataProvider):
