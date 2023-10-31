@@ -194,24 +194,28 @@ class DuckdbProvider(QgsVectorDataProvider):
         if not self._extent:
             if not self._is_valid:
                 self._extent = QgsRectangle()
+                PlgLogger.log(
+                    message="Using empty extent because geometry is not valid",
+                    log_level=4,
+                )
             else:
-                x_min = self._con.sql(
-                    f"select min(st_xmin({self._column_geom})) from {self._table}"
-                ).fetchone()[0]
+                extent_bounds = self._con.sql(
+                    query=f"select min(st_xmin({self._column_geom})), "
+                    f"max(st_xmax({self._column_geom})), "
+                    f"min(st_ymin({self._column_geom})), "
+                    f"max(st_ymax({self._column_geom})) "
+                    f"from {self._table}"
+                ).fetchone()
 
-                x_max = self._con.sql(
-                    f"select max(st_xmax({self._column_geom})) from {self._table}"
-                ).fetchone()[0]
+                self._extent = QgsRectangle(*extent_bounds)
 
-                y_min = self._con.sql(
-                    f"select min(st_ymin({self._column_geom})) from {self._table}"
-                ).fetchone()[0]
-
-                y_max = self._con.sql(
-                    f"select max(st_ymax({self._column_geom})) from {self._table}"
-                ).fetchone()[0]
-
-                self._extent = QgsRectangle(x_min, y_min, x_max, y_max)
+                PlgLogger.log(
+                    message="Extent calculated for {}: "
+                    "xmin={}, xmax={}, ymin={}, ymax={}".format(
+                        self._table, *extent_bounds
+                    ),
+                    log_level=4,
+                )
 
         return self._extent
 
