@@ -7,6 +7,9 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_FOLDER/.cache/pip"
   PROJECT_FOLDER: "qduckdb"
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PROJECT_FOLDER}"
+  PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
+  PYTHON_MINIMAL_VERSION: "3.9"
   REPO_PLUGIN_URL: "https://oslandia.gitlab.io/qgis/qduckdb/"
 
 cache:
@@ -14,12 +17,13 @@ cache:
     files:
       - requirements/*.txt
   paths:
-    - .cache/pip
+    - ${PIP_CACHE_DIR}
+    - ${PRE_COMMIT_HOME}
 
 # -- LINT JOBS -------------------------------------------------------------------------
 git-hooks:
   stage: 🐍 lint
-  image: python:3.9
+  image: python:${PYTHON_MINIMAL_VERSION}
   tags:
     - docker
   variables:
@@ -42,12 +46,12 @@ git-hooks:
 
 flake8:
   stage: 🐍 lint
-  image: python:3.9-slim-bullseye
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
     - docker
-  only:
-    changes:
-      - "**/*.py"
+  rules:
+    - changes:
+        - "**/*.py"
   before_script:
     - python -m pip install -U flake8
   script:
@@ -57,25 +61,29 @@ flake8:
 # -- TEST JOBS --------------------------------------------------------------------------
 tests:unit:
   stage: 🤞 test
-  image: python:3.9-slim-bullseye
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
     - docker
-  only:
-    changes:
-      - "**/*.py"
-      - ".gitlab-ci.yml"
+  rules:
+    - changes:
+        - "**/*.py"
+        - ".gitlab-ci.yml"
   before_script:
     - python3 -m pip install -U -r requirements/testing.txt
     - python3 -m pip install -U -r requirements/dependencies.txt
   script:
-    - env PYTHONPATH=/usr/share/qgis/python:. pytest -p no:qgis tests/unit
+    - env PYTHONPATH=/usr/share/qgis/python:. pytest -p no:qgis tests/unit --junitxml=junit/test-results-unit.xml --cov-report=xml:coverage-reports/coverage-unit.xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
-    when: always
+    paths:
+      - coverage-reports/coverage-unit.xml
+      - junit/test-results-unit.xml
     reports:
-      junit: junit/test-results.xml
+      junit: junit/test-results-unit.xml
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: coverage-reports/coverage-unit.xml
+    when: always
 
 tests:qgis:
   stage: 🤞 test
@@ -85,40 +93,73 @@ tests:qgis:
   variables:
     DISPLAY: ":1"
     PYTHONPATH: "/usr/share/qgis/python/plugins:/usr/share/qgis/python:."
-  only:
-    changes:
-      - "**/*.py"
-      - ".gitlab-ci.yml"
-    refs:
-      - main
-      - merge_requests
+  rules:
+    - if: "$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH"
+      when: always
+    # on a tag
+    - if: $CI_COMMIT_TAG
+    - changes:
+        - "**/*.py"
+        - ".gitlab-ci.yml"
   before_script:
     - python3 -m pip install -U -r requirements/testing.txt
     - python3 -m pip install -U -r requirements/dependencies.txt
     - Xvfb :1 &
   script:
-    - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis
+    - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
-    when: always
+    paths:
+      - coverage-reports/coverage-qgis.xml
+      - junit/test-results-qgis.xml
     reports:
-      junit: junit/test-results.xml
+      junit: junit/test-results-qgis.xml
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: coverage-reports/coverage-qgis.xml
+    when: always
 
 # -- BUILD JOBS -------------------------------------------------------------------------
-build:translation:
+build:documentation:
   stage: 📦 build
-  image: python:3.9-slim-buster
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
     - docker
-  only:
-    refs:
-      - main
-      - tags
+  rules:
+    # on default branch
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+    # on a tag
+    - if: $CI_COMMIT_TAG
+    # on a MR (manually)
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
+  before_script:
+    - python -m pip install -U -r requirements/documentation.txt
+  script:
+    - sphinx-build -b html docs target/docs
+  artifacts:
+    name: documentation
+    expose_as: "Built documentation static website"
+    paths:
+      - target/docs
+    when: always
+
+build:translation:
+  stage: 📦 build
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
+  rules:
+    # on default branch
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+    # on a tag
+    - if: $CI_COMMIT_TAG
+    # on a MR if previous jobs are successful
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
   before_script:
     - apt update
-    - apt install -y qttools5-dev-tools qt5-default g++
+    - apt install -y qt5-qmake qttools5-dev-tools
     - python -m pip install -U pyqt5-tools
   script:
     - pylupdate5 -noobsolete -verbose $PROJECT_FOLDER/resources/i18n/plugin_translation.pro
@@ -129,15 +170,20 @@ build:translation:
       - $PROJECT_FOLDER/resources/i18n/*qm
     when: always
 
-builder:
+build:plugin:
   stage: 📦 build
-  image: python:3.9
+  image: python:${PYTHON_MINIMAL_VERSION}
   tags:
     - docker
-  only:
-    refs:
-      - main
-      - tags
+  rules:
+    # on default branch
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+    # on a tag
+    - if: $CI_COMMIT_TAG
+    # on a MR if previous jobs are successful
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
   needs:
     - build:translation
   before_script:
@@ -159,25 +205,6 @@ builder:
       - RELEASE_DESCRIPTION.md
     expire_in: never
 
-documentation:
-  stage: 📦 build
-  image: python:3.9-slim-bullseye
-  tags:
-    - docker
-  only:
-    refs:
-      - main
-  before_script:
-    - python -m pip install -U -r requirements/documentation.txt
-  script:
-    - sphinx-build -b html docs target/docs
-  artifacts:
-    name: documentation
-    expose_as: "Built documentation static website"
-    paths:
-      - target/docs
-    when: always
-
 # -- DEPLOYMENT JOBS -------------------------------------------------------------------
 pages:
   stage: 🚀 deploy
@@ -185,19 +212,24 @@ pages:
     - docker
   variables:
     GIT_STRATEGY: none
-  only:
-    changes:
-      - "**/*.md"
-      - "**/*.rst"
-      - ".gitlab-ci.yml"
-      - "$PROJECT_FOLDER/**/*"
-      - requirements/documentation.txt
-      - requirements/packaging.txt
-    refs:
-      - main
+  rules:
+    # on default branch
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+      changes:
+        - "**/*.md"
+        - "**/*.rst"
+        - ".gitlab-ci.yml"
+        - "$PROJECT_FOLDER/**/*"
+        - requirements/documentation.txt
+        - requirements/packaging.txt
+    # on a tag
+    - if: $CI_COMMIT_TAG
   needs:
-    - builder
-    - documentation
+    - job: build:plugin
+      artifacts: true
+    - job: build:documentation
+      artifacts: true
 
   script:
     - mkdir -p public
@@ -219,11 +251,12 @@ release:prepare:
   image:
     name: alpine/git:latest
     entrypoint: [""]
-  only:
-    - tags
+  rules:
+    # on a tag
+    - if: $CI_COMMIT_TAG
   allow_failure: true
   needs:
-    - job: builder
+    - job: build:plugin
       artifacts: true
   script:
     - echo -e '\n\n## Technical changelog\n' >> RELEASE_DESCRIPTION.md
@@ -236,6 +269,24 @@ release:prepare:
     paths:
       - RELEASE_DESCRIPTION.md
 
+release:upload:
+  stage: 🚀 deploy
+  image: curlimages/curl:latest
+  rules:
+    # on a tag
+    - if: $CI_COMMIT_TAG
+  needs:
+    - job: build:plugin
+      artifacts: true
+  script:
+    - |
+      PACKAGE_NAME=$(ls ${PROJECT_FOLDER}.*.zip)
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file ${PACKAGE_NAME} ${PACKAGE_REGISTRY_URL}/${CI_COMMIT_TAG}/${PACKAGE_NAME}
+      echo "PACKAGE_NAME=$PACKAGE_NAME" >> release.env
+  artifacts:
+    reports:
+      dotenv: release.env
+
 release:publish:
   stage: 🚀 deploy
   image: registry.gitlab.com/gitlab-org/release-cli:latest
@@ -243,10 +294,13 @@ release:publish:
     - docker
   variables:
     GIT_STRATEGY: none
-  only:
-    - tags
+  rules:
+    # on a tag
+    - if: $CI_COMMIT_TAG
   needs:
     - job: release:prepare
+      artifacts: true
+    - job: release:upload
       artifacts: true
   script:
     - echo "Creating release from $CI_COMMIT_TAG"
@@ -256,16 +310,17 @@ release:publish:
     tag_name: "$CI_COMMIT_TAG"
     assets:
       links:
-        - name: "Packaged plugin"
-          url: "https://gitlab.com/Oslandia/qgis/qduckdb/-/jobs/${ARTIFACT_JOB_ID}/artifacts/download?job=builder"
+        - name: "${PACKAGE_NAME}"
+          url: "${PACKAGE_REGISTRY_URL}/${CI_COMMIT_TAG}/${PACKAGE_NAME}"
 
 deploy:qgis-repository:
   stage: 🚀 deploy
   image: python:3.11
   tags:
     - docker
-  only:
-    - tags
+  rules:
+    # on a tag
+    - if: $CI_COMMIT_TAG
   before_script:
     - apt install git
     - python -m pip install -U -r requirements/packaging.txt
