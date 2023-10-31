@@ -14,7 +14,7 @@ from qgis.core import (
 )
 
 # plugin
-from qduckdb.provider import duckdb_feature_source
+from qduckdb.provider import duckdb_feature_source, duckdb_provider
 
 
 class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
@@ -26,7 +26,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         """Constructor"""
         # FIXME: Handle QgsFeatureRequest.FilterExpression
         super().__init__(request)
-        self._provider = source.get_provider()
+        self._provider: duckdb_provider.DuckdbProvider = source.get_provider()
 
         self._request = request if request is not None else QgsFeatureRequest()
         self._transform = QgsCoordinateTransform()
