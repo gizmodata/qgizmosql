@@ -1,0 +1,9 @@
+# Embedded requirements
+#
+# Python packages required by the plugin and which are not included into the embedded Python in QGIS (mainly Windows).
+#
+# Typical command to install:
+# python -m pip install --no-deps -U -r requirements/embedded.txt -t qduckdb/embedded_external_libs
+# -----------------------
+
+duckdb==0.9.1
