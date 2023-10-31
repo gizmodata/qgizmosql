@@ -104,7 +104,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
             )
 
-        self._result = self._provider.con.execute(
+        self._result = self._provider.con().execute(
             f"select * from (select {fields_name_for_query}, "
             f"st_astext({geom_column}), {geom_column}, row_number() over() as index from {table}) "
             f"{where_clause} order by index"

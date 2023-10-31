@@ -342,7 +342,6 @@ class DuckdbProvider(QgsVectorDataProvider):
             )
         )
 
-    @property
     def con(self) -> duckdb.DuckDBPyConnection | None:
         """Start DuckDB cursor"""
         if not self._is_valid:
