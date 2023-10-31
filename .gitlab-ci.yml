@@ -139,7 +139,7 @@ build:translation:
       - $PROJECT_FOLDER/resources/i18n/*qm
     when: always
 
-builder:
+build:plugin:
   stage: 📦 build
   image: python:${PYTHON_MINIMAL_VERSION}
   tags:
@@ -169,7 +169,7 @@ builder:
       - RELEASE_DESCRIPTION.md
     expire_in: never
 
-documentation:
+build:documentation:
   stage: 📦 build
   image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
@@ -206,8 +206,10 @@ pages:
     refs:
       - main
   needs:
-    - builder
-    - documentation
+    - job: build:plugin
+      artifacts: true
+    - job: build:documentation
+      artifacts: true
 
   script:
     - mkdir -p public
@@ -233,7 +235,7 @@ release:prepare:
     - tags
   allow_failure: true
   needs:
-    - job: builder
+    - job: build:plugin
       artifacts: true
   script:
     - echo -e '\n\n## Technical changelog\n' >> RELEASE_DESCRIPTION.md
