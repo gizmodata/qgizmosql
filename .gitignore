@@ -130,3 +130,5 @@ dmypy.json
 .vscode/
 *.qm
 symbology-style.db
+tests/fixtures/capitals.db
+tests/fixtures/tmp_*.db

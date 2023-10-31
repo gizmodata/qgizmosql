@@ -11,7 +11,7 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
         start_app()
         self.dialog = LoadDuckDBLayerDialog()
         self.db_path_test = (
-            Path(__file__).parent.joinpath("data/base_test.db").as_posix()
+            Path(__file__).parent.parent.joinpath("fixtures/base_test.db").as_posix()
         )
         self.wrong_db_path = "wrong/path/zidane.db"
 
