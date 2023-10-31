@@ -18,8 +18,10 @@ from qgis.core import (
 )
 
 from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
-from qduckdb.resources.mapping.field_type import mapping_duckdb_qgis_type
-from qduckdb.resources.mapping.geometry import mapping_duckdb_qgis_geometry
+from qduckdb.provider.mappings import (
+    mapping_duckdb_qgis_geometry,
+    mapping_duckdb_qgis_type,
+)
 from qduckdb.toolbelt.log_handler import PlgLogger
 
 
