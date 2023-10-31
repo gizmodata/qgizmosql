@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import weakref
-from pathlib import Path
 
 import duckdb
 from qgis.core import (
@@ -46,32 +45,14 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._fields = None
         self._feature_count = None
         self._primary_key = None
-        self._path, self._table, self._epsg = self._parse_uri(uri)
-        if not self._path or not self._table:
-            PlgLogger.log(
-                message=self.tr(
-                    "Wrong URI. Excepted: path={} table={} epsg={}".format(
-                        self._path, self._table, self._epsg
-                    )
-                ),
-                log_level=2,
-                duration=25,
-                push=True,
-            )
+
+        try:
+            self._path, self._table, self._epsg = self.ddb_wrapper.parse_uri(uri)
+        except (FileNotFoundError, ValueError) as exc:
+            self._is_valid = False
+            PlgLogger.log(message=exc)
             return
 
-        if not Path(self._path).exists():
-            PlgLogger.log(
-                message=self.tr(
-                    "Database does not exists at the specified path: {}".format(
-                        self._path
-                    )
-                ),
-                log_level=2,
-                duration=25,
-                push=False,
-            )
-            return
         if self._epsg:
             self._crs = QgsCoordinateReferenceSystem.fromEpsgId(int(self._epsg))
         else:
@@ -258,26 +239,6 @@ class DuckdbProvider(QgsVectorDataProvider):
                     self._fields.append(qgs_field)
 
         return self._fields
-
-    @staticmethod
-    def _parse_uri(uri: str) -> tuple[str | None, str | None, str | None]:
-        """Parse the uri and return the path to the database and the name of the table"""
-        path = None
-        table = None
-        epsg = None
-        for variable in uri.split(" "):
-            try:
-                key, value = variable.split("=")
-                if key == "path":
-                    path = value
-                elif key == "table":
-                    table = value
-                elif key == "epsg":
-                    epsg = value
-            except ValueError:
-                pass
-
-        return path, table, epsg
 
     def dataSourceUri(self, expandAuthConfig=False):
         """Returns the data source specification: database path and

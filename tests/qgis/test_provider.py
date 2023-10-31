@@ -229,14 +229,6 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(provider.crs().authid(), "EPSG:4326")
         self.assertIsInstance(provider.crs(), QgsCoordinateReferenceSystem)
 
-    def test_parse_uri(self) -> None:
-        provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
-        )
-        self.assertEqual(provider._path, str(self.db_path_test))
-        self.assertEqual(provider._table, "cities")
-        self.assertEqual(provider._epsg, "4326")
-
     def test_primary_key(self) -> None:
         # table does not have a primary key
         provider = DuckdbProvider(
