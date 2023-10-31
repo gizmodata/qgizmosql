@@ -63,18 +63,6 @@ class QduckdbPlugin:
             self.translator.load(str(locale_path.resolve()))
             QCoreApplication.installTranslator(self.translator)
 
-        r = QgsProviderRegistry.instance()
-        metadata = QgsProviderMetadata(
-            DuckdbProvider.providerKey(),
-            DuckdbProvider.description(),
-            DuckdbProvider.createProvider,
-        )
-        # FIXME: It is not possible to remove unregister a provider
-        # Is it the correct approach?
-        # assert r.registerProvider(metadata)
-        r.registerProvider(metadata)
-        QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
-
         # dialogs placeholders
         self._dlg_add_layer = None
 
@@ -135,6 +123,22 @@ class QduckdbPlugin:
         self.iface.pluginHelpMenu().addAction(
             self.action_help_plugin_menu_documentation
         )
+
+        # below come everything which depends on external dependencies
+        self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
+
+        # register custom provider
+        r = QgsProviderRegistry.instance()
+        metadata = QgsProviderMetadata(
+            DuckdbProvider.providerKey(),
+            DuckdbProvider.description(),
+            DuckdbProvider.createProvider,
+        )
+        # FIXME: It is not possible to remove unregister a provider
+        # Is it the correct approach?
+        # assert r.registerProvider(metadata)
+        r.registerProvider(metadata)
+        QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
 
     def tr(self, message: str) -> str:
         """Get the translation for a string using Qt translation API.
