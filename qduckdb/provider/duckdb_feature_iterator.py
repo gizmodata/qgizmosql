@@ -50,7 +50,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         if not self._provider.isValid():
             return
 
-        table = self._provider.get_table
+        table = self._provider.get_table()
         geom_column = self._provider.get_geometry_column()
 
         list_field_names = []
