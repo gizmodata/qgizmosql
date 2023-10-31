@@ -72,14 +72,18 @@ tests:unit:
     - python3 -m pip install -U -r requirements/testing.txt
     - python3 -m pip install -U -r requirements/dependencies.txt
   script:
-    - env PYTHONPATH=/usr/share/qgis/python:. pytest -p no:qgis tests/unit
+    - env PYTHONPATH=/usr/share/qgis/python:. pytest -p no:qgis tests/unit --junitxml=junit/test-results-unit.xml --cov-report=xml:coverage-reports/coverage-unit.xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
-    when: always
+    paths:
+      - coverage-reports/coverage-unit.xml
+      - junit/test-results-unit.xml
     reports:
-      junit: junit/test-results.xml
+      junit: junit/test-results-unit.xml
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: coverage-reports/coverage-unit.xml
+    when: always
 
 tests:qgis:
   stage: 🤞 test
@@ -101,14 +105,18 @@ tests:qgis:
     - python3 -m pip install -U -r requirements/dependencies.txt
     - Xvfb :1 &
   script:
-    - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis
+    - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
-    when: always
+    paths:
+      - coverage-reports/coverage-qgis.xml
+      - junit/test-results-qgis.xml
     reports:
-      junit: junit/test-results.xml
+      junit: junit/test-results-qgis.xml
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: coverage-reports/coverage-qgis.xml
+    when: always
 
 # -- BUILD JOBS -------------------------------------------------------------------------
 build:translation:
