@@ -7,14 +7,14 @@ from qgis.core import (
     QgsProject,
 )
 
-from qduckdb.provider import duckdb_feature_iterator
+from qduckdb.provider import duckdb_feature_iterator, duckdb_provider
 
 
 class DuckdbFeatureSource(QgsAbstractFeatureSource):
     def __init__(self, provider):
         """Constructor"""
         super().__init__()
-        self._provider = provider
+        self._provider: duckdb_provider.DuckdbProvider = provider
 
         self._expression_context = QgsExpressionContext()
         self._expression_context.appendScope(QgsExpressionContextUtils.globalScope())
