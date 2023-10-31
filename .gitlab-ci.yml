@@ -140,7 +140,7 @@ build:documentation:
     - sphinx-build -b html docs target/docs
   artifacts:
     name: documentation
-    expose_as: "Built documentation static website"
+    expose_as: "built_documentation"
     paths:
       - target/docs
     when: always
@@ -199,6 +199,7 @@ build:plugin:
     - qgis-plugin-ci changelog latest >> RELEASE_DESCRIPTION.md
   artifacts:
     name: "$PROJECT_FOLDER_b$CI_COMMIT_REF_NAME-c$CI_COMMIT_SHORT_SHA-j$CI_JOB_ID"
+    expose_as: "packaged_plugin"
     paths:
       - "${PROJECT_FOLDER}.*.zip"
       - plugins.xml
