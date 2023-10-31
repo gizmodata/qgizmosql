@@ -140,7 +140,7 @@ build:documentation:
     - sphinx-build -b html docs target/docs
   artifacts:
     name: documentation
-    expose_as: "Built documentation static website"
+    expose_as: "built_documentation"
     paths:
       - target/docs
     when: always
@@ -243,7 +243,6 @@ build:plugin:
       - "${PROJECT_FOLDER}.*.zip"
       - plugins.xml
       - RELEASE_DESCRIPTION.md
-    expire_in: never
 
 # -- DEPLOYMENT JOBS -------------------------------------------------------------------
 pages:
