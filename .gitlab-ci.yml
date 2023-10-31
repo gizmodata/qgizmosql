@@ -120,6 +120,31 @@ tests:qgis:
     when: always
 
 # -- BUILD JOBS -------------------------------------------------------------------------
+build:documentation:
+  stage: 📦 build
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
+  tags:
+    - docker
+  rules:
+    # on default branch
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+    # on a tag
+    - if: $CI_COMMIT_TAG
+    # on a MR (manually)
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
+  before_script:
+    - python -m pip install -U -r requirements/documentation.txt
+  script:
+    - sphinx-build -b html docs target/docs
+  artifacts:
+    name: documentation
+    expose_as: "Built documentation static website"
+    paths:
+      - target/docs
+    when: always
+
 build:translation:
   stage: 📦 build
   image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
@@ -179,31 +204,6 @@ build:plugin:
       - plugins.xml
       - RELEASE_DESCRIPTION.md
     expire_in: never
-
-build:documentation:
-  stage: 📦 build
-  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
-  tags:
-    - docker
-  rules:
-    # on default branch
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      when: always
-    # on a tag
-    - if: $CI_COMMIT_TAG
-    # on a MR (manually)
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      when: manual
-  before_script:
-    - python -m pip install -U -r requirements/documentation.txt
-  script:
-    - sphinx-build -b html docs target/docs
-  artifacts:
-    name: documentation
-    expose_as: "Built documentation static website"
-    paths:
-      - target/docs
-    when: always
 
 # -- DEPLOYMENT JOBS -------------------------------------------------------------------
 pages:
