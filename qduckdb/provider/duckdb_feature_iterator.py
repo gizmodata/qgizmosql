@@ -14,7 +14,7 @@ from qgis.core import (
 )
 
 # plugin
-from qduckdb.provider import duckdb_feature_source
+from qduckdb.provider import duckdb_feature_source, duckdb_provider
 
 
 class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
@@ -26,7 +26,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         """Constructor"""
         # FIXME: Handle QgsFeatureRequest.FilterExpression
         super().__init__(request)
-        self._provider = source.get_provider()
+        self._provider: duckdb_provider.DuckdbProvider = source.get_provider()
 
         self._request = request if request is not None else QgsFeatureRequest()
         self._transform = QgsCoordinateTransform()
@@ -50,7 +50,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         if not self._provider.isValid():
             return
 
-        table = self._provider.get_table
+        table = self._provider.get_table()
         geom_column = self._provider.get_geometry_column()
 
         list_field_names = []
@@ -75,7 +75,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         where_clause = ""
 
         if feature_id_list and not filter_rect.isNull():
-            if self._provider.primary_key == -1:
+            if self._provider.primary_key() == -1:
                 where_clause = (
                     f"where st_intersects({geom_column}, "
                     f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
@@ -83,7 +83,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 )
 
             else:
-                primary_key_name = list_field_names[self._provider.primary_key]
+                primary_key_name = list_field_names[self._provider.primary_key()]
                 where_clause = (
                     f"where st_intersects({geom_column}, "
                     f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
@@ -91,11 +91,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 )
 
         if feature_id_list and filter_rect.isNull():
-            if self._provider.primary_key == -1:
+            if self._provider.primary_key() == -1:
                 where_clause = f"where index in {tuple(feature_id_list)}"
 
             else:
-                primary_key_name = list_field_names[self._provider.primary_key]
+                primary_key_name = list_field_names[self._provider.primary_key()]
                 where_clause = f"where {primary_key_name} in {tuple(feature_id_list)}"
 
         if not filter_rect.isNull() and not feature_id_list:
@@ -104,7 +104,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
             )
 
-        self._result = self._provider.con.execute(
+        self._result = self._provider.con().execute(
             f"select * from (select {fields_name_for_query}, "
             f"st_astext({geom_column}), {geom_column}, row_number() over() as index from {table}) "
             f"{where_clause} order by index"
@@ -131,11 +131,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setGeometry(geometry)
         self.geometryToDestinationCrs(f, self._transform)
 
-        if self._provider.primary_key == -1:
+        if self._provider.primary_key() == -1:
             # the table does not have a primary key, use the row number as fallback
             f.setId(next_result[-1])
         else:
-            f.setId(next_result[self._provider.primary_key])
+            f.setId(next_result[self._provider.primary_key()])
 
         for enum in range(self.index_geom_column):
             f.setAttribute(enum, next_result[enum])

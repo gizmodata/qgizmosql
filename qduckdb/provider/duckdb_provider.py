@@ -237,12 +237,11 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         return self._column_geom
 
-    @property
     def primary_key(self) -> int:
         if not self._primary_key:
             res = self._con.sql(
                 "SELECT constraint_column_indexes FROM duckdb_constraints() "
-                f"WHERE table_name='{self.get_table}' "
+                f"WHERE table_name='{self.get_table()}' "
                 "AND constraint_type = 'PRIMARY KEY';"
             ).fetchone()
 
@@ -312,7 +311,6 @@ class DuckdbProvider(QgsVectorDataProvider):
     def storageType(self):
         return "DuckDB local database"
 
-    @property
     def get_table(self) -> str:
         """Get the table name
 
@@ -344,7 +342,6 @@ class DuckdbProvider(QgsVectorDataProvider):
             )
         )
 
-    @property
     def con(self) -> duckdb.DuckDBPyConnection | None:
         """Start DuckDB cursor"""
         if not self._is_valid:
