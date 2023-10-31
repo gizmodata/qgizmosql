@@ -7,6 +7,9 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_FOLDER/.cache/pip"
   PROJECT_FOLDER: "qduckdb"
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PROJECT_FOLDER}"
+  PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
+  PYTHON_MINIMAL_VERSION: "3.9"
   REPO_PLUGIN_URL: "https://oslandia.gitlab.io/qgis/qduckdb/"
 
 cache:
@@ -14,12 +17,13 @@ cache:
     files:
       - requirements/*.txt
   paths:
-    - .cache/pip
+    - ${PIP_CACHE_DIR}
+    - ${PRE_COMMIT_HOME}
 
 # -- LINT JOBS -------------------------------------------------------------------------
 git-hooks:
   stage: 🐍 lint
-  image: python:3.9
+  image: python:${PYTHON_MINIMAL_VERSION}
   tags:
     - docker
   variables:
@@ -42,7 +46,7 @@ git-hooks:
 
 flake8:
   stage: 🐍 lint
-  image: python:3.9-slim-bullseye
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
     - docker
   only:
@@ -57,7 +61,7 @@ flake8:
 # -- TEST JOBS --------------------------------------------------------------------------
 tests:unit:
   stage: 🤞 test
-  image: python:3.9-slim-bullseye
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
     - docker
   only:
@@ -109,16 +113,14 @@ tests:qgis:
 # -- BUILD JOBS -------------------------------------------------------------------------
 build:translation:
   stage: 📦 build
-  image: python:3.9-slim-buster
-  tags:
-    - docker
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   only:
     refs:
       - main
       - tags
   before_script:
     - apt update
-    - apt install -y qttools5-dev-tools qt5-default g++
+    - apt install -y qt5-qmake qttools5-dev-tools
     - python -m pip install -U pyqt5-tools
   script:
     - pylupdate5 -noobsolete -verbose $PROJECT_FOLDER/resources/i18n/plugin_translation.pro
@@ -131,7 +133,7 @@ build:translation:
 
 builder:
   stage: 📦 build
-  image: python:3.9
+  image: python:${PYTHON_MINIMAL_VERSION}
   tags:
     - docker
   only:
@@ -161,7 +163,7 @@ builder:
 
 documentation:
   stage: 📦 build
-  image: python:3.9-slim-bullseye
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
     - docker
   only:
