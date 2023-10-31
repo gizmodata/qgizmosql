@@ -18,6 +18,7 @@ from qgis.core import (
 )
 
 from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
+from qduckdb.provider.duckdb_wrapper import DuckDbTools
 from qduckdb.provider.mappings import (
     mapping_duckdb_qgis_geometry,
     mapping_duckdb_qgis_type,
@@ -35,22 +36,7 @@ class DuckdbProvider(QgsVectorDataProvider):
     ):
         super().__init__(uri)
 
-        # Test spatial extension
-        list_extension = []
-        for extension in duckdb.sql(
-            "select extension_name FROM duckdb_extensions();"
-        ).fetchall():
-            list_extension.append(extension[0])
-
-        if "spatial" not in list_extension:
-            duckdb.sql("INSTALL spatial ; ")
-            PlgLogger.log(
-                message=self.tr(
-                    "Spatial extension has been installed in DuckDB engine."
-                ),
-                log_level=0,
-                push=False,
-            )
+        self.ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
 
         self._is_valid = False
         self._uri = uri
