@@ -10,24 +10,26 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
     def setUp(self):
         start_app()
         self.dialog = LoadDuckDBLayerDialog()
-        self.db_path_test = (
-            Path(__file__).parent.parent.joinpath("fixtures/base_test.db").as_posix()
+        self.db_path_test = Path(__file__).parent.parent.joinpath(
+            "fixtures/base_test.db"
         )
-        self.wrong_db_path = "wrong/path/zidane.db"
+
+        self.assertTrue(self.db_path_test.exists())
+        self.wrong_db_path = Path("wrong/path/zidane.db")
 
     def test_get_path(self) -> None:
         """Check that the database path is correctly returned"""
         # Good path
-        self.dialog._db_path_input.setFilePath(self.db_path_test)
+        self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
         self.assertEqual(self.dialog.db_path(), self.db_path_test)
         # Wrong path
-        self.dialog._db_path_input.setFilePath(self.wrong_db_path)
+        self.dialog._db_path_input.setFilePath(self.wrong_db_path.as_posix())
         self.assertEqual(self.dialog.db_path(), self.wrong_db_path)
 
     def test_list_table_in_db(self) -> None:
         """We test that the list of tables in the database is correctly returned"""
         self.assertIsInstance(self.dialog, LoadDuckDBLayerDialog)
-        self.dialog._db_path_input.setFilePath(self.db_path_test)
+        self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
         self.assertEqual(
             self.dialog.list_table_in_db(),
             [
@@ -42,14 +44,14 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
 
     def test_push_add_layer_button(self) -> None:
         """Test that a layer has been added to the canvas"""
-        self.dialog._db_path_input.setFilePath(self.db_path_test)
+        self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
         self.dialog._table_combobox.setCurrentText("highway")
-        self.dialog._db_path_input.setFilePath(self.db_path_test)
+        self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
         self.dialog._push_add_layer_button()
         project = QgsProject.instance()
         self.assertTrue(project.mapLayersByName("highway"))
 
     def test_lock_button_with_wrong_path(self) -> None:
         """We test that the button remains locked when the wrong base is entered."""
-        self.dialog._db_path_input.setFilePath(self.wrong_db_path)
+        self.dialog._db_path_input.setFilePath(self.wrong_db_path.as_posix())
         self.assertFalse(self.dialog._add_layer_btn.isEnabled())

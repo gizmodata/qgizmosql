@@ -1,10 +1,13 @@
+# standard
 from pathlib import Path
 
-import duckdb
+# PyQGIS
 from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog
 
+# plugin
+from qduckdb.provider.duckdb_wrapper import DuckDbTools
 from qduckdb.toolbelt.log_handler import PlgLogger
 
 
@@ -16,14 +19,24 @@ class LoadDuckDBLayerDialog(QDialog):
         super().__init__(parent)
 
         uic.loadUi(Path(__file__).parent / f"{Path(__file__).stem}.ui", self)
+
+        # attributes
+        self.ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
+
+        # widgets and signals connection
         self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
         self._table_combobox.currentTextChanged.connect(self._unlock_add_layer)
         self._add_layer_btn.clicked.connect(self._push_add_layer_button)
         self._add_layer_btn.setEnabled(False)
 
-    def db_path(self) -> str:
-        """Return the db path specified entered in the appropriate field"""
-        return self._db_path_input.filePath()
+    def db_path(self) -> Path:
+        """Return the db path specified entered in the appropriate field as pathlib.Path
+            object.
+
+        :return: path to the file picked by the user through the UI.
+        :rtype: Path
+        """
+        return Path(self._db_path_input.filePath())
 
     def crs(self) -> QgsCoordinateReferenceSystem:
         """Return the crs will"""
@@ -36,32 +49,33 @@ class LoadDuckDBLayerDialog(QDialog):
         :rtype: list
         """
         try:
-            con = duckdb.connect(self.db_path())
-        except duckdb.IOException:
+            query_results = self.ddb_wrapper.run_sql(
+                database_path=self.db_path(),
+                query_sql="list_tables",
+                requires_spatial=False,
+                results_fetcher="fetchall",
+            )
+
+            return [result[0] for result in query_results]
+        except Exception as exc:
             PlgLogger.log(
-                self.tr("{} is not a valid database DuckDB".format(self.db_path())),
+                message="Unable to retrieve list of tables. Trace: {}".format(exc),
                 log_level=2,
-                duration=10,
                 push=True,
             )
             return []
 
-        list_table = []
-        for elem in con.sql(
-            "SELECT table_name from information_schema.tables"
-        ).fetchall():
-            list_table.append(elem[0])
-        con.close()
-
-        return list_table
-
     def _add_list_table_name_to_combobox(self) -> None:
         """Add list of table to combobox"""
+        # set selected path as wrapper's default database path
+        self.ddb_wrapper.database_path = self.db_path()
+
+        # update table list
         self._table_combobox.clear()
         self._table_combobox.addItems(self.list_table_in_db())
 
     def _push_add_layer_button(self) -> None:
-        if not Path(self.db_path()).exists():
+        if not self.db_path().exists():
             PlgLogger.log(
                 self.tr("The database {} does not exist.".format(self.db_path())),
                 log_level=2,
@@ -85,7 +99,7 @@ class LoadDuckDBLayerDialog(QDialog):
 
     def _unlock_add_layer(self) -> None:
         """Unlock the add layer button if a database is valid and a table is selected"""
-        if self._table_combobox.currentText() and Path(self.db_path()).exists():
+        if self._table_combobox.currentText() and self.db_path().exists():
             self._add_layer_btn.setEnabled(True)
         else:
             self._add_layer_btn.setEnabled(False)
