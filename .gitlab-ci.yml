@@ -238,6 +238,23 @@ release:prepare:
     paths:
       - RELEASE_DESCRIPTION.md
 
+release:upload:
+  stage: 🚀 deploy
+  image: curlimages/curl:latest
+  only:
+    - tags
+  needs:
+    - job: build:plugin
+      artifacts: true
+  script:
+    - |
+      PACKAGE_NAME=$(ls ${PROJECT_FOLDER}.*.zip)
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file ${PACKAGE_NAME} ${PACKAGE_REGISTRY_URL}/${CI_COMMIT_TAG}/${PACKAGE_NAME}
+      echo "PACKAGE_NAME=$PACKAGE_NAME" >> release.env
+  artifacts:
+    reports:
+      dotenv: release.env
+
 release:publish:
   stage: 🚀 deploy
   image: registry.gitlab.com/gitlab-org/release-cli:latest
@@ -250,6 +267,8 @@ release:publish:
   needs:
     - job: release:prepare
       artifacts: true
+    - job: release:upload
+      artifacts: true
   script:
     - echo "Creating release from $CI_COMMIT_TAG"
   release: # See https://docs.gitlab.com/ee/ci/yaml/#release for available properties
@@ -258,8 +277,8 @@ release:publish:
     tag_name: "$CI_COMMIT_TAG"
     assets:
       links:
-        - name: "Packaged plugin"
-          url: "https://gitlab.com/Oslandia/qgis/qduckdb/-/jobs/${ARTIFACT_JOB_ID}/artifacts/download?job=builder"
+        - name: "${PACKAGE_NAME}"
+          url: "${PACKAGE_REGISTRY_URL}/${CI_COMMIT_TAG}/${PACKAGE_NAME}"
 
 deploy:qgis-repository:
   stage: 🚀 deploy
