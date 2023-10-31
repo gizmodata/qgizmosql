@@ -125,7 +125,7 @@ class DuckDbTools:
                     message="Spatial extension loaded on database {}.".format(
                         self.database_path.resolve()
                     ),
-                    log_level=1,
+                    log_level=0,
                     push=False,
                 )
             return self.ddb_conn
@@ -580,7 +580,7 @@ class DuckDbTools:
             message="URI parsed successfully: path={} ; table={} ; epsg={}".format(
                 path, table, epsg
             ),
-            log_level=1,
+            log_level=4,
             push=False,
         )
 
@@ -604,7 +604,7 @@ class DuckDbTools:
 
         PlgLogger.log(
             message="Results from URI parsing are now used as wrapper attributes.",
-            log_level=1,
+            log_level=4,
             push=False,
         )
 
