@@ -201,8 +201,8 @@ class DuckdbProvider(QgsVectorDataProvider):
             else:
                 extent_bounds = self._con.sql(
                     query=f"select min(st_xmin({self._column_geom})), "
-                    f"max(st_xmax({self._column_geom})), "
                     f"min(st_ymin({self._column_geom})), "
+                    f"max(st_xmax({self._column_geom})), "
                     f"max(st_ymax({self._column_geom})) "
                     f"from {self._table}"
                 ).fetchone()
