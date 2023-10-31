@@ -170,6 +170,36 @@ build:translation:
       - $PROJECT_FOLDER/resources/i18n/*qm
     when: always
 
+build:windows:
+  stage: 📦 build
+  tags:
+    - windows
+  rules:
+    - if: $CI_COMMIT_TAG != null && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
+  before_script:
+    - Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+    - choco install -y python --version=3.9.13
+    - RefreshEnv
+  script:
+    - python --version
+    - python -m pip install -U pip setuptools wheel
+    - python -m pip install --no-deps -U -r requirements/embedded.txt -t $PROJECT_FOLDER/embedded_external_libs
+
+    # cleaning up code and build files to alleviate artifact
+    - gci -Recurse -Filter "__pycache__" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
+    - gci -Recurse -Filter "*.dist-info" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
+    - gci -Recurse -Filter "*.ipynb" -File -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
+    - gci -Recurse -Filter "examples" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
+    - gci -Recurse -Filter "tests" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
+    - gci -Recurse -Filter "test" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
+
+  artifacts:
+    paths:
+      - $PROJECT_FOLDER/embedded_external_libs
+
 build:plugin:
   stage: 📦 build
   image: python:${PYTHON_MINIMAL_VERSION}
@@ -186,10 +216,14 @@ build:plugin:
       when: on_success
   needs:
     - build:translation
+    - build:windows
   before_script:
     - apt install git
     - python -m pip install -U -r requirements/packaging.txt
   script:
+    # Amend gitignore to include embedded libs with qgis-plugin-ci
+    - sed -i "s|^$PROJECT_FOLDER/embedded_external_libs/.*| |" .gitignore
+
     # Amend gitignore to include translation with qgis-plugin-ci
     - sed -i "s|^*.qm.*| |" .gitignore
     - git add $PROJECT_FOLDER/resources/i18n/*.qm
@@ -325,8 +359,21 @@ deploy:qgis-repository:
     - apt install git
     - python -m pip install -U -r requirements/packaging.txt
   script:
+    # list files
+    - ls -lR
+    # print some info
     - echo "Deploying the version ${CI_COMMIT_TAG} plugin to QGIS Plugins Repository with the user ${OSGEO_USER_NAME}"
     - python ${PROJECT_FOLDER}/__about__.py
+
+    # Amend gitignore to include embedded libs with qgis-plugin-ci
+    - sed -i "s|^$PROJECT_FOLDER/embedded_external_libs/.*| |" .gitignore
+    - sed -i "s|^*.qm.*| |" .gitignore
+
+    # git tracks new files
+    - git add $PROJECT_FOLDER/
+
+    # release it
     - qgis-plugin-ci release ${CI_COMMIT_TAG}
+      --allow-uncommitted-changes
       --osgeo-username $OSGEO_USER_NAME
       --osgeo-password $OSGEO_USER_PASSWORD
