@@ -230,7 +230,9 @@ build:plugin:
 
     # Amend gitignore to include translation with qgis-plugin-ci
     - sed -i "s|^*.qm.*| |" .gitignore
-    - git add $PROJECT_FOLDER/resources/i18n/*.qm
+
+    # git tracks new files
+    - git add $PROJECT_FOLDER/
 
     # Package the latest version listed in the changelog
     - qgis-plugin-ci package latest --allow-uncommitted-changes --plugin-repo-url $REPO_PLUGIN_URL
