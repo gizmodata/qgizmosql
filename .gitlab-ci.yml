@@ -203,6 +203,7 @@ build:windows:
   artifacts:
     paths:
       - $PROJECT_FOLDER/embedded_external_libs
+    untracked: true
 
 build:plugin:
   stage: 📦 build
