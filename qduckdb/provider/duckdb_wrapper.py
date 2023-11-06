@@ -540,15 +540,15 @@ class DuckDbTools:
             )
         self.retrieve_duckdb_extensions()
 
-    def parse_uri(self, uri: str) -> tuple[str | None, str | None, str | None]:
+    def parse_uri(self, uri: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """Parse the input URI and returns the path to the database and the name of the
-        table. If the parsing is successfull
+        table. If the parsing is successfull, the path, table, and epsg are set at wwrapper's level.
 
         :param uri: input URI connection
         :type uri: str
 
         :return: tuple with database path, table name and CRS code
-        :rtype: tuple[str | None, str | None, str | None]
+        :rtype: tuple[Optional[str], Optional[str], Optional[str]]
 
         :example:
 
