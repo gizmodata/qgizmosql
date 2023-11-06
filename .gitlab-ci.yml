@@ -228,6 +228,9 @@ build:plugin:
   script:
     # Amend gitignore to include embedded libs with qgis-plugin-ci
     - sed -i "s|^$PROJECT_FOLDER/embedded_external_libs/.*| |" .gitignore
+    # IMPORTANT: following lines are commented out since they are already in .gitignore
+    # - echo -e "!$PROJECT_FOLDER/embedded_external_libs/**/*.so" >> .gitignore
+    # - echo -e "!$PROJECT_FOLDER/embedded_external_libs/**/*.pyd" >> .gitignore
 
     # Amend gitignore to include translation with qgis-plugin-ci
     - sed -i "s|^*.qm.*| |" .gitignore
