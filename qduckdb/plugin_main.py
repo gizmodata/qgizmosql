@@ -28,10 +28,21 @@ from qduckdb.__about__ import (
     __title__,
     __uri_homepage__,
 )
-from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
+
+# plugin
 from qduckdb.gui.dlg_settings import PlgOptionsFactory
-from qduckdb.provider.duckdb_provider import DuckdbProvider
 from qduckdb.toolbelt import PlgLogger
+
+# conditional imports
+try:
+    from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
+    from qduckdb.provider.duckdb_provider import DuckdbProvider
+
+    EXTERNAL_DEPENDENCIES_AVAILABLE: bool = True
+except ImportError:
+    EXTERNAL_DEPENDENCIES_AVAILABLE: bool = False
+    DuckdbProvider = None
+    LoadDuckDBLayerDialog = None
 
 # ############################################################################
 # ########## Classes ###############
@@ -62,18 +73,6 @@ class QduckdbPlugin:
             self.translator = QTranslator()
             self.translator.load(str(locale_path.resolve()))
             QCoreApplication.installTranslator(self.translator)
-
-        r = QgsProviderRegistry.instance()
-        metadata = QgsProviderMetadata(
-            DuckdbProvider.providerKey(),
-            DuckdbProvider.description(),
-            DuckdbProvider.createProvider,
-        )
-        # FIXME: It is not possible to remove unregister a provider
-        # Is it the correct approach?
-        # assert r.registerProvider(metadata)
-        r.registerProvider(metadata)
-        QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
 
         # dialogs placeholders
         self._dlg_add_layer = None
@@ -136,6 +135,25 @@ class QduckdbPlugin:
             self.action_help_plugin_menu_documentation
         )
 
+        if not self.check_dependencies():
+            return
+
+        # below come everything which depends on external dependencies
+        self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
+
+        # register custom provider
+        r = QgsProviderRegistry.instance()
+        metadata = QgsProviderMetadata(
+            DuckdbProvider.providerKey(),
+            DuckdbProvider.description(),
+            DuckdbProvider.createProvider,
+        )
+        # FIXME: It is not possible to remove unregister a provider
+        # Is it the correct approach?
+        # assert r.registerProvider(metadata)
+        r.registerProvider(metadata)
+        QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
+
     def tr(self, message: str) -> str:
         """Get the translation for a string using Qt translation API.
 
@@ -189,3 +207,36 @@ class QduckdbPlugin:
             self._dlg_add_layer = LoadDuckDBLayerDialog()
 
         self._dlg_add_layer.show()
+
+    def check_dependencies(self) -> bool:
+        """Check if all dependencies are satisfied. If not, warn the user and disable plugin.
+
+        :return: dependencies status
+        :rtype: bool
+        """
+        # if import failed
+        if not EXTERNAL_DEPENDENCIES_AVAILABLE:
+            self.log(
+                message=self.tr("Error importing dependencies. Plugin disabled."),
+                log_level=2,
+                push=True,
+                duration=60,
+                button=True,
+                button_connect=partial(
+                    QDesktopServices.openUrl,
+                    QUrl(f"{__uri_homepage__}/usage/installation.html"),
+                ),
+            )
+            # disable plugin widgets
+            self.action_main.setEnabled(False)
+
+            # add tooltip over menu
+            msg_disable = self.tr(
+                "Plugin disabled. Please install all dependencies and then restart QGIS."
+                " Refer to the documentation for more information."
+            )
+            self.action_main.setToolTip(msg_disable)
+            return False
+        else:
+            self.log(message=self.tr("Dependencies satisfied"), log_level=3)
+            return True

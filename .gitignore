@@ -132,3 +132,10 @@ dmypy.json
 symbology-style.db
 tests/fixtures/capitals.db
 tests/fixtures/tmp_*.db
+
+# -- MANDATORY -----
+
+# For packaging See: https://gitlab.com/Oslandia/qgis/qduckdb/-/merge_requests/53
+qduckdb/embedded_external_libs/
+!qduckdb/embedded_external_libs/**/*.so
+!qduckdb/embedded_external_libs/**/*.pyd

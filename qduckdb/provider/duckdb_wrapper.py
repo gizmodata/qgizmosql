@@ -11,12 +11,32 @@ References:
 from pathlib import Path
 from typing import Optional, Union
 
-# 3rd party
-import duckdb
-
 # plugin
 from qduckdb.provider.models import DdbExtension
 from qduckdb.toolbelt.log_handler import PlgLogger
+
+# conditional imports
+try:
+    import duckdb
+
+    PlgLogger.log(message="Dependencies loaded from Python installation.")
+except Exception:
+    PlgLogger.log(
+        message="Import from Python installation failed. Trying to load from "
+        "embedded external libs.",
+        log_level=0,
+        push=False,
+    )
+    import site
+
+    from qduckdb.__about__ import DIR_PLUGIN_ROOT
+
+    site.addsitedir(DIR_PLUGIN_ROOT / "embedded_external_libs")
+    import duckdb
+
+    PlgLogger.log(
+        message=f"Dependencies loaded from embedded external libs: {duckdb.__version__=}"
+    )
 
 
 # -- CLASSES --
@@ -25,6 +45,7 @@ class DuckDbTools:
 
     # DuckDB installation
     DDB_EXTENSIONS: list[DdbExtension] = []
+    DDB_VERSION: str = duckdb.__version__
 
     # predefined SQL queries
     SQL_QUERIES: dict = {

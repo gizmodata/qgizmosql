@@ -19,7 +19,7 @@ DuckDB is an in-process SQL OLAP database management system, designed to be simp
 - Read geographic layers from a DuckDB database
 - Use the provider with pyqgis command line or through a graphical interface
 
-![IHM](docs/imgs/ihm.png)
+![IHM](docs/static/ihm.png)
 
 ## Limitations
 
@@ -60,7 +60,7 @@ List of foreseen features, according to available funding :
 
 ## Contributing
 
-Contributions are welcome ! You can contribute through : 
+Contributions are welcome ! You can contribute through :
 
 - Testing and [giving feedback in issues](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues)
 - Bug reports & bug fixes
@@ -69,6 +69,6 @@ Contributions are welcome ! You can contribute through : 
 
 You can also contribute with **funding** if you want to support the project and see new features !
 
-## Get in touch !
+## Get in touch
 
 Do not hesitate to contact us by [mail](mailto:infos+qduckdb@oslandia.com) or open an issue, should you have any question or want to support QDuckDB.
