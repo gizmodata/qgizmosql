@@ -69,7 +69,7 @@ class DuckDbTools:
         """
         # init class
         self.ddb_conn: Union[duckdb.DuckDBPyConnection, None] = None
-        self.database_path = database_path
+        self.database_path = Path(database_path) if database_path else None
 
         # perform automatic operations
         if auto_setup_spatial:
@@ -101,6 +101,9 @@ class DuckDbTools:
         :rtype: duckdb.DuckDBPyConnection
         """
         # determine which database to use
+        if self.database_path is None:
+            raise FileNotFoundError("Database path cannot be None on connection.")
+
         if not self.database_path.is_file() and read_only is True:
             raise FileNotFoundError(
                 "In read-only mode, database must exist before. "
