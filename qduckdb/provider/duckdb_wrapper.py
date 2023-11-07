@@ -257,7 +257,7 @@ class DuckDbTools:
                 )
 
         elif database_path is None and isinstance(self.database_path, Path):
-            # using databae path defined at wrapper's level
+            # using database path defined at wrapper's level
 
             # check incompatibility with read-only mode
             if read_only and not self.database_path.is_file():
