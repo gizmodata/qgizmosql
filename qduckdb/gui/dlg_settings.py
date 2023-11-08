@@ -23,8 +23,8 @@ from qduckdb.__about__ import (
     __uri_tracker__,
     __version__,
 )
-from qduckdb.toolbelt import PlgLogger, PlgOptionsManager
-from qduckdb.toolbelt.preferences import PlgSettingsStructure
+from qduckdb.toolbelt.log_handler import PlgLogger
+from qduckdb.toolbelt.preferences import PlgOptionsManager, PlgSettingsStructure
 
 # ############################################################################
 # ########## Globals ###############

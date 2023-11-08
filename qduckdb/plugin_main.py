@@ -31,7 +31,7 @@ from qduckdb.__about__ import (
 
 # plugin
 from qduckdb.gui.dlg_settings import PlgOptionsFactory
-from qduckdb.toolbelt import PlgLogger
+from qduckdb.toolbelt.log_handler import PlgLogger
 
 # conditional imports
 try:
