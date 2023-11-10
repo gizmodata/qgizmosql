@@ -16,8 +16,9 @@ Unreleased
 
 -->
 
-## 0.5.0-beta1 - 2023-11-10
+## 0.2.0-beta1 - 2023-11-10
 
+- First version to be published on the official QGIS plugins repository
 - Add a QGIS provider to read a DuckDB database !2 !3 !4 !9 !11 !12 !14 !21 !22 !24 !34
 - Creating a user interface to use the provider !15
 - Centralizing DuckDB calls in a wrapper !48 !49 !50 !51 !52
