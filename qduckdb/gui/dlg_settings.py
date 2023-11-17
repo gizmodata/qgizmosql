@@ -5,11 +5,13 @@
 """
 
 # standard
+import platform
 from functools import partial
 from pathlib import Path
+from urllib.parse import quote
 
 # PyQGIS
-from qgis.core import QgsApplication
+from qgis.core import Qgis, QgsApplication
 from qgis.gui import QgsOptionsPageWidget, QgsOptionsWidgetFactory
 from qgis.PyQt import uic
 from qgis.PyQt.Qt import QUrl
@@ -48,6 +50,14 @@ class ConfigOptionsPage(FORM_CLASS, QgsOptionsPageWidget):
         self.log = PlgLogger().log
         self.plg_settings = PlgOptionsManager()
 
+        self.report_context_message = quote(
+            "> Reported from plugin settings\n\n"
+            f"- operating system: {platform.system()} "
+            f"{platform.release()}_{platform.version()}\n"
+            f"- QGIS: {Qgis.QGIS_VERSION}"
+            f"- plugin version: {__version__}\n"
+        )
+
         # load UI and set objectName
         self.setupUi(self)
         self.setObjectName("mOptionsPage{}".format(__title__))
@@ -65,7 +75,14 @@ class ConfigOptionsPage(FORM_CLASS, QgsOptionsPageWidget):
             QIcon(QgsApplication.iconPath("console/iconSyntaxErrorConsole.svg"))
         )
         self.btn_report.pressed.connect(
-            partial(QDesktopServices.openUrl, QUrl(f"{__uri_tracker__}/new/choose"))
+            partial(
+                QDesktopServices.openUrl,
+                QUrl(
+                    f"{__uri_tracker__}/new?issuable_template=bug_report&"
+                    "issue[title]=[BUG]&"
+                    f"issue[description]={self.report_context_message}"
+                ),
+            )
         )
 
         self.btn_reset.setIcon(QIcon(QgsApplication.iconPath("mActionUndo.svg")))
