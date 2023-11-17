@@ -16,7 +16,7 @@ caption: Usage
 maxdepth: 1
 ---
 Installation <usage/installation>
-Utilisation <usage/use>
+Use <usage/use>
 ```
 
 ```{toctree}
