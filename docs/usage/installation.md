@@ -11,7 +11,7 @@ The plugin's logic is mainly based on on the [DuckDB API's Pyton client](https:/
 Open a terminal and install dependencies from the Python Package Index (PyPi):
 
 ```sh
-python3 -m pip install qduckdb "duckdb==0.9.1"
+python3 -m pip install qduckdb "duckdb==0.9.2"
 ```
 
 Then enable DuckDB spatial extension:
@@ -50,7 +50,7 @@ Then, if the plugin fails to import a package, you can try to install it manuall
   ```batch
   python-qgis-ltr -m pip install -U pip
   python-qgis-ltr -m pip install -U setuptools wheel
-  python-qgis-ltr -m pip install -U "duckdb==0.9.1"
+  python-qgis-ltr -m pip install -U "duckdb==0.9.2"
   ```
 
 :::{important}
