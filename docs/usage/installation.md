@@ -14,12 +14,6 @@ Open a terminal and install dependencies from the Python Package Index (PyPi):
 python3 -m pip install qduckdb "duckdb==0.9.2"
 ```
 
-Then enable DuckDB spatial extension:
-
-```sh
-python3 -c "import duckdb; duckdb.sql('INSTALL spatial')"
-```
-
 ### Windows: embedded package
 
 It's quite a challenge to install it on QGIS for Windows, because QGIS uses its own Python interpreter and doesn't make it easy to use packages manager (`pip`).
