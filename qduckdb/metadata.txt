@@ -8,7 +8,7 @@ icon=resources/images/logo_duckdb.png
 tags=duckdb,database,parquet,sql
 
 # credits and contact
-author=Oslandia
+author=Florent Fougeres (Oslandia), Jean Felder (Oslandia), Julien Moura (Oslandia)
 email=qgis@oslandia.com
 homepage=https://oslandia.gitlab.io/qgis/qduckdb
 repository=https://gitlab.com/Oslandia/qgis/qduckdb
