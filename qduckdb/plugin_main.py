@@ -49,7 +49,45 @@ except ImportError:
 # ##################################
 
 
-class QduckdbPlugin:
+class QduckdbBasePlugin:
+    def __init__(self):
+        """Constructor.
+
+        This contains common method for the plugin classes.
+        """
+        self.log = PlgLogger().log
+
+    def tr(self, message: str) -> str:
+        """Get the translation for a string using Qt translation API.
+
+        :param message: string to be translated.
+        :type message: str
+
+        :returns: Translated version of message.
+        :rtype: str
+        """
+        return QCoreApplication.translate(self.__class__.__name__, message)
+
+    @staticmethod
+    def register_duckdb_provider() -> None:
+        """Register duckdb provider.
+        This only needs to be called once.
+
+        :returns: None
+        """
+        registry = QgsProviderRegistry.instance()
+        metadata = QgsProviderMetadata(
+            DuckdbProvider.providerKey(),
+            DuckdbProvider.description(),
+            DuckdbProvider.createProvider,
+        )
+        # FIXME: It is not possible to remove unregister a provider
+        # Is it the correct approach?
+        # assert registry.registerProvider(metadata)
+        registry.registerProvider(metadata)
+
+
+class QduckdbPlugin(QduckdbBasePlugin):
     def __init__(self, iface: QgisInterface):
         """Constructor.
 
@@ -57,8 +95,9 @@ class QduckdbPlugin:
         provides the hook by which you can manipulate the QGIS application at run time.
         :type iface: QgsInterface
         """
+        super().__init__()
+
         self.iface = iface
-        self.log = PlgLogger().log
 
         # translation
         # initialize the locale
@@ -142,28 +181,9 @@ class QduckdbPlugin:
         self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
 
         # register custom provider
-        r = QgsProviderRegistry.instance()
-        metadata = QgsProviderMetadata(
-            DuckdbProvider.providerKey(),
-            DuckdbProvider.description(),
-            DuckdbProvider.createProvider,
-        )
-        # FIXME: It is not possible to remove unregister a provider
-        # Is it the correct approach?
-        # assert r.registerProvider(metadata)
-        r.registerProvider(metadata)
+        self.register_duckdb_provider()
+
         QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
-
-    def tr(self, message: str) -> str:
-        """Get the translation for a string using Qt translation API.
-
-        :param message: string to be translated.
-        :type message: str
-
-        :returns: Translated version of message.
-        :rtype: str
-        """
-        return QCoreApplication.translate(self.__class__.__name__, message)
 
     def unload(self):
         """Cleans up when plugin is disabled/uninstalled."""
