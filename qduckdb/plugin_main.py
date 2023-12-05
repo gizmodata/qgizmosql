@@ -5,6 +5,8 @@
 """
 
 # standard
+from __future__ import annotations
+
 from functools import partial
 from pathlib import Path
 
@@ -20,6 +22,7 @@ from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QLocale, QTranslator, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.server import QgsServerInterface
 
 # project
 from qduckdb.__about__ import (
@@ -260,3 +263,27 @@ class QduckdbPlugin(QduckdbBasePlugin):
         else:
             self.log(message=self.tr("Dependencies satisfied"), log_level=3)
             return True
+
+
+class QduckdbServerPlugin(QduckdbBasePlugin):
+    def __init__(self, serverIface: QgsServerInterface):
+        """Constructor.
+
+        :param serverIface: An interface instance that will be passed to this \
+        class which provides the hook by which you can manipulate QGIS SERVER \
+        at run time.
+        :type serverIface: QgsServerInterface
+        """
+        super().__init__()
+
+        if not EXTERNAL_DEPENDENCIES_AVAILABLE:
+            self.log(
+                message=self.tr("Error importing dependencies. Plugin disabled."),
+                log_level=2,
+            )
+            return
+
+        # QGIS Server only needs to load the provider
+        self.register_duckdb_provider()
+        self.log(message=self.tr("Dependencies satisfied"), log_level=4)
+        return
