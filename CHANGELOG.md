@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 0.3.0 - 2023-12-06
+
+- Adding support for the plugin by QGIS Server !68
+
 ## 0.2.0-beta1 - 2023-11-17
 
 - First version to be published on the official QGIS plugins repository
