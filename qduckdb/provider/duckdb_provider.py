@@ -72,7 +72,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._primary_key = None
 
         try:
-            self._path, self._table, self._epsg = self.ddb_wrapper.parse_uri(uri)
+            self._path, self._table, self._epsg, _ = self.ddb_wrapper.parse_uri(uri)
         except (FileNotFoundError, ValueError) as exc:
             self._is_valid = False
             PlgLogger.log(message=exc)
