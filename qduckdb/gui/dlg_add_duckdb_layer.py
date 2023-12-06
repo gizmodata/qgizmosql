@@ -23,6 +23,8 @@ class LoadDuckDBLayerDialog(QDialog):
         # init module and ui
         super().__init__(parent)
 
+        self.list_table = None
+
         uic.loadUi(Path(__file__).parent / f"{Path(__file__).stem}.ui", self)
 
         # attributes
@@ -31,8 +33,35 @@ class LoadDuckDBLayerDialog(QDialog):
         # widgets and signals connection
         self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
         self._table_combobox.currentTextChanged.connect(self._unlock_add_layer)
+        self._sql_query.textChanged.connect(self._unlock_add_layer)
         self._add_layer_btn.clicked.connect(self._push_add_layer_button)
         self._add_layer_btn.setEnabled(False)
+
+        self._table.setChecked(True)
+        self._sql.clicked.connect(self.change_mode)
+        self._sql.clicked.connect(self._unlock_add_layer)
+        self._table.clicked.connect(self.change_mode)
+        self._table.clicked.connect(self._add_list_table_name_to_combobox)
+        self._table.clicked.connect(self._unlock_add_layer)
+
+        self.label_sql.setVisible(False)
+        self._sql_query.setVisible(False)
+
+    def change_mode(self):
+        """Interface behavior when radio buttons are used to switch between full table
+        mode and custom sql query mode"""
+
+        if self._table.isChecked():
+            self.label_table.setVisible(True)
+            self._table_combobox.setVisible(True)
+            self.label_sql.setVisible(False)
+            self._sql_query.setVisible(False)
+
+        if self._sql.isChecked():
+            self.label_table.setVisible(False)
+            self._table_combobox.setVisible(False)
+            self.label_sql.setVisible(True)
+            self._sql_query.setVisible(True)
 
     def db_path(self) -> Path:
         """Return the db path specified entered in the appropriate field as pathlib.Path
@@ -53,15 +82,20 @@ class LoadDuckDBLayerDialog(QDialog):
         :return: List of table
         :rtype: list
         """
-        try:
-            query_results = self.ddb_wrapper.run_sql(
-                database_path=self.db_path(),
-                query_sql="list_tables",
-                requires_spatial=False,
-                results_fetcher="fetchall",
-            )
+        if not self._db_path_input.filePath():
+            return []
 
-            return [result[0] for result in query_results]
+        try:
+            if not self.list_table:
+                self.list_table = self.ddb_wrapper.run_sql(
+                    database_path=self.db_path(),
+                    query_sql="list_tables",
+                    requires_spatial=False,
+                    results_fetcher="fetchall",
+                )
+
+            return [result[0] for result in self.list_table]
+
         except Exception as exc:
             PlgLogger.log(
                 message="Unable to retrieve list of tables. Trace: {}".format(exc),
@@ -77,6 +111,7 @@ class LoadDuckDBLayerDialog(QDialog):
 
         # update table list
         self._table_combobox.clear()
+        self.list_table = None
         self._table_combobox.addItems(self.list_table_in_db())
 
     def _push_add_layer_button(self) -> None:
@@ -88,7 +123,7 @@ class LoadDuckDBLayerDialog(QDialog):
                 push=True,
             )
             return
-        if not self._table_combobox.currentText():
+        if not self._table_combobox.currentText() and self._table.isChecked():
             PlgLogger.log(
                 "No table selected.",
                 log_level=2,
@@ -96,14 +131,25 @@ class LoadDuckDBLayerDialog(QDialog):
                 push=True,
             )
             return
+
         epsg = self.crs().authid()
         epsg = epsg.replace("EPSG:", "")
         duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
             "duckdb"
         )
+
+        table_name = ""
+        sql_query = ""
+        if self._sql.isChecked() and self._sql_query.text():
+            sql_query = self._sql_query.text()
+            table_name = "query"
+        else:
+            table_name = self._table_combobox.currentText()
+
         uri_parts = {
             "path": str(self.db_path()),
-            "table": self._table_combobox.currentText(),
+            "sql": sql_query,
+            "table": table_name,
             "epsg": epsg,
         }
         uri = duckdbProviderMetadata.encodeUri(uri_parts)
@@ -111,8 +157,21 @@ class LoadDuckDBLayerDialog(QDialog):
         QgsProject.instance().addMapLayer(layer)
 
     def _unlock_add_layer(self) -> None:
-        """Unlock the add layer button if a database is valid and a table is selected"""
-        if self._table_combobox.currentText() and self.db_path().exists():
-            self._add_layer_btn.setEnabled(True)
-        else:
-            self._add_layer_btn.setEnabled(False)
+        """Unlock the add layer button if a database is valid and a table is selected
+        or valid sql query is input"""
+
+        if self._table.isChecked():
+            if self._table_combobox.currentText() and self.db_path().exists():
+                self._add_layer_btn.setEnabled(True)
+            else:
+                self._add_layer_btn.setEnabled(False)
+
+        if self._sql.isChecked():
+            if (
+                "select" in self._sql_query.text().lower()
+                and "from" in self._sql_query.text().lower()
+                and self.db_path().exists()
+            ):
+                self._add_layer_btn.setEnabled(True)
+            else:
+                self._add_layer_btn.setEnabled(False)
