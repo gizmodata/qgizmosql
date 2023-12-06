@@ -7,6 +7,7 @@
 # standard
 from __future__ import annotations
 
+import typing
 from functools import partial
 from pathlib import Path
 
@@ -22,7 +23,9 @@ from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QLocale, QTranslator, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.server import QgsServerInterface
+
+if typing.TYPE_CHECKING:
+    from qgis.server import QgsServerInterface
 
 # project
 from qduckdb.__about__ import (
