@@ -5,6 +5,8 @@
 """
 
 # standard
+from __future__ import annotations
+
 from functools import partial
 from pathlib import Path
 
@@ -20,6 +22,7 @@ from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QLocale, QTranslator, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.server import QgsServerInterface
 
 # project
 from qduckdb.__about__ import (
@@ -49,7 +52,45 @@ except ImportError:
 # ##################################
 
 
-class QduckdbPlugin:
+class QduckdbBasePlugin:
+    def __init__(self):
+        """Constructor.
+
+        This contains common method for the plugin classes.
+        """
+        self.log = PlgLogger().log
+
+    def tr(self, message: str) -> str:
+        """Get the translation for a string using Qt translation API.
+
+        :param message: string to be translated.
+        :type message: str
+
+        :returns: Translated version of message.
+        :rtype: str
+        """
+        return QCoreApplication.translate(self.__class__.__name__, message)
+
+    @staticmethod
+    def register_duckdb_provider() -> None:
+        """Register duckdb provider.
+        This only needs to be called once.
+
+        :returns: None
+        """
+        registry = QgsProviderRegistry.instance()
+        metadata = QgsProviderMetadata(
+            DuckdbProvider.providerKey(),
+            DuckdbProvider.description(),
+            DuckdbProvider.createProvider,
+        )
+        # FIXME: It is not possible to remove unregister a provider
+        # Is it the correct approach?
+        # assert registry.registerProvider(metadata)
+        registry.registerProvider(metadata)
+
+
+class QduckdbPlugin(QduckdbBasePlugin):
     def __init__(self, iface: QgisInterface):
         """Constructor.
 
@@ -57,8 +98,9 @@ class QduckdbPlugin:
         provides the hook by which you can manipulate the QGIS application at run time.
         :type iface: QgsInterface
         """
+        super().__init__()
+
         self.iface = iface
-        self.log = PlgLogger().log
 
         # translation
         # initialize the locale
@@ -142,28 +184,9 @@ class QduckdbPlugin:
         self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
 
         # register custom provider
-        r = QgsProviderRegistry.instance()
-        metadata = QgsProviderMetadata(
-            DuckdbProvider.providerKey(),
-            DuckdbProvider.description(),
-            DuckdbProvider.createProvider,
-        )
-        # FIXME: It is not possible to remove unregister a provider
-        # Is it the correct approach?
-        # assert r.registerProvider(metadata)
-        r.registerProvider(metadata)
+        self.register_duckdb_provider()
+
         QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
-
-    def tr(self, message: str) -> str:
-        """Get the translation for a string using Qt translation API.
-
-        :param message: string to be translated.
-        :type message: str
-
-        :returns: Translated version of message.
-        :rtype: str
-        """
-        return QCoreApplication.translate(self.__class__.__name__, message)
 
     def unload(self):
         """Cleans up when plugin is disabled/uninstalled."""
@@ -240,3 +263,27 @@ class QduckdbPlugin:
         else:
             self.log(message=self.tr("Dependencies satisfied"), log_level=3)
             return True
+
+
+class QduckdbServerPlugin(QduckdbBasePlugin):
+    def __init__(self, serverIface: QgsServerInterface):
+        """Constructor.
+
+        :param serverIface: An interface instance that will be passed to this \
+        class which provides the hook by which you can manipulate QGIS SERVER \
+        at run time.
+        :type serverIface: QgsServerInterface
+        """
+        super().__init__()
+
+        if not EXTERNAL_DEPENDENCIES_AVAILABLE:
+            self.log(
+                message=self.tr("Error importing dependencies. Plugin disabled."),
+                log_level=2,
+            )
+            return
+
+        # QGIS Server only needs to load the provider
+        self.register_duckdb_provider()
+        self.log(message=self.tr("Dependencies satisfied"), log_level=4)
+        return

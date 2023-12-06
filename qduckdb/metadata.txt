@@ -3,6 +3,7 @@ name=QDuckDB
 about=Plugin for using DuckDB databases in QGIS.
 category=Database
 hasProcessingProvider=False
+server=True
 description=This plugin adds a new data prodivder that can read DuckDB databases and display their tables as a layer in QGIS.
 icon=resources/images/logo_duckdb.png
 tags=duckdb,database,parquet,sql

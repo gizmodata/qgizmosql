@@ -21,3 +21,14 @@ def classFactory(iface):
     from .plugin_main import QduckdbPlugin
 
     return QduckdbPlugin(iface)
+
+
+def serverClassFactory(serverIface):
+    """Load the plugin server class.
+
+    :param serverIface: A QGIS server interface instance.
+    :type serverIface: QgsServerInterface
+    """
+    from .plugin_main import QduckdbServerPlugin
+
+    return QduckdbServerPlugin(serverIface)
