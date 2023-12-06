@@ -16,6 +16,11 @@ Unreleased
 
 -->
 
+## 0.3.1 - 2023-12-06
+
+- Fix the bug related to importing QGIS Server with the windows version which does not contain
+QGIS server.
+
 ## 0.3.0 - 2023-12-06
 
 - Adding support for the plugin by QGIS Server !68
