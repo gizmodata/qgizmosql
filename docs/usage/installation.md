@@ -30,6 +30,16 @@ Technically, the plugin tries to:
 
 **BUT** there are some caveats because those packages require to be compiled with the same exact Python version than the one used by QGIS and sometimes the QGIS packagers change the Python version...
 
+### MacOS
+
+Note that on MacOS QGIS uses its own python, not the system's.
+
+Open a terminal and install dependencies from the Python Package Index (PyPi) on QGIS python :
+
+```sh
+/Applications/QGIS.app/Contents/MacOS/bin/python3.9 -m pip install "duckdb==0.9.2"
+```
+
 ### Manual installation
 
 Then, if the plugin fails to import a package, you can try to install it manually using the `pip` command.
