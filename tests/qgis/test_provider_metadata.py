@@ -36,7 +36,9 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
         cls.epsg = 4326
         cls.sql = "SELECT * from mytable LIMIT 10"
 
-        cls.expected_sql_uri = f'path="{cls.full_path}";sql="{cls.sql}";epsg="{cls.epsg}"'
+        cls.expected_sql_uri = (
+            f'path="{cls.full_path}";sql="{cls.sql}";epsg="{cls.epsg}"'
+        )
 
         cls.expected_abs_table_uri = (
             f'path="{cls.full_path}";table="{cls.table}";epsg="{cls.epsg}"'

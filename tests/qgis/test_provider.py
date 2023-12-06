@@ -73,16 +73,28 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 1";epsg="4326"'
+        )
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
 
         # Linestring
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="highway";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from highway limit 1";epsg="4326"'
+        )
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
 
         # Polygon
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="building";epsg="4326"'
+        )
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from building limit 1";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
 
@@ -94,13 +106,13 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # Geom with wrong uri
         provider = DuckdbProvider(
-            uri="path=wrong/uri/biuycdzohd.db table=zidane epsg=4326"
+            uri=f'path="{self.db_path_test}";table="zidane";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
 
         # Table without geom
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=tabke_no_geom epsg=4326"
+            uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
 
@@ -161,6 +173,14 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(fields[3].type(), QVariant.Double)
         self.assertEqual(fields[4].type(), QVariant.Bool)
 
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select name, geom from cities limit 1";epsg="4326"'
+        )
+        self.assertIsInstance(provider.fields(), QgsFields)
+        fields = provider.fields()
+        self.assertEqual(fields[0].name(), "name")
+        self.assertEqual(fields[0].type(), QVariant.String)
+
         # Fields with wrong uri
         provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db";table="zidane"')
         self.assertEqual(provider.fields().count(), 0)
@@ -168,6 +188,11 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_get_geometry_column(self) -> None:
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+        self.assertEqual(provider.get_geometry_column(), "geom")
+
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 2";epsg="4326"'
         )
         self.assertEqual(provider.get_geometry_column(), "geom")
 
@@ -187,32 +212,44 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertEqual(provider.featureCount(), 3)
 
-        # Count with wrong uri
         provider = DuckdbProvider(
-            uri='path="wrong/uri/biuycdzohd.db";table="zidane";epsg="4326"'
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 2";epsg="4326"'
         )
+        self.assertEqual(provider.featureCount(), 2)
+
+        # Count with wrong uri
+        provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db";table="zidane"')
         self.assertEqual(provider.featureCount(), 0)
 
     def test_get_features(self) -> None:
-        vl = QgsVectorLayer(
+        v1 = QgsVectorLayer(
             f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
         )
-        self.assertTrue(vl.isValid())
+        v2 = QgsVectorLayer(
+            f'path="{self.db_path_test}";sql="select id::int as id, name, geom from cities limit 3";epsg="4326"',
+            "test",
+            "duckdb",
+        )
+        for v in [v1, v2]:
+            self.assertTrue(v.isValid())
 
-        features = vl.getFeatures()
+            features = v.getFeatures()
 
-        count_feature = 0
-        for feature in features:
-            count_feature += 1
-            self.assertEqual(feature.geometry().wkbType(), QgsWkbTypes.Point)
-            list_type_field = []
-            for field in feature.fields():
-                list_type_field.append(field.type())
-            self.assertEqual(list_type_field[0], QVariant.Int)
-            self.assertEqual(list_type_field[1], QVariant.String)
-            self.assertEqual(feature.id(), count_feature)
+            count_feature = 0
+            for feature in features:
+                count_feature += 1
+                self.assertEqual(feature.geometry().wkbType(), QgsWkbTypes.Point)
+                list_type_field = []
+                for field in feature.fields():
+                    list_type_field.append(field.type())
+                if v == v1:
+                    self.assertEqual(list_type_field[0], QVariant.Int)
+                if v == v2:
+                    self.assertEqual(list_type_field[0], QVariant.Double)
+                self.assertEqual(list_type_field[1], QVariant.String)
+                self.assertEqual(feature.id(), count_feature)
 
-        self.assertEqual(count_feature, 3)
+            self.assertEqual(count_feature, 3)
 
     def test_crs(self) -> None:
         provider = DuckdbProvider(
@@ -350,6 +387,13 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(len(features), 2)
         self.assertEqual(features[0].id(), 1)
         self.assertEqual(features[1].id(), 2)
+
+    def test_sql_query(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 1";epsg="4326"'
+        )
+
+        self.assertTrue(provider._sql, "select * from cities limit 1")
 
 
 if __name__ == "__main__":
