@@ -11,6 +11,9 @@ References:
 from pathlib import Path
 from typing import Optional, Union
 
+# PyQGIS
+from qgis.core import QgsProviderRegistry
+
 # plugin
 from qduckdb.provider.models import DdbExtension
 from qduckdb.toolbelt.log_handler import PlgLogger
@@ -585,21 +588,20 @@ class DuckDbTools:
         path = None
         table = None
         epsg = None
-        for variable in uri.split(" "):
-            try:
-                key, value = variable.split("=")
-                if key == "path":
-                    path = value
-                elif key == "table":
-                    table = value
-                elif key == "epsg":
-                    epsg = value
-            except ValueError as exc:
-                PlgLogger.log(
-                    message="Parsing URI failed: {}".format(exc),
-                    log_level=1,
-                    push=False,
-                )
+        duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
+            "duckdb"
+        )
+        try:
+            parsed_uri = duckdbProviderMetadata.decodeUri(uri)
+            path = parsed_uri["path"]
+            table = parsed_uri["table"]
+            epsg = parsed_uri["epsg"]
+        except ValueError as exc:
+            PlgLogger.log(
+                message="Parsing URI failed: {}".format(exc),
+                log_level=1,
+                push=False,
+            )
 
         PlgLogger.log(
             message="URI parsed successfully: path={} ; table={} ; epsg={}".format(

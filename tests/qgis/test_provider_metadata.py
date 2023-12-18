@@ -15,19 +15,24 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
         # Register the provider if it has not been loaded yet
         register_provider_if_necessary()
 
+        cls.provider_metadata = QgsProviderRegistry.instance().providerMetadata("duckdb")
+
+        cls.db_path = "/home/foo/project/database.path"
+        cls.table = "mytable"
+        cls.epsg = 4326
+        cls.expected_uri = f"path={cls.db_path} table={cls.table} epsg={cls.epsg}"
+
     def test_encode_uri(self):
-        duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata("duckdb")
-
-        db_path = "/home/foo/project/database.path"
-        table = "mytable"
-        epsg = 4326
-
-        expected_uri = f"path={db_path} table={table} epsg={epsg}"
-
         parts = {
-            "path": db_path,
-            "table": table,
-            "epsg": epsg
+            "path": self.db_path,
+            "table": self.table,
+            "epsg": self.epsg
         }
-        abs_uri = duckdbProviderMetadata.encodeUri(parts)
-        self.assertEqual(abs_uri, expected_uri)
+        uri = self.provider_metadata.encodeUri(parts)
+        self.assertEqual(uri, self.expected_uri)
+
+    def test_decode_uri(self):
+        parts = self.provider_metadata.decodeUri(self.expected_uri)
+        self.assertEqual(parts["path"], self.db_path)
+        self.assertEqual(parts["table"], self.table)
+        self.assertEqual(int(parts["epsg"]), self.epsg)
