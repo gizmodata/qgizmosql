@@ -2,7 +2,12 @@
 from pathlib import Path
 
 # PyQGIS
-from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer
+from qgis.core import (
+    QgsCoordinateReferenceSystem,
+    QgsProject,
+    QgsProviderRegistry,
+    QgsVectorLayer,
+)
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog
 
@@ -93,7 +98,15 @@ class LoadDuckDBLayerDialog(QDialog):
             return
         epsg = self.crs().authid()
         epsg = epsg.replace("EPSG:", "")
-        uri = f"path={self.db_path()} table={self._table_combobox.currentText()} epsg={epsg}"
+        duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
+            "duckdb"
+        )
+        uri_parts = {
+            "path": str(self.db_path()),
+            "table": self._table_combobox.currentText(),
+            "epsg": epsg,
+        }
+        uri = duckdbProviderMetadata.encodeUri(uri_parts)
         layer = QgsVectorLayer(uri, self._table_combobox.currentText(), "duckdb")
         QgsProject.instance().addMapLayer(layer)
 
