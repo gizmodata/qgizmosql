@@ -7,15 +7,18 @@ from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
 
 
 class TestDlgAddDuckdbLayer(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         start_app()
-        self.dialog = LoadDuckDBLayerDialog()
-        self.db_path_test = Path(__file__).parent.parent.joinpath(
+
+        cls.dialog = LoadDuckDBLayerDialog()
+        cls.db_path_test = Path(__file__).parent.parent.joinpath(
             "fixtures/base_test.db"
         )
+        cls.wrong_db_path = Path("wrong/path/zidane.db")
 
+    def setUp(self):
         self.assertTrue(self.db_path_test.exists())
-        self.wrong_db_path = Path("wrong/path/zidane.db")
 
     def test_get_path(self) -> None:
         """Check that the database path is correctly returned"""
