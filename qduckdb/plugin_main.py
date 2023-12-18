@@ -12,13 +12,7 @@ from functools import partial
 from pathlib import Path
 
 # PyQGIS
-from qgis.core import (
-    QgsApplication,
-    QgsProject,
-    QgsProviderMetadata,
-    QgsProviderRegistry,
-    QgsSettings,
-)
+from qgis.core import QgsApplication, QgsProject, QgsProviderRegistry, QgsSettings
 from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QLocale, QTranslator, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
@@ -43,11 +37,13 @@ from qduckdb.toolbelt.log_handler import PlgLogger
 try:
     from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
     from qduckdb.provider.duckdb_provider import DuckdbProvider
+    from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
 
     EXTERNAL_DEPENDENCIES_AVAILABLE: bool = True
 except ImportError:
     EXTERNAL_DEPENDENCIES_AVAILABLE: bool = False
     DuckdbProvider = None
+    DuckdbProviderMetadata = None
     LoadDuckDBLayerDialog = None
 
 # ############################################################################
@@ -82,15 +78,11 @@ class QduckdbBasePlugin:
         :returns: None
         """
         registry = QgsProviderRegistry.instance()
-        metadata = QgsProviderMetadata(
-            DuckdbProvider.providerKey(),
-            DuckdbProvider.description(),
-            DuckdbProvider.createProvider,
-        )
+        duckdb_metadata = DuckdbProviderMetadata()
         # FIXME: It is not possible to remove unregister a provider
         # Is it the correct approach?
         # assert registry.registerProvider(metadata)
-        registry.registerProvider(metadata)
+        registry.registerProvider(duckdb_metadata)
 
 
 class QduckdbPlugin(QduckdbBasePlugin):

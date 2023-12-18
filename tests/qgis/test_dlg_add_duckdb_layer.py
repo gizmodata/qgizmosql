@@ -5,11 +5,16 @@ from qgis.testing import start_app, unittest
 
 from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
 
+from .utilities import register_provider_if_necessary
+
 
 class TestDlgAddDuckdbLayer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         start_app()
+
+        # Register the provider if it has not been loaded yet
+        register_provider_if_necessary()
 
         cls.dialog = LoadDuckDBLayerDialog()
         cls.db_path_test = Path(__file__).parent.parent.joinpath(
