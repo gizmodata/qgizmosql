@@ -567,7 +567,7 @@ class DuckDbTools:
 
     def parse_uri(self, uri: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """Parse the input URI and returns the path to the database and the name of the
-        table. If the parsing is successfull, the path, table, and epsg are set at wwrapper's level.
+        table. If the parsing is successfull, the path, table, and epsg are set at wrapper's level.
 
         :param uri: input URI connection
         :type uri: str
@@ -619,7 +619,7 @@ class DuckDbTools:
         # check database path
         if not Path(path).is_file():
             raise FileNotFoundError(
-                "Database does not exists at the specified path: {}".format(path)
+                "Database does not exist at the specified path: {}".format(path)
             )
 
         # set results as wrapper attributes
