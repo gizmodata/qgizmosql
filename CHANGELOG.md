@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 0.4.0 - 2023-12-19
+
+- Enable relative database path for QGIS projects !70
+
 ## 0.3.1 - 2023-12-06
 
 - Fix the bug related to importing QGIS Server with the windows version which does not contain
