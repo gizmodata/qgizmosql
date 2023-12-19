@@ -7,7 +7,6 @@ from qgis.core import (
     QgsFields,
     QgsGeometry,
     QgsProject,
-    QgsProviderMetadata,
     QgsProviderRegistry,
     QgsRectangle,
     QgsVectorDataProvider,
@@ -18,6 +17,9 @@ from qgis.PyQt.Qt import QVariant
 from qgis.testing import unittest
 
 from qduckdb.provider.duckdb_provider import DuckdbProvider
+from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
+
+from .utilities import register_provider_if_necessary
 
 db_path = Path(__file__).parent.joinpath("data/base_test.db")
 
@@ -27,15 +29,9 @@ class TestQDuckDBProvider(unittest.TestCase):
     def setUpClass(cls):
         """Run before all tests"""
         super(TestQDuckDBProvider, cls).setUpClass()
-        # Register the provider
-        r = QgsProviderRegistry.instance()
-        metadata = QgsProviderMetadata(
-            DuckdbProvider.providerKey(),
-            DuckdbProvider.description(),
-            DuckdbProvider.createProvider,
-        )
-        assert r.registerProvider(metadata)
-        assert r.providerMetadata(DuckdbProvider.providerKey()) == metadata
+
+        # Register the provider if it has not been loaded yet
+        register_provider_if_necessary()
 
         cls.db_path_test = (
             Path(__file__).parent.parent.joinpath("fixtures/base_test.db").as_posix()
@@ -51,13 +47,9 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_register_same_provider_twice(self) -> None:
         """Test that a provider cannot be registered twice"""
-        r = QgsProviderRegistry.instance()
-        metadata = QgsProviderMetadata(
-            DuckdbProvider.providerKey(),
-            DuckdbProvider.description(),
-            DuckdbProvider.createProvider,
-        )
-        self.assertFalse(r.registerProvider(metadata))
+        registry = QgsProviderRegistry.instance()
+        duckdb_metadata = DuckdbProviderMetadata()
+        self.assertFalse(registry.registerProvider(duckdb_metadata))
 
     def test_valid(self) -> None:
         correct_uri = f"path={self.db_path_test} table=cities epsg=4326"

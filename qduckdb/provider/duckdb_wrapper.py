@@ -11,6 +11,9 @@ References:
 from pathlib import Path
 from typing import Optional, Union
 
+# PyQGIS
+from qgis.core import QgsProviderRegistry
+
 # plugin
 from qduckdb.provider.models import DdbExtension
 from qduckdb.toolbelt.log_handler import PlgLogger
@@ -567,7 +570,7 @@ class DuckDbTools:
 
     def parse_uri(self, uri: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """Parse the input URI and returns the path to the database and the name of the
-        table. If the parsing is successfull, the path, table, and epsg are set at wwrapper's level.
+        table. If the parsing is successfull, the path, table, and epsg are set at wrapper's level.
 
         :param uri: input URI connection
         :type uri: str
@@ -585,21 +588,20 @@ class DuckDbTools:
         path = None
         table = None
         epsg = None
-        for variable in uri.split(" "):
-            try:
-                key, value = variable.split("=")
-                if key == "path":
-                    path = value
-                elif key == "table":
-                    table = value
-                elif key == "epsg":
-                    epsg = value
-            except ValueError as exc:
-                PlgLogger.log(
-                    message="Parsing URI failed: {}".format(exc),
-                    log_level=1,
-                    push=False,
-                )
+        duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
+            "duckdb"
+        )
+        try:
+            parsed_uri = duckdbProviderMetadata.decodeUri(uri)
+            path = parsed_uri["path"]
+            table = parsed_uri["table"]
+            epsg = parsed_uri["epsg"]
+        except ValueError as exc:
+            PlgLogger.log(
+                message="Parsing URI failed: {}".format(exc),
+                log_level=1,
+                push=False,
+            )
 
         PlgLogger.log(
             message="URI parsed successfully: path={} ; table={} ; epsg={}".format(
@@ -619,7 +621,7 @@ class DuckDbTools:
         # check database path
         if not Path(path).is_file():
             raise FileNotFoundError(
-                "Database does not exists at the specified path: {}".format(path)
+                "Database does not exist at the specified path: {}".format(path)
             )
 
         # set results as wrapper attributes
