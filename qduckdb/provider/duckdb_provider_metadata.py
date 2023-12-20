@@ -1,6 +1,6 @@
 from typing import Dict
 
-from qgis.core import QgsProject, QgsProviderMetadata, QgsReadWriteContext
+from qgis.core import Qgis, QgsProject, QgsProviderMetadata, QgsReadWriteContext
 
 from qduckdb.provider.duckdb_provider import DuckdbProvider
 
@@ -35,9 +35,31 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
             except ValueError:
                 raise
 
-        # readPath ensures to have an absolute path whether 'path' is absolute or not
-        qgis_db_path = QgsProject.instance().pathResolver().readPath(path)
-        return {"path": qgis_db_path, "table": table, "epsg": epsg}
+        if Qgis.QGIS_VERSION_INT < 33000:
+            # The logic to parse an uri and convert the path from
+            # relative to absolute is:
+            # 1. call `QGsVectorLayer::decodedSource()` to parse the
+            # uri and convert the path with `readPath`
+            # 2. call `QgsProviderMetadata.decodeUri()` to parse the uri
+            # which already contains an absolute path.
+            #
+            # However, prior to QGIS 3.30, this does not work for duckdb
+            # provider. Indeed, the behavior of each provider was
+            # hardcoded in the function `QGsVectorLayer::decodedSource()`
+            # and it could not handle duckdb provider.
+            # Since, QGIS 3.30, this has been delegated to
+            # QgsProviderMetadata::relativeToAbsoluteUri. This allows
+            # each provider to have its own behavior and fix the issue
+            # for duckdb provider.
+            #
+            # Since it is not possible to override
+            # QGsVectorLayer::decodedSource(), prior to QGIS 3.30, the
+            # uri used to call `decodeUri` contains a
+            # relative path instead of an absolute one. By calling
+            # `readPath`, this solves the issue.
+            path = QgsProject.instance().pathResolver().readPath(path)
+
+        return {"path": path, "table": table, "epsg": epsg}
 
     def encodeUri(self, parts: Dict[str, str]) -> str:
         """Reassembles a provider data source URI from its component paths

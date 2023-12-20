@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from qgis.core import (
+    Qgis,
     QgsPathResolver,
     QgsProject,
     QgsProviderRegistry,
@@ -65,9 +66,19 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
             self.assertEqual(int(abs_parts["epsg"]), self.epsg)
 
             # path is relative
-            # it also returns an absolute path
+            # - returns a relative path since QGIS 3.30
+            # - returns an absolute path prior to QGIS 3.30
+            # This change of behavior was necessary to prevent a
+            # QGIS limitation with older QGIS versions.
+            # See DuckdbProviderMetadata::decodeUri() code for a full
+            # explanation
+            if Qgis.QGIS_VERSION_INT < 33000:
+                expected_path = self.full_path
+            else:
+                expected_path = self.rel_path
+
             rel_parts = self.provider_metadata.decodeUri(self.expected_abs_uri)
-            self.assertEqual(rel_parts["path"], self.full_path)
+            self.assertEqual(rel_parts["path"], expected_path)
             self.assertEqual(rel_parts["table"], self.table)
             self.assertEqual(int(rel_parts["epsg"]), self.epsg)
 
