@@ -135,7 +135,7 @@ class TestQDuckDBProvider(unittest.TestCase):
             ),
         )
 
-        # Extend with wrong uri
+        # Extent with wrong uri
         provider = DuckdbProvider(uri="path=wrong/uri/biuycdzohd.db table=zidane")
         self.assertEqual(
             provider.extent().asWktPolygon(), "POLYGON((0 0, 0 0, 0 0, 0 0, 0 0))"
