@@ -35,9 +35,11 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
         cls.table = "mytable"
         cls.epsg = 4326
 
-        cls.expected_abs_uri = f"path={cls.full_path} table={cls.table} epsg={cls.epsg}"
+        cls.expected_abs_uri = (
+            f'path="{cls.full_path}";table="{cls.table}";epsg="{cls.epsg}"'
+        )
         cls.expected_rel_uri = (
-            f"path={cls.db_filename} table={cls.table} epsg={cls.epsg}"
+            f'path="{cls.db_filename}";table="{cls.table}";epsg="{cls.epsg}"'
         )
 
     def test_encode_uri(self):

@@ -581,26 +581,16 @@ class DuckDbTools:
 
             .. code-block:: python
 
-                >>> test_uri = f"path=/home/test/gis/insee/bureaux_vote.db table=cities epsg=4326"
+                >>> test_uri = f'path="/home/test/gis/insee/bureaux_vote.db";table="cities";epsg="4326"'
                 >>> db_path, table_name, epsg_code = ddb_wrapper.parse_uri(test_uri)
         """
-        path = None
-        table = None
-        epsg = None
         duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
             "duckdb"
         )
-        try:
-            parsed_uri = duckdbProviderMetadata.decodeUri(uri)
-            path = parsed_uri["path"]
-            table = parsed_uri["table"]
-            epsg = parsed_uri["epsg"]
-        except ValueError as exc:
-            PlgLogger.log(
-                message="Parsing URI failed: {}".format(exc),
-                log_level=1,
-                push=False,
-            )
+        parsed_uri = duckdbProviderMetadata.decodeUri(uri)
+        path = parsed_uri.get("path", None)
+        table = parsed_uri.get("table", None)
+        epsg = parsed_uri.get("epsg", None)
 
         PlgLogger.log(
             message="URI parsed successfully: path={} ; table={} ; epsg={}".format(

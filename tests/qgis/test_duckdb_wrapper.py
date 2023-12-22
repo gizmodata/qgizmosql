@@ -172,7 +172,7 @@ class TestDdbWrapper(unittest.TestCase):
         """Test URI parser."""
         ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
 
-        test_uri = f"path={self.fixture_db_path} table=cities epsg=4326"
+        test_uri = f'path="{self.fixture_db_path}";table="cities";epsg="4326"'
 
         parsed_uri = ddb_wrapper.parse_uri(test_uri)
 
