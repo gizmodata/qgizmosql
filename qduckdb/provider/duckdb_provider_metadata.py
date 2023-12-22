@@ -59,10 +59,16 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
         :param Dict[str, str] parts: parts as returned by decodeUri
         :returns: uri as string
         """
-        table_name = parts["table"]
+        sql_query = parts.get("sql", "")
+        if sql_query:
+            sql_part = f'sql="{sql_query}"'
+        else:
+            table_name = parts["table"]
+            sql_part = f'table="{table_name}"'
+
         path = parts["path"]
         epsg = parts["epsg"]
-        uri = f'path="{path}";table="{table_name}";epsg="{epsg}"'
+        uri = f'path="{path}";{sql_part};epsg="{epsg}"'
         return uri
 
     def absoluteToRelativeUri(self, uri: str, context: QgsReadWriteContext) -> str:

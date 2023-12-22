@@ -34,11 +34,14 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
         cls.table = "mytable"
         cls.epsg = 4326
+        cls.sql = "SELECT * from mytable LIMIT 10"
 
-        cls.expected_abs_uri = (
+        cls.expected_sql_uri = f'path="{cls.full_path}";sql="{cls.sql}";epsg="{cls.epsg}"'
+
+        cls.expected_abs_table_uri = (
             f'path="{cls.full_path}";table="{cls.table}";epsg="{cls.epsg}"'
         )
-        cls.expected_rel_uri = (
+        cls.expected_table_rel_uri = (
             f'path="{cls.db_filename}";table="{cls.table}";epsg="{cls.epsg}"'
         )
 
@@ -47,13 +50,18 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
         abs_parts = {"path": self.full_path, "table": self.table, "epsg": self.epsg}
         abs_uri = self.provider_metadata.encodeUri(abs_parts)
-        self.assertEqual(abs_uri, self.expected_abs_uri)
+        self.assertEqual(abs_uri, self.expected_abs_table_uri)
 
         rel_parts = {"path": self.db_filename, "table": self.table, "epsg": self.epsg}
         uri = self.provider_metadata.encodeUri(rel_parts)
-        self.assertEqual(uri, self.expected_rel_uri)
+        self.assertEqual(uri, self.expected_table_rel_uri)
 
-    def test_decode_uri(self):
+        # encode parts with a sql
+        sql_parts = {"path": self.full_path, "sql": self.sql, "epsg": self.epsg}
+        uri = self.provider_metadata.encodeUri(sql_parts)
+        self.assertEqual(uri, self.expected_sql_uri)
+
+    def test_decode_uri_table(self):
         # it should always return an absolute path
 
         qgs_project_filenames = ["", self.project_path]
@@ -62,7 +70,8 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
             # path is absolute
             # it returns an absolute path
-            abs_parts = self.provider_metadata.decodeUri(self.expected_abs_uri)
+            abs_parts = self.provider_metadata.decodeUri(self.expected_abs_table_uri)
+            self.assertTrue("sql" not in abs_parts)
             self.assertEqual(abs_parts["path"], self.full_path)
             self.assertEqual(abs_parts["table"], self.table)
             self.assertEqual(int(abs_parts["epsg"]), self.epsg)
@@ -79,12 +88,20 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
             else:
                 expected_path = self.rel_path
 
-            rel_parts = self.provider_metadata.decodeUri(self.expected_abs_uri)
+            rel_parts = self.provider_metadata.decodeUri(self.expected_abs_table_uri)
+            self.assertTrue("sql" not in rel_parts)
             self.assertEqual(rel_parts["path"], expected_path)
             self.assertEqual(rel_parts["table"], self.table)
             self.assertEqual(int(rel_parts["epsg"]), self.epsg)
 
         QgsProject.instance().setFileName("")
+
+    def test_decode_uri_sql(self):
+        parts = self.provider_metadata.decodeUri(self.expected_sql_uri)
+        self.assertTrue("table" not in parts)
+        self.assertEqual(parts["path"], self.full_path)
+        self.assertEqual(parts["sql"], self.sql)
+        self.assertEqual(int(parts["epsg"]), self.epsg)
 
     def test_absolute_to_relative_uri(self):
         ctx = QgsReadWriteContext()
@@ -96,15 +113,15 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
         # absolute uri is unchanged
         rel_path = self.provider_metadata.absoluteToRelativeUri(
-            self.expected_abs_uri, ctx
+            self.expected_abs_table_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_abs_uri)
+        self.assertEqual(rel_path, self.expected_abs_table_uri)
 
         # relative uri is unchanged
         rel_path = self.provider_metadata.absoluteToRelativeUri(
-            self.expected_rel_uri, ctx
+            self.expected_table_rel_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_rel_uri)
+        self.assertEqual(rel_path, self.expected_table_rel_uri)
 
         #
         # 2. context path defined
@@ -113,15 +130,15 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
         # absolute uri becomes relative
         rel_path = self.provider_metadata.absoluteToRelativeUri(
-            self.expected_abs_uri, ctx
+            self.expected_abs_table_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_rel_uri)
+        self.assertEqual(rel_path, self.expected_table_rel_uri)
 
         # relative uri is unchanged
         rel_path = self.provider_metadata.absoluteToRelativeUri(
-            self.expected_rel_uri, ctx
+            self.expected_table_rel_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_rel_uri)
+        self.assertEqual(rel_path, self.expected_table_rel_uri)
 
     def test_relative_to_absolute_uri(self):
         ctx = QgsReadWriteContext()
@@ -133,15 +150,15 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
         # absolute uri is unchanged
         rel_path = self.provider_metadata.relativeToAbsoluteUri(
-            self.expected_abs_uri, ctx
+            self.expected_abs_table_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_abs_uri)
+        self.assertEqual(rel_path, self.expected_abs_table_uri)
 
         # relative uri is unchanged
         rel_path = self.provider_metadata.relativeToAbsoluteUri(
-            self.expected_rel_uri, ctx
+            self.expected_table_rel_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_rel_uri)
+        self.assertEqual(rel_path, self.expected_table_rel_uri)
 
         #
         # 2. context path defined
@@ -150,12 +167,12 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
         # absolute uri is unchanged
         rel_path = self.provider_metadata.relativeToAbsoluteUri(
-            self.expected_abs_uri, ctx
+            self.expected_abs_table_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_abs_uri)
+        self.assertEqual(rel_path, self.expected_abs_table_uri)
 
         # relative uri becomes absolute
         rel_path = self.provider_metadata.relativeToAbsoluteUri(
-            self.expected_rel_uri, ctx
+            self.expected_table_rel_uri, ctx
         )
-        self.assertEqual(rel_path, self.expected_abs_uri)
+        self.assertEqual(rel_path, self.expected_abs_table_uri)
