@@ -9,18 +9,25 @@
         # for specific test
         python -m unittest tests.unit.test_duckdb_wrapper.TestDdbWrapper.test_parse_uri
 """
-import unittest
 from pathlib import Path
 
 import duckdb
+from qgis.testing import start_app, unittest
 
 from qduckdb.provider.duckdb_wrapper import DuckDbTools
 from qduckdb.provider.models import DdbExtension
+
+from .utilities import register_provider_if_necessary
 
 
 class TestDdbWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        start_app()
+
+        # Register the provider if it has not been loaded yet
+        register_provider_if_necessary()
+
         cls.fixture_db_path = Path(__file__).parent.parent.joinpath(
             "fixtures/base_test.db"
         )
