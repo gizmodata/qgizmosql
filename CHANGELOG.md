@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 0.4.1 - 2023-02-14
+
+- Upgrade DuckDB version 0.9.2 to 0.10
+
 ## 0.4.0 - 2023-12-19
 
 - Enable relative database path for QGIS projects !70
