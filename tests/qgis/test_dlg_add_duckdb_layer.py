@@ -41,11 +41,11 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
         self.assertEqual(
             self.dialog.list_table_in_db(),
             [
-                "table_with_primary_key",
-                "table_no_geom",
+                "building",
                 "cities",
                 "highway",
-                "building",
+                "table_no_geom",
+                "table_with_primary_key",
                 "test_multi",
             ],
         )
