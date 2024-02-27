@@ -17,7 +17,6 @@ from qgis.core import QgsProviderRegistry
 # plugin
 from qduckdb.provider.models import DdbExtension
 from qduckdb.toolbelt.log_handler import PlgLogger
-from qduckdb.toolbelt.utils import resolve_path
 
 # conditional imports
 try:
@@ -128,7 +127,7 @@ class DuckDbTools:
         if self.is_connection_alive():
             PlgLogger.log(
                 message="An open connection to {} already exists. Use it or close it "
-                "before.".format(resolve_path(self.database_path)),
+                "before.".format(self.database_path.resolve()),
                 log_level=0,
                 push=False,
             )
@@ -136,12 +135,12 @@ class DuckDbTools:
 
         try:
             self.ddb_conn = duckdb.connect(
-                database=f"{resolve_path(self.database_path)}", read_only=read_only
+                database=f"{self.database_path.resolve()}", read_only=read_only
             )
 
             PlgLogger.log(
                 message="Connection to database {} succeeded.".format(
-                    resolve_path(self.database_path)
+                    self.database_path.resolve()
                 ),
                 log_level=0,
                 push=False,
@@ -151,7 +150,7 @@ class DuckDbTools:
                 self.ddb_conn.sql(query=self.SQL_QUERIES.get("spatial_load"))
                 PlgLogger.log(
                     message="Spatial extension loaded on database {}.".format(
-                        resolve_path(self.database_path)
+                        self.database_path.resolve()
                     ),
                     log_level=0,
                     push=False,
@@ -161,7 +160,7 @@ class DuckDbTools:
         except duckdb.IOException as exc:
             PlgLogger.log(
                 "{} is not a valid database DuckDB. Trace: {}".format(
-                    resolve_path(self.database_path), exc
+                    self.database_path.resolve(), exc
                 ),
                 log_level=2,
                 push=True,
@@ -170,7 +169,7 @@ class DuckDbTools:
         except duckdb.ConnectionException as exc:
             PlgLogger.log(
                 "Connection to {} failed. Trace: {}".format(
-                    resolve_path(self.database_path), exc
+                    self.database_path.resolve(), exc
                 ),
                 log_level=2,
                 push=True,
@@ -179,7 +178,7 @@ class DuckDbTools:
         except Exception as exc:
             PlgLogger.log(
                 "Connection to {} failed for a generic reason. Trace: {}".format(
-                    resolve_path(self.database_path), exc
+                    self.database_path.resolve(), exc
                 ),
                 log_level=2,
                 push=True,
@@ -196,7 +195,7 @@ class DuckDbTools:
             self.ddb_conn.close()
             PlgLogger.log(
                 "Connection to {} has been closed.".format(
-                    resolve_path(self.database_path)
+                    self.database_path.resolve()
                 ),
                 log_level=2,
                 push=True,
@@ -302,7 +301,7 @@ class DuckDbTools:
         # try to run query
         try:
             with duckdb.connect(
-                database=f"{resolve_path(database_path)}", read_only=read_only
+                database=f"{database_path.resolve()}", read_only=read_only
             ) as con:
                 if requires_spatial:
                     con.sql(query=self.SQL_QUERIES.get("spatial_load"))
