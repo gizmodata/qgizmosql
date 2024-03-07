@@ -32,6 +32,7 @@ class LoadDuckDBLayerDialog(QDialog):
 
         # widgets and signals connection
         self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
+        self._db_path_input.fileChanged.connect(self.change_mode)
         self._table_combobox.currentTextChanged.connect(self._unlock_add_layer)
         self._sql_query.textChanged.connect(self._unlock_add_layer)
         self._add_layer_btn.clicked.connect(self._push_add_layer_button)
@@ -62,6 +63,11 @@ class LoadDuckDBLayerDialog(QDialog):
             self._table_combobox.setVisible(False)
             self.label_sql.setVisible(True)
             self._sql_query.setVisible(True)
+
+            if str(self.db_path()) == ".":
+                self._sql_query.setEnabled(False)
+            else:
+                self._sql_query.setEnabled(True)
 
     def db_path(self) -> Path:
         """Return the db path specified entered in the appropriate field as pathlib.Path
@@ -153,7 +159,7 @@ class LoadDuckDBLayerDialog(QDialog):
             "epsg": epsg,
         }
         uri = duckdbProviderMetadata.encodeUri(uri_parts)
-        layer = QgsVectorLayer(uri, self._table_combobox.currentText(), "duckdb")
+        layer = QgsVectorLayer(uri, table_name, "duckdb")
         QgsProject.instance().addMapLayer(layer)
 
     def _unlock_add_layer(self) -> None:
