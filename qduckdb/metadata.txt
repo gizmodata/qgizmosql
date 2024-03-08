@@ -19,7 +19,7 @@ tracker=https://gitlab.com/Oslandia/qgis/qduckdb/-/issues
 deprecated=False
 experimental=True
 qgisMinimumVersion=3.28
-qgisMaximumVersion=3.36
+qgisMaximumVersion=3.99
 
 # versioning
 version=0.4.1
