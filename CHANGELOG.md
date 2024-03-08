@@ -16,6 +16,11 @@ Unreleased
 
 -->
 
+## 0.5.0 - 2023-03-08
+
+- Loading a layer with an sql query !78
+- Correctly read paths from a network share !76
+
 ## 0.4.1 - 2023-02-14
 
 - Upgrade DuckDB version 0.9.2 to 0.10
