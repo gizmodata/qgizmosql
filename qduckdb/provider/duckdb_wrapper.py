@@ -81,6 +81,7 @@ class DuckDbTools:
         # attributes
         self._table_name: str = None
         self._epsg_code: str = None
+        self._sql: str = None
 
     def connect(
         self,
@@ -221,7 +222,8 @@ class DuckDbTools:
         :type database_path: Optional[Path], optional
         :param read_only: read-only mode, defaults to True
         :type read_only: bool, optional
-        :param results_fetcher: method to use to fetch results, defaults to "fetchall"
+        :param results_fetcher: method to use to fetch results, defaults to "fetchall".
+        Possible to set "no_output" for a create table for example.
         :type results_fetcher: str, optional
         :param requires_spatial: option to load spatial extension before running the
             SQL query, defaults to True
@@ -313,6 +315,8 @@ class DuckDbTools:
                     query_results = query_results.fetchall()
                 elif results_fetcher == "fetchone":
                     query_results = query_results.fetchone()
+                elif results_fetcher == "no_output":
+                    query_results = None
 
             # connection is now closed
             PlgLogger.log(
@@ -567,7 +571,9 @@ class DuckDbTools:
             )
         self.retrieve_duckdb_extensions()
 
-    def parse_uri(self, uri: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    def parse_uri(
+        self, uri: str
+    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """Parse the input URI and returns the path to the database and the name of the
         table. If the parsing is successfull, the path, table, and epsg are set at wrapper's level.
 
@@ -581,37 +587,28 @@ class DuckDbTools:
 
             .. code-block:: python
 
-                >>> test_uri = f"path=/home/test/gis/insee/bureaux_vote.db table=cities epsg=4326"
+                >>> test_uri = f'path="/home/test/gis/insee/bureaux_vote.db";table="cities";epsg="4326"'
                 >>> db_path, table_name, epsg_code = ddb_wrapper.parse_uri(test_uri)
         """
-        path = None
-        table = None
-        epsg = None
         duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
             "duckdb"
         )
-        try:
-            parsed_uri = duckdbProviderMetadata.decodeUri(uri)
-            path = parsed_uri["path"]
-            table = parsed_uri["table"]
-            epsg = parsed_uri["epsg"]
-        except ValueError as exc:
-            PlgLogger.log(
-                message="Parsing URI failed: {}".format(exc),
-                log_level=1,
-                push=False,
-            )
+        parsed_uri = duckdbProviderMetadata.decodeUri(uri)
+        path = parsed_uri.get("path", None)
+        table = parsed_uri.get("table", None)
+        epsg = parsed_uri.get("epsg", None)
+        sql = parsed_uri.get("sql", None)
 
         PlgLogger.log(
-            message="URI parsed successfully: path={} ; table={} ; epsg={}".format(
-                path, table, epsg
+            message="URI parsed successfully: path={} ; table={} ; epsg={} ; sql={}".format(
+                path, table, epsg, sql
             ),
             log_level=4,
             push=False,
         )
 
         # check parsing results
-        if not path or not table:
+        if not path:
             raise ValueError(
                 "Invalid URI. Expected something like: path=/fake_path/database_duck.db "
                 "table=table_name epsg=4326. Received: {}".format(uri)
@@ -627,6 +624,7 @@ class DuckDbTools:
         self.database_path = Path(path)
         self._table_name = table
         self._epsg_code = epsg
+        self._sql = sql
 
         PlgLogger.log(
             message="Results from URI parsing are now used as wrapper attributes.",
@@ -634,4 +632,4 @@ class DuckDbTools:
             push=False,
         )
 
-        return path, table, epsg
+        return path, table, epsg, sql

@@ -1,3 +1,4 @@
+import re
 from typing import Dict
 
 from qgis.core import Qgis, QgsProject, QgsProviderMetadata, QgsReadWriteContext
@@ -20,22 +21,10 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
         :param str uri: uri to convert
         :returns: dict of components as strings
         """
-        path = ""
-        table = ""
-        epsg = ""
-        for variable in uri.split(" "):
-            try:
-                key, value = variable.split("=")
-                if key == "path":
-                    path = value
-                elif key == "table":
-                    table = value
-                elif key == "epsg":
-                    epsg = value
-            except ValueError:
-                raise
+        matches = re.findall(r'(\w+)="(.*?)"', uri)
+        params = {key: value for key, value in matches}
 
-        if Qgis.QGIS_VERSION_INT < 33000:
+        if "path" in params and Qgis.QGIS_VERSION_INT < 33000:
             # The logic to parse an uri and convert the path from
             # relative to absolute is:
             # 1. call `QGsVectorLayer::decodedSource()` to parse the
@@ -57,9 +46,11 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
             # uri used to call `decodeUri` contains a
             # relative path instead of an absolute one. By calling
             # `readPath`, this solves the issue.
-            path = QgsProject.instance().pathResolver().readPath(path)
+            params["path"] = (
+                QgsProject.instance().pathResolver().readPath(params["path"])
+            )
 
-        return {"path": path, "table": table, "epsg": epsg}
+        return params
 
     def encodeUri(self, parts: Dict[str, str]) -> str:
         """Reassembles a provider data source URI from its component paths
@@ -68,7 +59,16 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
         :param Dict[str, str] parts: parts as returned by decodeUri
         :returns: uri as string
         """
-        uri = f"path={parts['path']} table={parts['table']} epsg={parts['epsg']}"
+        sql_query = parts.get("sql", "")
+        if sql_query:
+            sql_part = f'sql="{sql_query}"'
+        else:
+            table_name = parts["table"]
+            sql_part = f'table="{table_name}"'
+
+        path = parts["path"]
+        epsg = parts["epsg"]
+        uri = f'path="{path}";{sql_part};epsg="{epsg}"'
         return uri
 
     def absoluteToRelativeUri(self, uri: str, context: QgsReadWriteContext) -> str:

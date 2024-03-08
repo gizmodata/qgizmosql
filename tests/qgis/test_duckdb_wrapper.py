@@ -172,13 +172,25 @@ class TestDdbWrapper(unittest.TestCase):
         """Test URI parser."""
         ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
 
-        test_uri = f"path={self.fixture_db_path} table=cities epsg=4326"
+        # uri with a table
+        test_table_uri = f'path="{self.fixture_db_path}";table="cities";epsg="4326"'
+        parsed_table_uri = ddb_wrapper.parse_uri(test_table_uri)
 
-        parsed_uri = ddb_wrapper.parse_uri(test_uri)
+        self.assertEqual(parsed_table_uri[0], str(self.fixture_db_path))
+        self.assertEqual(parsed_table_uri[1], "cities")
+        self.assertEqual(parsed_table_uri[2], "4326")
+        self.assertEqual(parsed_table_uri[3], None)
 
-        self.assertEqual(parsed_uri[0], str(self.fixture_db_path))
-        self.assertEqual(parsed_uri[1], "cities")
-        self.assertEqual(parsed_uri[2], "4326")
+        # uri with a sql
+        test_sql_uri = (
+            f'path="{self.fixture_db_path}";epsg="4326";'
+            f'sql="select * from truc where machin"'
+        )
+        parsed_sql_uri = ddb_wrapper.parse_uri(test_sql_uri)
+        self.assertEqual(parsed_sql_uri[0], str(self.fixture_db_path))
+        self.assertEqual(parsed_sql_uri[1], None)
+        self.assertEqual(parsed_sql_uri[2], "4326")
+        self.assertEqual(parsed_sql_uri[3], "select * from truc where machin")
 
 
 if __name__ == "__main__":

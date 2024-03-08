@@ -36,7 +36,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         cls.db_path_test = (
             Path(__file__).parent.parent.joinpath("fixtures/base_test.db").as_posix()
         )
-        cls.wrong_db_path = "wrong/path/zidane.db"
+        cls.wrong_db_path = 'path="wrong/path/zidane.db"'
 
     def test_get_capabilities(self) -> None:
         provider = DuckdbProvider()
@@ -52,62 +52,74 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertFalse(registry.registerProvider(duckdb_metadata))
 
     def test_valid(self) -> None:
-        correct_uri = f"path={self.db_path_test} table=cities epsg=4326"
+        correct_uri = f'path="{self.db_path_test}";table="cities";epsg="4326"'
         provider = DuckdbProvider(uri=correct_uri)
         self.assertTrue(provider.isValid())
         self.assertEqual(provider.dataSourceUri(), correct_uri)
 
         # Test table without geom
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=table_no_geom epsg=4326"
+            uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
         )
         self.assertFalse(provider.isValid())
 
     def test_wrong_uri(self) -> None:
-        provider = DuckdbProvider(uri="zidane")
+        provider = DuckdbProvider(uri='path="wrong/path/zidane.db"')
         self.assertFalse(provider.isValid())
 
     def test_geom_mapping(self) -> None:
         # Point
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 1";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
 
         # Linestring
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=highway epsg=4326"
+            uri=f'path="{self.db_path_test}";table="highway";epsg="4326"'
+        )
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from highway limit 1";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
 
         # Polygon
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=building epsg=4326"
+            uri=f'path="{self.db_path_test}";table="building";epsg="4326"'
+        )
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from building limit 1";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
 
         # MultiPolygon
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=test_multi epsg=4326"
+            uri=f'path="{self.db_path_test}";table="test_multi";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.MultiPolygon)
 
         # Geom with wrong uri
         provider = DuckdbProvider(
-            uri="path=wrong/uri/biuycdzohd.db table=zidane epsg=4326"
+            uri=f'path="{self.db_path_test}";table="zidane";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
 
         # Table without geom
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=tabke_no_geom epsg=4326"
+            uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
 
     def test_extent(self) -> None:
         # Test linestring layer
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=highway epsg=4326"
+            uri=f'path="{self.db_path_test}";table="highway";epsg="4326"'
         )
         self.assertIsInstance(provider.extent(), QgsRectangle)
         self.assertEqual(
@@ -122,7 +134,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # Test point layer
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         self.assertIsInstance(provider.extent(), QgsRectangle)
         self.assertEqual(
@@ -136,21 +148,21 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
 
         # Extent with wrong uri
-        provider = DuckdbProvider(uri="path=wrong/uri/biuycdzohd.db table=zidane")
+        provider = DuckdbProvider(uri='path="wrong/path/zidane.db"')
         self.assertEqual(
             provider.extent().asWktPolygon(), "POLYGON((0 0, 0 0, 0 0, 0 0, 0 0))"
         )
 
     def test_fields(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         self.assertEqual(provider.fields().field(0).name(), "id")
         self.assertEqual(provider.fields().field(0).type(), 2)
 
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=test_multi epsg=4326"
+            uri=f'path="{self.db_path_test}";table="test_multi";epsg="4326"'
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         fields = provider.fields()
@@ -161,19 +173,32 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(fields[3].type(), QVariant.Double)
         self.assertEqual(fields[4].type(), QVariant.Bool)
 
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select name, geom from cities limit 1";epsg="4326"'
+        )
+        self.assertIsInstance(provider.fields(), QgsFields)
+        fields = provider.fields()
+        self.assertEqual(fields[0].name(), "name")
+        self.assertEqual(fields[0].type(), QVariant.String)
+
         # Fields with wrong uri
-        provider = DuckdbProvider(uri="path=wrong/uri/biuycdzohd.db table=zidane")
+        provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db";table="zidane"')
         self.assertEqual(provider.fields().count(), 0)
 
     def test_get_geometry_column(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+        self.assertEqual(provider.get_geometry_column(), "geom")
+
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 2";epsg="4326"'
         )
         self.assertEqual(provider.get_geometry_column(), "geom")
 
     def test_table_without_geom_column(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=table_no_geom epsg=4326"
+            uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
         )
         self.assertEqual(provider.get_geometry_column(), None)
         self.assertEqual(
@@ -183,40 +208,52 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_featureCount(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         self.assertEqual(provider.featureCount(), 3)
 
-        # Count with wrong uri
         provider = DuckdbProvider(
-            uri="path=wrong/uri/biuycdzohd.db table=zidane epsg=4326"
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 2";epsg="4326"'
         )
+        self.assertEqual(provider.featureCount(), 2)
+
+        # Count with wrong uri
+        provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db";table="zidane"')
         self.assertEqual(provider.featureCount(), 0)
 
     def test_get_features(self) -> None:
-        vl = QgsVectorLayer(
-            f"path={self.db_path_test} table=cities epsg=4326", "test", "duckdb"
+        v1 = QgsVectorLayer(
+            f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
         )
-        self.assertTrue(vl.isValid())
+        v2 = QgsVectorLayer(
+            f'path="{self.db_path_test}";sql="select id::int as id, name, geom from cities limit 3";epsg="4326"',
+            "test",
+            "duckdb",
+        )
+        for v in [v1, v2]:
+            self.assertTrue(v.isValid())
 
-        features = vl.getFeatures()
+            features = v.getFeatures()
 
-        count_feature = 0
-        for feature in features:
-            count_feature += 1
-            self.assertEqual(feature.geometry().wkbType(), QgsWkbTypes.Point)
-            list_type_field = []
-            for field in feature.fields():
-                list_type_field.append(field.type())
-            self.assertEqual(list_type_field[0], QVariant.Int)
-            self.assertEqual(list_type_field[1], QVariant.String)
-            self.assertEqual(feature.id(), count_feature)
+            count_feature = 0
+            for feature in features:
+                count_feature += 1
+                self.assertEqual(feature.geometry().wkbType(), QgsWkbTypes.Point)
+                list_type_field = []
+                for field in feature.fields():
+                    list_type_field.append(field.type())
+                if v == v1:
+                    self.assertEqual(list_type_field[0], QVariant.Int)
+                if v == v2:
+                    self.assertEqual(list_type_field[0], QVariant.Double)
+                self.assertEqual(list_type_field[1], QVariant.String)
+                self.assertEqual(feature.id(), count_feature)
 
-        self.assertEqual(count_feature, 3)
+            self.assertEqual(count_feature, 3)
 
     def test_crs(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         self.assertEqual(provider.crs().authid(), "EPSG:4326")
         self.assertIsInstance(provider.crs(), QgsCoordinateReferenceSystem)
@@ -224,7 +261,7 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_primary_key(self) -> None:
         # table does not have a primary key
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         self.assertEqual(provider.primary_key(), -1)
         features = list(provider.getFeatures())
@@ -235,7 +272,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # table has a primary key
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=table_with_primary_key epsg=4326"
+            uri=f'path="{self.db_path_test}";table="table_with_primary_key";epsg="4326"'
         )
         self.assertEqual(provider.primary_key(), 0)
         features = list(provider.getFeatures())
@@ -247,7 +284,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_output_crs(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         liste_point = [
             "Point (5.38107000000000024 43.29695000000000249)",
@@ -279,7 +316,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_filter_rect(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         request = QgsFeatureRequest()
         # All features
@@ -294,13 +331,13 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_subset_string(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=table_with_primary_key epsg=4326"
+            uri=f'path="{self.db_path_test}";table="table_with_primary_key";epsg="4326"'
         )
         self.assertFalse(provider.supportsSubsetString())
 
     def test_filter_fid_and_fids(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
 
         # Fid
@@ -322,7 +359,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_filter_fids_and_rect(self) -> None:
         provider = DuckdbProvider(
-            uri=f"path={self.db_path_test} table=cities epsg=4326"
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         request = QgsFeatureRequest()
 
@@ -350,6 +387,13 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(len(features), 2)
         self.assertEqual(features[0].id(), 1)
         self.assertEqual(features[1].id(), 2)
+
+    def test_sql_query(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from cities limit 1";epsg="4326"'
+        )
+
+        self.assertTrue(provider._sql, "select * from cities limit 1")
 
 
 if __name__ == "__main__":

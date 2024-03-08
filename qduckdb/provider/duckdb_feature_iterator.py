@@ -106,7 +106,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
         self._result = self._provider.con().execute(
             f"select * from (select {fields_name_for_query}, "
-            f"st_astext({geom_column}), {geom_column}, row_number() over() as index from {table}) "
+            f"st_astext({geom_column}), {geom_column}, row_number() over() as index from {self._provider._from_clause}) "
             f"{where_clause} order by index"
         )
         self._index = 0

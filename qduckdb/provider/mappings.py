@@ -11,7 +11,6 @@ mapping_duckdb_qgis_geometry = {
     # ...
 }
 
-
 mapping_duckdb_qgis_type = {
     "BIGINT": QVariant.Int,
     "BOOLEAN": QVariant.Bool,
@@ -20,4 +19,10 @@ mapping_duckdb_qgis_type = {
     "INTEGER": QVariant.Int,
     "TIMESTAMP": QVariant.DateTime,
     "VARCHAR": QVariant.String,
+    # Type used for custom sql when table is not created
+    # Not difference betwenn float and integer so all the numeric field are NUMBER
+    "NUMBER": QVariant.Double,
+    "STRING": QVariant.String,
+    "Date": QVariant.Date,
+    "bool": QVariant.Bool,
 }

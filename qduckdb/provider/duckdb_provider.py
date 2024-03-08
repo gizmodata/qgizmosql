@@ -70,9 +70,12 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._fields = None
         self._feature_count = None
         self._primary_key = None
-
+        self._is_custom_SQL = False
         try:
-            self._path, self._table, self._epsg = self.ddb_wrapper.parse_uri(uri)
+            self._path, self._table, self._epsg, self._sql = self.ddb_wrapper.parse_uri(
+                uri
+            )
+
         except (FileNotFoundError, ValueError) as exc:
             self._is_valid = False
             PlgLogger.log(message=exc)
@@ -82,7 +85,14 @@ class DuckdbProvider(QgsVectorDataProvider):
             self._crs = QgsCoordinateReferenceSystem.fromEpsgId(int(self._epsg))
         else:
             self._crs = QgsCoordinateReferenceSystem()
+
         self.connect_database()
+
+        if self._sql and not self._table:
+            self._from_clause = f"({self._sql})"
+        else:
+            self._from_clause = self._table
+
         self.get_geometry_column()
         if not self._column_geom:
             return
@@ -118,14 +128,14 @@ class DuckdbProvider(QgsVectorDataProvider):
                 self._feature_count = 0
             else:
                 self._feature_count = self._con.sql(
-                    f"select count(*) from {self._table}"
+                    f"select count(*) from {self._from_clause}"
                 ).fetchone()[0]
 
         return self._feature_count
 
     def disconnect_database(self):
         """Disconnects the database"""
-        if self._con:
+        if self._con and self.isValid():
             self._con.close()
             self._con = None
 
@@ -153,7 +163,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 self._wkb_type = QgsWkbTypes.Unknown
             else:
                 str_geom_duckdb = self._con.sql(
-                    f"select st_geometrytype({self._column_geom}) from {self._table}"
+                    f"select st_geometrytype({self._column_geom}) from {self._from_clause}"
                 ).fetchone()[0]
 
                 if str_geom_duckdb in mapping_duckdb_qgis_geometry:
@@ -190,7 +200,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                     f"min(st_ymin({self._column_geom})), "
                     f"max(st_xmax({self._column_geom})), "
                     f"max(st_ymax({self._column_geom})) "
-                    f"from {self._table}"
+                    f"from {self._from_clause}"
                 ).fetchone()
 
                 self._extent = QgsRectangle(*extent_bounds)
@@ -212,25 +222,46 @@ class DuckdbProvider(QgsVectorDataProvider):
     def get_geometry_column(self) -> str:
         """Returns the name of the geometry column"""
         if not self._column_geom:
-            cols = self._con.sql(
-                "SELECT column_name FROM information_schema.columns "
-                f"WHERE table_name = '{self._table}' AND data_type = 'GEOMETRY'"
-            ).fetchone()
-            if cols:
-                self._column_geom = cols[0]
+            if not self._sql:
+                cols = self._con.sql(
+                    "SELECT column_name FROM information_schema.columns "
+                    f"WHERE table_name = '{self._table}' AND data_type = 'GEOMETRY'"
+                ).fetchone()
+                if cols:
+                    self._column_geom = cols[0]
+            else:
+                description = self._con.sql(self._sql).description
+                # Exemple : description = [('id', 'NUMBER'),('name', 'STRING'),('geom', 'BINARY')]
+                for data in description:
+                    if data[1] == "BINARY":
+                        self._column_geom = data[0]
+                        break
+
+            if not self._column_geom:
+                PlgLogger.log(
+                    message=self.tr(
+                        "The table does not contain any geometry columns, so the table cannot be displayed."
+                    ),
+                    log_level=2,
+                    push=True,
+                    duration=10,
+                )
 
         return self._column_geom
 
     def primary_key(self) -> int:
         if not self._primary_key:
-            res = self._con.sql(
-                "SELECT constraint_column_indexes FROM duckdb_constraints() "
-                f"WHERE table_name='{self.get_table()}' "
-                "AND constraint_type = 'PRIMARY KEY';"
-            ).fetchone()
+            if not self._sql:
+                res = self._con.sql(
+                    "SELECT constraint_column_indexes FROM duckdb_constraints() "
+                    f"WHERE table_name='{self.get_table()}' "
+                    "AND constraint_type = 'PRIMARY KEY';"
+                ).fetchone()
 
-            if res:
-                self._primary_key = res[0][0]
+                if res:
+                    self._primary_key = res[0][0]
+                else:
+                    self._primary_key = -1
             else:
                 self._primary_key = -1
 
@@ -243,11 +274,18 @@ class DuckdbProvider(QgsVectorDataProvider):
         if not self._fields:
             self._fields = QgsFields()
             if self._is_valid:
-                field_info = self._con.sql(
-                    "select column_name, data_type from "
-                    f"information_schema.columns WHERE table_name = '{self._table}' AND "
-                    " data_type not in ('GEOMETRY', 'WKB_BLOB')"
-                ).fetchall()
+                if not self._sql:
+                    field_info = self._con.sql(
+                        "select column_name, data_type from "
+                        f"information_schema.columns WHERE table_name = '{self._table}' AND "
+                        " data_type not in ('GEOMETRY', 'WKB_BLOB')"
+                    ).fetchall()
+                else:
+                    field_info = []
+                    desription = self._con.sql(self._sql).description
+                    for data in desription:
+                        if data[1] not in ["GEOMETRY", "BINARY", "WKB_BLOB"]:
+                            field_info.append((data[0], data[1]))
 
                 for field_name, field_type in field_info:
                     qgs_field = QgsField(
@@ -281,7 +319,10 @@ class DuckdbProvider(QgsVectorDataProvider):
         :return: table name
         :rtype: str
         """
-        return self._table
+        if self._sql:
+            return ""
+        else:
+            return self._table
 
     def uniqueValues(self, fieldIndex) -> set:
         """Returns the unique values of a field
@@ -292,7 +333,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         column_name = self.fields().field(fieldIndex).name()
         results = set()
         for elem in self._con.sql(
-            f"select distinct {column_name} from {self._table};"
+            f"select distinct {column_name} from {self._from_clause};"
         ).fetchall():
             results.add(elem[0])
 
