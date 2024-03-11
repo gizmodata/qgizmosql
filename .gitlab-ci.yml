@@ -25,7 +25,7 @@ git-hooks:
   stage: 🐍 lint
   image: python:${PYTHON_MINIMAL_VERSION}
   tags:
-    - docker
+    - oslandia_docker
   variables:
     PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
   cache:
@@ -48,7 +48,7 @@ flake8:
   stage: 🐍 lint
   image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
-    - docker
+    - oslandia_docker
   rules:
     - changes:
         - "**/*.py"
@@ -63,7 +63,7 @@ tests:unit:
   stage: 🤞 test
   image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
-    - docker
+    - oslandia_docker
   rules:
     - changes:
         - "**/*.py"
@@ -89,7 +89,7 @@ tests:qgis:
   stage: 🤞 test
   image: qgis/qgis:release-3_28
   tags:
-    - docker
+    - oslandia_docker
   variables:
     DISPLAY: ":1"
     PYTHONPATH: "/usr/share/qgis/python/plugins:/usr/share/qgis/python:."
@@ -124,7 +124,7 @@ build:documentation:
   stage: 📦 build
   image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
   tags:
-    - docker
+    - oslandia_docker
   rules:
     # on default branch
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
@@ -209,7 +209,7 @@ build:plugin:
   stage: 📦 build
   image: python:${PYTHON_MINIMAL_VERSION}
   tags:
-    - docker
+    - oslandia_docker
   rules:
     # on default branch
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
@@ -252,7 +252,7 @@ build:plugin:
 pages:
   stage: 🚀 deploy
   tags:
-    - docker
+    - oslandia_docker
   variables:
     GIT_STRATEGY: none
   rules:
@@ -290,7 +290,7 @@ pages:
 release:prepare:
   stage: 🚀 deploy
   tags:
-    - docker
+    - oslandia_docker
   image:
     name: alpine/git:latest
     entrypoint: [""]
@@ -334,7 +334,7 @@ release:publish:
   stage: 🚀 deploy
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   tags:
-    - docker
+    - oslandia_docker
   variables:
     GIT_STRATEGY: none
   rules:
@@ -360,7 +360,7 @@ deploy:qgis-repository:
   stage: 🚀 deploy
   image: python:3.11
   tags:
-    - docker
+    - oslandia_docker
   rules:
     # on a tag
     - if: $CI_COMMIT_TAG
