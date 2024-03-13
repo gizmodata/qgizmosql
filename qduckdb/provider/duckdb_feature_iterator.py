@@ -112,7 +112,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
         self._result = self._provider.con().execute(
             f"select * from (select {fields_name_for_query} "
-            f"st_astext({geom_column}), {geom_column}, row_number() over() as index from {self._provider._from_clause}) "
+            f"st_aswkb({geom_column}), {geom_column}, row_number() over() as index from {self._provider._from_clause}) "
             f"{where_clause} order by index"
         )
         self._index = 0
@@ -133,7 +133,9 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
         f.setFields(self._provider.fields())
         f.setValid(self._provider.isValid())
-        geometry = QgsGeometry.fromWkt(next_result[self.index_geom_column])
+
+        geometry = QgsGeometry()
+        geometry.fromWkb(next_result[self.index_geom_column])
         f.setGeometry(geometry)
         self.geometryToDestinationCrs(f, self._transform)
 
