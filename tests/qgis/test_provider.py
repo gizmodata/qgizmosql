@@ -249,6 +249,40 @@ class TestQDuckDBProvider(unittest.TestCase):
 
             self.assertEqual(count_feature, 3)
 
+    def test_rowid_in_sql_subquery(self) -> None:
+        layer_without_rowid = QgsVectorLayer(
+            f'path="{self.db_path_test}";sql="select name, geom from cities limit 3";epsg="4326"',
+            "test_without_id",
+            "duckdb",
+        )
+        self.assertTrue(layer_without_rowid.isValid())
+
+        layer_with_rowid = QgsVectorLayer(
+            f'path="{self.db_path_test}";sql="select rowid, name, geom from cities limit 3";epsg="4326"',
+            "test_without_id",
+            "duckdb",
+        )
+        self.assertTrue(layer_with_rowid.isValid())
+
+        count_feature = 0
+        for feature_without_rowid, feature_with_rowid in zip(
+            layer_without_rowid.getFeatures(), layer_with_rowid.getFeatures()
+        ):
+            count_feature += 1
+            self.assertEqual(feature_without_rowid.id(), count_feature)
+            self.assertEqual(feature_without_rowid.id(), feature_with_rowid.id())
+
+            self.assertEqual(feature_with_rowid.fields().field(0).name(), "name")
+            self.assertEqual(feature_without_rowid.fields().field(0).name(), "name")
+            self.assertEqual(
+                feature_without_rowid.attributes(), feature_with_rowid.attributes()
+            )
+
+            self.assertEqual(feature_without_rowid.attributeCount(), 1)
+            self.assertEqual(feature_with_rowid.attributeCount(), 1)
+
+        self.assertEqual(count_feature, 3)
+
     def test_attributes(self):
         # No sql subquery, it should return all the fields
         vector_layer1 = QgsVectorLayer(
