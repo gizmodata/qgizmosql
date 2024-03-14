@@ -70,7 +70,6 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._fields = None
         self._feature_count = None
         self._primary_key = None
-        self._is_custom_SQL = False
         try:
             self._path, self._table, self._epsg, self._sql = self.ddb_wrapper.parse_uri(
                 uri
