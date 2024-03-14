@@ -88,9 +88,9 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
             if Qgis.QGIS_VERSION_INT < 33000:
                 expected_path = self.full_path
             else:
-                expected_path = self.rel_path
+                expected_path = self.db_filename
 
-            rel_parts = self.provider_metadata.decodeUri(self.expected_abs_table_uri)
+            rel_parts = self.provider_metadata.decodeUri(self.expected_table_rel_uri)
             self.assertTrue("sql" not in rel_parts)
             self.assertEqual(rel_parts["path"], expected_path)
             self.assertEqual(rel_parts["table"], self.table)
