@@ -251,6 +251,51 @@ class TestQDuckDBProvider(unittest.TestCase):
 
             self.assertEqual(count_feature, 3)
 
+    def test_attributes(self):
+        # No sql subquery, it should return all the fields
+        vector_layer1 = QgsVectorLayer(
+            f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
+        )
+
+        # check fields
+        fields = vector_layer1.fields()
+        self.assertTrue(len(fields), 2)
+        self.assertEqual(fields.field(0).name(), "id")
+        self.assertEqual(fields.field(0).type(), QVariant.Int)
+        self.assertEqual(fields.field(1).name(), "name")
+        self.assertEqual(fields.field(1).type(), QVariant.String)
+
+        expected_attributes = [
+            [2995469, "Marseille"],
+            [3128760, "Barcelona"],
+            [3165524, "Turin"],
+        ]
+        # check attributes
+        for idx, feature in enumerate(vector_layer1.getFeatures()):
+            self.assertEqual(feature.attributes(), expected_attributes[idx])
+
+        # A sql subquery, it should only return the fields from the subquery
+        vector_layer2 = QgsVectorLayer(
+            f'path="{self.db_path_test}";sql="select name, geom from cities limit 3";epsg="4326"',
+            "test",
+            "duckdb",
+        )
+
+        # check fields
+        fields = vector_layer2.fields()
+        self.assertTrue(len(fields), 1)
+        self.assertEqual(fields.field(0).name(), "name")
+        self.assertEqual(fields.field(0).type(), QVariant.String)
+
+        expected_attributes = [
+            ["Marseille"],
+            ["Barcelona"],
+            ["Turin"],
+        ]
+        # check attributes
+        for idx, feature in enumerate(vector_layer2.getFeatures()):
+            self.assertEqual(feature.attributes(), expected_attributes[idx])
+
     def test_crs(self) -> None:
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
