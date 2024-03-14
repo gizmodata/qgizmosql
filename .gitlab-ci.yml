@@ -87,7 +87,7 @@ tests:unit:
 
 tests:qgis:
   stage: 🤞 test
-  image: qgis/qgis:release-3_28
+  image: qgis/qgis:release-3_34
   tags:
     - oslandia_docker
   variables:

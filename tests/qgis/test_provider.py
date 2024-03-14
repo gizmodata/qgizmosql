@@ -150,7 +150,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         # Extent with wrong uri
         provider = DuckdbProvider(uri='path="wrong/path/zidane.db"')
         self.assertEqual(
-            provider.extent().asWktPolygon(), "POLYGON((0 0, 0 0, 0 0, 0 0, 0 0))"
+            provider.extent().asWktPolygon(), QgsRectangle().asWktPolygon()
         )
 
     def test_fields(self) -> None:
@@ -202,7 +202,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertEqual(provider.get_geometry_column(), None)
         self.assertEqual(
-            provider.extent().asWktPolygon(), "POLYGON((0 0, 0 0, 0 0, 0 0, 0 0))"
+            provider.extent().asWktPolygon(), QgsRectangle().asWktPolygon()
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
 
