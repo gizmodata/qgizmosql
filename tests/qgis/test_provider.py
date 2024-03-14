@@ -286,7 +286,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
-        liste_point = [
+        list_point = [
             "Point (5.38107000000000024 43.29695000000000249)",
             "Point (2.15899000000000019 41.38879000000000019)",
             "Point (7.68681999999999999 45.0704899999999995)",
@@ -294,7 +294,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         feats = provider.getFeatures()
         for i, feat in enumerate(feats):
-            self.assertEqual(feat.geometry().asWkt(), liste_point[i])
+            self.assertEqual(feat.geometry().asWkt(), list_point[i])
 
         request = QgsFeatureRequest()
         request.setDestinationCrs(
@@ -309,9 +309,9 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         feats = provider.getFeatures(request)
         for i, feat in enumerate(feats):
-            geom = QgsGeometry.fromWkt(liste_point[i])
+            geom = QgsGeometry.fromWkt(list_point[i])
             geom.transform(transform)
-            self.assertNotEqual(feat.geometry().asWkt(), liste_point[i])
+            self.assertNotEqual(feat.geometry().asWkt(), list_point[i])
             self.assertEqual(feat.geometry().asWkt(), geom.asWkt())
 
     def test_filter_rect(self) -> None:

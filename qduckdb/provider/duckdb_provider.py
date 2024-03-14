@@ -282,8 +282,8 @@ class DuckdbProvider(QgsVectorDataProvider):
                     ).fetchall()
                 else:
                     field_info = []
-                    desription = self._con.sql(self._sql).description
-                    for data in desription:
+                    description = self._con.sql(self._sql).description
+                    for data in description:
                         if data[1] not in ["GEOMETRY", "BINARY", "WKB_BLOB"]:
                             field_info.append((data[0], data[1]))
 
