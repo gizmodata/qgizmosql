@@ -270,6 +270,8 @@ class DuckdbProvider(QgsVectorDataProvider):
     def fields(self) -> QgsFields:
         """Detects field name and type. Converts the type into a QVariant, and returns a
         QgsFields containing QgsFields.
+        If there is no sql subquery, all the fields are returned
+        If there is a sql subquery, only the fields contained in the subquery are returned
         """
         if not self._fields:
             self._fields = QgsFields()
