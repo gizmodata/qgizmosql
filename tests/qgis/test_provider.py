@@ -159,7 +159,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         self.assertEqual(provider.fields().field(0).name(), "id")
-        self.assertEqual(provider.fields().field(0).type(), 2)
+        self.assertEqual(provider.fields().field(0).type(), QVariant.Int)
 
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="test_multi";epsg="4326"'
