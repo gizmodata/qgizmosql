@@ -325,17 +325,21 @@ class DuckdbProvider(QgsVectorDataProvider):
         else:
             return self._table
 
-    def uniqueValues(self, fieldIndex) -> set:
+    def uniqueValues(self, fieldIndex: int, limit: int = -1) -> set:
         """Returns the unique values of a field
 
         :param fieldIndex: Index of field
         :type fieldIndex: int
+        :param limit: limit of returned values
+        :type limit: int
         """
         column_name = self.fields().field(fieldIndex).name()
         results = set()
-        for elem in self._con.sql(
-            f"select distinct {column_name} from {self._from_clause};"
-        ).fetchall():
+        query = f"select distinct {column_name} from {self._from_clause} order by {column_name}"
+        if limit >= 0:
+            query += f" limit {limit}"
+
+        for elem in self._con.sql(query).fetchall():
             results.add(elem[0])
 
         return results

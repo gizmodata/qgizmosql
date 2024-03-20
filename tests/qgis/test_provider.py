@@ -221,6 +221,18 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db";table="zidane"')
         self.assertEqual(provider.featureCount(), 0)
 
+    def test_unique_values(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+        self.assertEqual(len(provider.fields()), 2)
+
+        values = provider.uniqueValues(1)
+        self.assertEqual(values, {"Barcelona", "Marseille", "Turin"})
+
+        values = provider.uniqueValues(1, 1)
+        self.assertEqual(values, {"Barcelona"})
+
     def test_get_features(self) -> None:
         v1 = QgsVectorLayer(
             f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
