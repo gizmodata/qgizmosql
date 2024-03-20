@@ -11,7 +11,7 @@ The plugin's logic is mainly based on on the [DuckDB API's Pyton client](https:/
 Open a terminal and install dependencies from the Python Package Index (PyPi):
 
 ```sh
-python3 -m pip install "duckdb==0.10"
+python3 -m pip install "duckdb==0.10.1"
 ```
 
 ### Windows: embedded package
@@ -37,7 +37,7 @@ Note that on MacOS QGIS uses its own python, not the system's.
 Open a terminal and install dependencies from the Python Package Index (PyPi) on QGIS python :
 
 ```sh
-/Applications/QGIS.app/Contents/MacOS/bin/python3.9 -m pip install "duckdb==0.10"
+/Applications/QGIS.app/Contents/MacOS/bin/python3.9 -m pip install "duckdb==0.10.1"
 ```
 
 ### Manual installation
@@ -54,7 +54,7 @@ Then, if the plugin fails to import a package, you can try to install it manuall
   ```batch
   python-qgis-ltr -m pip install -U pip
   python-qgis-ltr -m pip install -U setuptools wheel
-  python-qgis-ltr -m pip install -U "duckdb==0.10"
+  python-qgis-ltr -m pip install -U "duckdb==0.10.1"
   ```
 
 :::{important}
