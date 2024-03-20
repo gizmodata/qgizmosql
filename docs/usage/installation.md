@@ -11,7 +11,7 @@ The plugin's logic is mainly based on on the [DuckDB API's Pyton client](https:/
 Open a terminal and install dependencies from the Python Package Index (PyPi):
 
 ```sh
-python3 -m pip install qduckdb "duckdb=0.10"
+python3 -m pip install "duckdb==0.10"
 ```
 
 ### Windows: embedded package
