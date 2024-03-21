@@ -10,6 +10,7 @@ category=Database
 description=This plugin adds a new data provider that can read DuckDB databases and display their tables as a layer in QGIS.
 hasProcessingProvider=False
 icon=resources/images/logo_duckdb.png
+supportsQt6=no
 server=True
 tags=duckdb,database,parquet,sql,overture,insee-fr
 
