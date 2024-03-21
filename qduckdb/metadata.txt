@@ -1,12 +1,17 @@
 [general]
 name=QDuckDB
-about=Plugin for using DuckDB databases in QGIS.
+about=Plugin for using DuckDB databases in QGIS.<br/>
+    If you're running on Windows, this plugin comes with the necessary version of
+    duckdb, so you don't have to install by yourself. Two things you may know:
+    - it's neither more nor less than the same version you could have installed with a 'pip install' (but we know how complicated that is in the Python environment of QGIS on Windows)
+    - the library is installed in a subdirectory of the plugin, which means that it is only activated when the plugin itself is activated.
+    You can get <a href="https://oslandia.gitlab.io/qgis/qduckdb/usage/installation.html#windows-embedded-package">more information in the documentation</a>.
 category=Database
+description=This plugin adds a new data provider that can read DuckDB databases and display their tables as a layer in QGIS.
 hasProcessingProvider=False
-server=True
-description=This plugin adds a new data prodivder that can read DuckDB databases and display their tables as a layer in QGIS.
 icon=resources/images/logo_duckdb.png
-tags=duckdb,database,parquet,sql
+server=True
+tags=duckdb,database,parquet,sql,overture,insee-fr
 
 # credits and contact
 author=Florent Fougeres (Oslandia), Jean Felder (Oslandia), Julien Moura (Oslandia)
