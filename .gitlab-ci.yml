@@ -173,7 +173,7 @@ build:translation:
 build:windows:
   stage: 📦 build
   tags:
-    - windows
+    - oslandia_windows
   rules:
     # on default branch
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
