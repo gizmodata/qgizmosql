@@ -16,6 +16,14 @@ Unreleased
 
 -->
 
+## 0.6.0 - 2023-03-26
+
+- Misc typo fixes !83
+- Update test to QGIS 3.34 !84
+- Fix unique values in metadata provider !88
+- Update DuckDB version to 0.10.1 !89
+- Add a disclaimer about binary dependency and explicitly disable qt6 support !91
+
 ## 0.5.0 - 2023-03-08
 
 - Loading a layer with an sql query !78
