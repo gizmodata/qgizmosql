@@ -25,4 +25,5 @@ mapping_duckdb_qgis_type = {
     "STRING": QVariant.String,
     "Date": QVariant.Date,
     "bool": QVariant.Bool,
+    "JSON": QVariant.String,
 }
