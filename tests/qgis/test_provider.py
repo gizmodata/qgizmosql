@@ -308,6 +308,62 @@ class TestQDuckDBProvider(unittest.TestCase):
         for idx, feature in enumerate(vector_layer2.getFeatures()):
             self.assertEqual(feature.attributes(), expected_attributes[idx])
 
+    def test_attributes_subset_of_attributes(self):
+        """
+        Check that the iterator works when a request has set
+        the SubsetOfAttributes flag
+        """
+        vector_layer = QgsVectorLayer(
+            f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
+        )
+
+        # check fields
+        fields = vector_layer.fields()
+        self.assertTrue(len(fields), 2)
+        self.assertEqual(fields.field(0).name(), "id")
+        self.assertEqual(fields.field(0).type(), QVariant.Int)
+        self.assertEqual(fields.field(1).name(), "name")
+        self.assertEqual(fields.field(1).type(), QVariant.String)
+
+        # no subset set
+        # all the attributes are returned
+        request = QgsFeatureRequest()
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [2995469, "Marseille"])
+
+        # set subset by idx
+        # only the selected ids are set - others are None
+        request.setSubsetOfAttributes([1])
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [None, "Marseille"])
+
+        request.setSubsetOfAttributes([0])
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [2995469, None])
+
+        request.setSubsetOfAttributes([0, 1])
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [2995469, "Marseille"])
+
+        request.setSubsetOfAttributes([])
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [None, None])
+
+        # set subset by field name
+        # only the selected names are set - others are None
+        request = QgsFeatureRequest()
+        request.setSubsetOfAttributes(["id"], fields)
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [2995469, None])
+
+        request.setSubsetOfAttributes(["name"], fields)
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [None, "Marseille"])
+
+        request.setSubsetOfAttributes(["id", "name"], fields)
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(attributes, [2995469, "Marseille"])
+
     def test_crs(self) -> None:
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'

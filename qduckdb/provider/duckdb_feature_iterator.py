@@ -52,11 +52,18 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
         geom_column = self._provider.get_geometry_column()
 
-        list_field_names = []
-        for field in self._provider.fields():
-            list_field_names.append(field.name())
+        # Create the list of fields that need to be retrieved
+        if self._request.flags() & QgsFeatureRequest.Flag.SubsetOfAttributes:
+            list_field_names = [
+                self._provider.fields()[idx].name()
+                for idx in self._request.subsetOfAttributes()
+            ]
+        else:
+            list_field_names = [field.name() for field in self._provider.fields()]
 
         fields_name_for_query = ", ".join(list_field_names)
+        if fields_name_for_query:
+            fields_name_for_query += ","
         self.index_geom_column = len(list_field_names)
 
         # Create fid/fids list
@@ -104,7 +111,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             )
 
         self._result = self._provider.con().execute(
-            f"select * from (select {fields_name_for_query}, "
+            f"select * from (select {fields_name_for_query} "
             f"st_astext({geom_column}), {geom_column}, row_number() over() as index from {self._provider._from_clause}) "
             f"{where_clause} order by index"
         )
@@ -136,8 +143,12 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         else:
             f.setId(next_result[self._provider.primary_key()])
 
-        for enum in range(self.index_geom_column):
-            f.setAttribute(enum, next_result[enum])
+        # set attributes
+        if self._request.flags() & QgsFeatureRequest.Flag.SubsetOfAttributes:
+            for idx, attr_idx in enumerate(self._request.subsetOfAttributes()):
+                f.setAttribute(attr_idx, next_result[idx])
+        else:
+            f.setAttributes(list(next_result[: self.index_geom_column]))
 
         self._index += 1
         return True
