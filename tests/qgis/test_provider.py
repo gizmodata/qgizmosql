@@ -19,7 +19,7 @@ from qgis.testing import unittest
 from qduckdb.provider.duckdb_provider import DuckdbProvider
 from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
 
-from .utilities import register_provider_if_necessary
+from .utilities import compare_rectangles, register_provider_if_necessary
 
 db_path = Path(__file__).parent.joinpath("data/base_test.db")
 
@@ -122,30 +122,16 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}";table="highway";epsg="4326"'
         )
         self.assertIsInstance(provider.extent(), QgsRectangle)
-        self.assertEqual(
-            provider.extent(),
-            QgsRectangle(
-                -0.75798929999999998,
-                48.08263490000000218,
-                -0.75523320000000005,
-                48.08447269999999918,
-            ),
-        )
+        expected_extent = QgsRectangle(-0.75799, 48.08263, -0.75523, 48.08447)
+        self.assertTrue(compare_rectangles(provider.extent(), expected_extent))
 
         # Test point layer
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
         )
         self.assertIsInstance(provider.extent(), QgsRectangle)
-        self.assertEqual(
-            provider.extent(),
-            QgsRectangle(
-                2.15899000000000019,
-                41.38879000000000019,
-                7.68681999999999999,
-                45.0704899999999995,
-            ),
-        )
+        expected_extent = QgsRectangle(2.15899, 41.38879, 7.68682, 45.07049)
+        self.assertTrue(compare_rectangles(provider.extent(), expected_extent))
 
         # Extent with wrong uri
         provider = DuckdbProvider(uri='path="wrong/path/zidane.db"')
