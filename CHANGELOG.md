@@ -16,6 +16,12 @@ Unreleased
 
 -->
 
+## 0.6.1 - 2023-04-28
+
+- Retrieve geometry as wkb instead of wkt. !97
+- Support for json-type fields !94
+- Provider : Add support for SubsetOfAttributes flag. !87
+
 ## 0.6.0 - 2023-03-26
 
 - Misc typo fixes !83
