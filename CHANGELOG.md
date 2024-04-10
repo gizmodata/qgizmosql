@@ -16,13 +16,13 @@ Unreleased
 
 -->
 
-## 0.6.1 - 2023-04-28
+## 0.6.1 - 2024-04-28
 
 - Retrieve geometry as wkb instead of wkt. !97
 - Support for json-type fields !94
 - Provider : Add support for SubsetOfAttributes flag. !87
 
-## 0.6.0 - 2023-03-26
+## 0.6.0 - 2024-03-26
 
 - Misc typo fixes !83
 - Update test to QGIS 3.34 !84
@@ -30,12 +30,12 @@ Unreleased
 - Update DuckDB version to 0.10.1 !89
 - Add a disclaimer about binary dependency and explicitly disable qt6 support !91
 
-## 0.5.0 - 2023-03-08
+## 0.5.0 - 2024-03-08
 
 - Loading a layer with an sql query !78
 - Correctly read paths from a network share !76
 
-## 0.4.1 - 2023-02-14
+## 0.4.1 - 2024-02-14
 
 - Upgrade DuckDB version 0.9.2 to 0.10
 
