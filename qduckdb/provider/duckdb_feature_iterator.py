@@ -15,6 +15,8 @@ from qgis.core import (
 
 # plugin
 from qduckdb.provider import duckdb_feature_source, duckdb_provider
+from qduckdb.toolbelt.log_handler import PlgLogger
+from qduckdb.toolbelt.preferences import PlgOptionsManager
 
 
 class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
@@ -27,6 +29,8 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         # FIXME: Handle QgsFeatureRequest.FilterExpression
         super().__init__(request)
         self._provider: duckdb_provider.DuckdbProvider = source.get_provider()
+        self._settings = PlgOptionsManager.get_plg_settings()
+        self.log = PlgLogger().log
 
         self._request = request if request is not None else QgsFeatureRequest()
         self._transform = QgsCoordinateTransform()
@@ -122,10 +126,17 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 f"st_aswkb({geom_column}), {geom_column}, row_number() over() as index from {self._provider._from_clause})"
             )
 
-        self._result = self._provider.con().execute(
-            base_query + f"{where_clause} order by index"
-        )
+        final_query = base_query + f"{where_clause} order by index"
+
+        self._result = self._provider.con().execute(final_query)
         self._index = 0
+
+        if self._settings.debug_mode:
+            self.log(
+                message="feature iterator execute query: {}".format(final_query),
+                log_level=4,  # 4 = info
+                push=False,
+            )
 
     def fetchFeature(self, f: QgsFeature) -> bool:
         """fetch next feature, return true on success
