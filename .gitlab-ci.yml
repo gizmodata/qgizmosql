@@ -375,6 +375,8 @@ deploy:qgis-repository:
   script:
     # list files
     - ls -lR
+    # Temporary fix : copy license file to plugin folder
+    - cp ./LICENSE ./${PROJECT_FOLDER}/LICENSE
     # print some info
     - echo "Deploying the version ${CI_COMMIT_TAG} plugin to QGIS Plugins Repository with the user ${OSGEO_USER_NAME}"
     - python ${PROJECT_FOLDER}/__about__.py
