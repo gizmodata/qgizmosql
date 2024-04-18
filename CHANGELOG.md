@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 0.6.2 - 2024-04-28
+
+- Update DuckDB version to 0.10.2 !100
+
 ## 0.6.1 - 2024-04-28
 
 - Retrieve geometry as wkb instead of wkt. !97
