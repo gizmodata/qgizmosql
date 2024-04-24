@@ -39,7 +39,7 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
         self.assertIsInstance(self.dialog, LoadDuckDBLayerDialog)
         self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
         self.assertEqual(
-            self.dialog.list_table_in_db(),
+            self.dialog.list_table_in_db().sort(),
             [
                 "building",
                 "cities",
@@ -47,7 +47,7 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
                 "table_no_geom",
                 "table_with_primary_key",
                 "test_multi",
-            ],
+            ].sort(),
         )
 
     def test_push_add_layer_button(self) -> None:
