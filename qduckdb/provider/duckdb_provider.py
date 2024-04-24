@@ -61,7 +61,6 @@ class DuckdbProvider(QgsVectorDataProvider):
         super().__init__(uri)
 
         self.ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
-
         self._is_valid = False
         self._uri = uri
         self._wkb_type = None
@@ -70,6 +69,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._fields = None
         self._feature_count = None
         self._primary_key = None
+        self.filter_where_clause = None
         try:
             self._path, self._table, self._epsg, self._sql = self.ddb_wrapper.parse_uri(
                 uri
@@ -126,9 +126,14 @@ class DuckdbProvider(QgsVectorDataProvider):
             if not self._is_valid:
                 self._feature_count = 0
             else:
-                self._feature_count = self._con.sql(
-                    f"select count(*) from {self._from_clause}"
-                ).fetchone()[0]
+                if self.subsetString():
+                    self._feature_count = self._con.sql(
+                        f"select count(*) from {self._from_clause} WHERE {self.subsetString()}"
+                    ).fetchone()[0]
+                else:
+                    self._feature_count = self._con.sql(
+                        f"select count(*) from {self._from_clause}"
+                    ).fetchone()[0]
 
         return self._feature_count
 
@@ -360,11 +365,37 @@ class DuckdbProvider(QgsVectorDataProvider):
         return self._con.cursor()
 
     def subsetString(self) -> str:
-        return ""
+        return self.filter_where_clause
 
-    def setSubsetString(self, subsetString: str) -> bool:
-        return False
+    def setSubsetString(
+        self, subsetstring: str, updateFeatureCount: bool = True
+    ) -> bool:
+        if subsetstring:
+            # Check if the fillter is valid
+            try:
+                self._con.sql(
+                    f"select count(*) from {self._from_clause} WHERE {subsetstring} LIMIT 0"
+                )
+            except Exception as e:
+                PlgLogger.log(
+                    self.tr("SQL error in filter : {}".format(e)),
+                    log_level=2,
+                    duration=5,
+                    push=False,
+                )
+                return False
+            self.filter_where_clause = subsetstring
+
+        if not subsetstring:
+            self.filter_where_clause = None
+
+        if updateFeatureCount:
+            # We set this variable to None to trigger featuresCount()
+            # reloadData() is a private method, so we have to use it to force the featureCount() refresh.
+            self._feature_count = None
+            self.reloadData()
+
+        return True
 
     def supportsSubsetString(self) -> bool:
-        # FIXME: the provider does not handle subsets at the moment
-        return False
+        return True
