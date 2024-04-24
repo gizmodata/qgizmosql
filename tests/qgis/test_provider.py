@@ -494,6 +494,28 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         self.assertTrue(provider._sql, "select * from cities limit 1")
 
+    def test_no_geometry_flag(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+
+        # With NoGeometry flag
+        req = QgsFeatureRequest()
+        req.setFlags(QgsFeatureRequest.Flag.NoGeometry)
+        self.assertTrue(req.flags() & QgsFeatureRequest.Flag.NoGeometry)
+        features = list(provider.getFeatures(req))
+        self.assertTrue(len(features) > 0)
+        self.assertTrue(features[0].isValid())
+        self.assertFalse(features[0].hasGeometry())
+
+        # Without NoGeometry flag
+        req = QgsFeatureRequest()
+        self.assertFalse(req.flags() & QgsFeatureRequest.Flag.NoGeometry)
+        features = list(provider.getFeatures(req))
+        self.assertTrue(len(features) > 0)
+        self.assertTrue(features[0].isValid())
+        self.assertTrue(features[0].hasGeometry())
+
 
 if __name__ == "__main__":
     unittest.main()

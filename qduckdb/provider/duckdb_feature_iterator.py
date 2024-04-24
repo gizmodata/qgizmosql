@@ -126,14 +126,14 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 f"st_aswkb({geom_column}), {geom_column}, row_number() over() as index from {self._provider._from_clause})"
             )
 
-        final_query = base_query + f"{where_clause} order by index"
+        self.final_query = base_query + f"{where_clause} order by index"
 
-        self._result = self._provider.con().execute(final_query)
+        self._result = self._provider.con().execute(self.final_query)
         self._index = 0
 
         if self._settings.debug_mode:
             self.log(
-                message="feature iterator execute query: {}".format(final_query),
+                message="feature iterator execute query: {}".format(self.final_query),
                 log_level=4,  # 4 = info
                 push=False,
             )
