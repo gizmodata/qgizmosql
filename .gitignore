@@ -139,3 +139,4 @@ tests/fixtures/tmp_*.db
 qduckdb/embedded_external_libs/
 !qduckdb/embedded_external_libs/**/*.so
 !qduckdb/embedded_external_libs/**/*.pyd
+tests/fixtures/*.tmp
