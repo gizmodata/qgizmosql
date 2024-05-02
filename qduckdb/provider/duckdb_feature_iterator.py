@@ -57,7 +57,10 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         geom_column = self._provider.get_geometry_column()
 
         # Create the list of fields that need to be retrieved
-        if self._request.flags() & QgsFeatureRequest.Flag.SubsetOfAttributes:
+        if (
+            self._request.flags() & QgsFeatureRequest.Flag.SubsetOfAttributes
+            and not self._provider.subsetString()
+        ):
             list_field_names = [
                 self._provider.fields()[idx].name()
                 for idx in self._request.subsetOfAttributes()
@@ -82,7 +85,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 else self._request.filterFids()
             )
 
-        where_clause = ""
+        where_clause = None
 
         if feature_id_list and not filter_rect.isNull():
             if self._provider.primary_key() == -1:
@@ -112,6 +115,16 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             where_clause = (
                 f"where st_intersects({geom_column}, "
                 f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
+            )
+
+        if self._provider.subsetString() and where_clause:
+            where_clause = "{} and {}".format(
+                where_clause, self._provider.subsetString().replace('"', "")
+            )
+
+        if self._provider.subsetString() and not where_clause:
+            where_clause = "where {}".format(
+                self._provider.subsetString().replace('"', "")
             )
 
         if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
