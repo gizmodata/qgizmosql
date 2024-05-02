@@ -16,11 +16,17 @@ Unreleased
 
 -->
 
-## 0.6.2 - 2024-04-28
+## 0.6.3 - 2024-05-02
+
+- Add support for NoGeometry Flag on QgsFeatureRequest !98
+- Log sql request when debug mode is on !98
+- Following the packaging of qgis windows in python 3.12 the maximum version required to use the plugin is currently QGIS 3.34.5.
+
+## 0.6.2 - 2024-04-18
 
 - Update DuckDB version to 0.10.2 !100
 
-## 0.6.1 - 2024-04-28
+## 0.6.1 - 2024-04-08
 
 - Retrieve geometry as wkb instead of wkt. !97
 - Support for json-type fields !94
