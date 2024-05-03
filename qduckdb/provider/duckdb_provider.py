@@ -88,6 +88,13 @@ class DuckdbProvider(QgsVectorDataProvider):
         self.connect_database()
 
         if self._sql and not self._table:
+            # If the rowid pseudocolumn is not in the sql add it to
+            # the clause. It will be used to build the feature ids if
+            # the table does not have a primary key.
+            columns = self._con.sql(self._sql).columns
+            if "rowid" not in columns:
+                self._sql = self._sql.replace("select ", "select rowid, ", 1)
+
             self._from_clause = f"({self._sql})"
         else:
             self._from_clause = self._table
@@ -290,7 +297,12 @@ class DuckdbProvider(QgsVectorDataProvider):
                     field_info = []
                     description = self._con.sql(self._sql).description
                     for data in description:
-                        if data[1] not in ["GEOMETRY", "BINARY", "WKB_BLOB"]:
+                        # rowid is a pseudocolumn which returns the row identifiers
+                        # it is already used to set the feature id
+                        if (
+                            data[1] not in ["GEOMETRY", "BINARY", "WKB_BLOB"]
+                            and data[0] != "rowid"
+                        ):
                             field_info.append((data[0], data[1]))
 
                 for field_name, field_type in field_info:

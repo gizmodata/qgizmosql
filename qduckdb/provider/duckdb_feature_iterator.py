@@ -129,14 +129,20 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
         if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
             base_query = (
-                f"select * from (select {fields_name_for_query} "
-                f"row_number() over() as index from {self._provider._from_clause})"
+                "select * from ("
+                f"select {fields_name_for_query} "
+                f"rowid + 1 as index "
+                f"from {self._provider._from_clause})"
             )
 
         else:
             base_query = (
-                f"select * from (select {fields_name_for_query} "
-                f"st_aswkb({geom_column}), {geom_column}, row_number() over() as index from {self._provider._from_clause})"
+                "select * from ("
+                f"select {fields_name_for_query} "
+                f"st_aswkb({geom_column}), "
+                f"{geom_column}, "
+                "rowid + 1 as index "
+                f"from {self._provider._from_clause})"
             )
 
         self.final_query = base_query + f"{where_clause} order by index"
@@ -175,7 +181,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             self.geometryToDestinationCrs(f, self._transform)
 
         if self._provider.primary_key() == -1:
-            # the table does not have a primary key, use the row number as fallback
+            # the table does not have a primary key, use rowid as fallback
             f.setId(next_result[-1])
         else:
             f.setId(next_result[self._provider.primary_key()])
