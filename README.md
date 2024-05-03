@@ -13,6 +13,17 @@ DuckDB is an in-process SQL OLAP database management system, designed to be simp
 
 [QGIS](https://qgis.org) is the most dynamic OpenSource Geographical Information System platform, including the QGIS Desktop software application.
 
+## :warning: Version information
+
+Between QGIS versions `3.34.5` and `3.34.6`, the packaging for the Windows version of QGIS changed from Python `3.9` to Python `3.12`.
+
+To keep pace with this evolution, we had to upgrade the plugin package as well.
+
+As a result :
+
+- For QGIS versions `3.34.5` and below, the plugin is frozen in version `0.6.3`
+- To get the latest version, you need at least qgis `3.34.6`, this starts with version `0.7.0` of the plugin
+
 ## Features
 
 - A new QGIS DuckDB provider is implement with this plugin
