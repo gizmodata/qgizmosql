@@ -185,7 +185,7 @@ build:windows:
       when: manual
   before_script:
     - Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-    - choco install -y python --version=3.9.13
+    - choco install -y python --version=3.12.3
     - RefreshEnv
   script:
     - python --version
