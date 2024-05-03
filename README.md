@@ -50,7 +50,7 @@ Distributed under the terms of the [`GPL` license version 2 or later](LICENSE).
 
 List of foreseen features, according to available funding :
 
-- [Write mode](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/11) : allowing edition of tables (update and delete entities, create column, drop column… ) 
+- [Write mode](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/11) : allowing edition of tables (update and delete entities, create column, drop column… )
 - [Import layer from QGIS to DuckDB database](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/12)
 - [Enable the provider to connect to a remote CSV, JSON or parquet file](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/14)
 - [Homegeneization of widgets, better integration in QGIS](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/13) ( e.g. provider list, config window…)
