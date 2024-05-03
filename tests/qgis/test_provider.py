@@ -516,6 +516,22 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertTrue(features[0].isValid())
         self.assertTrue(features[0].hasGeometry())
 
+    def test_subset_string(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+        self.assertTrue(provider.supportsSubsetString())
+
+        # With valid filter
+        self.assertTrue(provider.setSubsetString("name='Marseille'"))
+        provider.setSubsetString("name='Marseille'")
+        req = QgsFeatureRequest()
+        features = list(provider.getFeatures(req))
+        self.assertTrue(len(features) == 1)
+
+        # With wrong filter
+        self.assertFalse(provider.setSubsetString("toto"))
+
 
 if __name__ == "__main__":
     unittest.main()
