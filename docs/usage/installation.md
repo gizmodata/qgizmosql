@@ -4,6 +4,17 @@
 
 The plugin's logic is mainly based on on the [DuckDB API's Pyton client](https://duckdb.org/docs/api/python/overview.html), which is not distributed with QGIS.
 
+### :warning: Version information
+
+Between QGIS versions `3.34.5` and `3.34.6`, the packaging for the Windows version of QGIS changed from Python `3.9` to Python `3.12`.
+
+To keep pace with this evolution, we had to upgrade the plugin package as well.
+
+As a result :
+
+- For QGIS versions `3.34.5` and below, the plugin is frozen in version `0.6.3`
+- To get the latest version, you need at least qgis `3.34.6`, this starts with version `0.7.0` of the plugin
+
 ### Linux
 
 > Typically on Ubuntu 22.04 with Python 3.10
