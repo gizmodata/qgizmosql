@@ -16,6 +16,12 @@ Unreleased
 
 -->
 
+## 0.7.0 - 2024-05-03
+
+- Plugin package with Python 3.12, now the minimum version of QGIS to use the plugin is 3.34.6 !106
+- Implement subsetstring : is now possible to create a filter on a DuckDB layer !103
+- Improve performance of the sql query by using rowid pseudocolumn instead of row_number !86
+
 ## 0.6.3 - 2024-05-02
 
 - Add support for NoGeometry Flag on QgsFeatureRequest !98
