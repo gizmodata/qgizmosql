@@ -94,15 +94,12 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 where_clause = f"{primary_key_name} in {tuple(feature_id_list)}"
 
         # Apply the subset string filter
-        if self._provider.subsetString() and where_clause:
-            where_clause = "{} and {}".format(
-                where_clause, self._provider.subsetString().replace('"', "")
-            )
-
-        if self._provider.subsetString() and not where_clause:
-            where_clause = " where {}".format(
-                self._provider.subsetString().replace('"', "")
-            )
+        if self._provider.subsetString():
+            subset_clause = self._provider.subsetString().replace('"', "")
+            if where_clause:
+                where_clause += f" and {subset_clause}"
+            else:
+                where_clause = f" where {subset_clause}"
 
         # Apply the geometry filter
         if not filter_rect.isNull():
