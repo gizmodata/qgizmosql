@@ -85,21 +85,20 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 else self._request.filterFids()
             )
 
-        where_clause = None
+        where_clause_list = []
         if feature_id_list:
             if self._provider.primary_key() == -1:
-                where_clause = f" where index in {tuple(feature_id_list)}"
+                feature_clause = f"index in {tuple(feature_id_list)}"
             else:
                 primary_key_name = list_field_names[self._provider.primary_key()]
-                where_clause = f"{primary_key_name} in {tuple(feature_id_list)}"
+                feature_clause = f"{primary_key_name} in {tuple(feature_id_list)}"
+
+            where_clause_list.append(feature_clause)
 
         # Apply the subset string filter
         if self._provider.subsetString():
             subset_clause = self._provider.subsetString().replace('"', "")
-            if where_clause:
-                where_clause += f" and {subset_clause}"
-            else:
-                where_clause = f" where {subset_clause}"
+            where_clause_list.append(subset_clause)
 
         # Apply the geometry filter
         if not filter_rect.isNull():
@@ -107,10 +106,15 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 f"st_intersects({geom_column}, "
                 f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
             )
-            if where_clause:
-                where_clause += f" and {filter_geom_clause}"
-            else:
-                where_clause = f" where {filter_geom_clause}"
+            where_clause_list.append(filter_geom_clause)
+
+        # build the complete where clause
+        where_clause = ""
+        if where_clause_list:
+            where_clause = f" where {where_clause_list[0]}"
+            if len(where_clause_list) > 1:
+                for clause in where_clause_list[1:]:
+                    where_clause += f" and {clause}"
 
         if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
             base_query = (
