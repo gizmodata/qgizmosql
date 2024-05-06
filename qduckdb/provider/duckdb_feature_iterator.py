@@ -120,7 +120,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
             geom_query = ""
 
-        self.final_query = (
+        final_query = (
             "select * from ("
             f"select {fields_name_for_query} "
             f"{geom_query} "
@@ -132,12 +132,12 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
         if self._settings.debug_mode:
             self.log(
-                message="feature iterator execute query: {}".format(self.final_query),
+                message="feature iterator execute query: {}".format(final_query),
                 log_level=4,  # 4 = info
                 push=False,
             )
 
-        self._result = self._provider.con().execute(self.final_query)
+        self._result = self._provider.con().execute(final_query)
         self._index = 0
 
     def fetchFeature(self, f: QgsFeature) -> bool:
