@@ -76,12 +76,12 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         # Create fid/fids list
         feature_id_list = None
         if (
-            self._request.filterType() == self._request.FilterFid
-            or self._request.filterType() == self._request.FilterFids
+            self._request.filterType() == QgsFeatureRequest.FilterFid
+            or self._request.filterType() == QgsFeatureRequest.FilterFids
         ):
             feature_id_list = (
                 [self._request.filterFid()]
-                if self._request.filterType() == self._request.FilterFid
+                if self._request.filterType() == QgsFeatureRequest.FilterFid
                 else self._request.filterFids()
             )
 
