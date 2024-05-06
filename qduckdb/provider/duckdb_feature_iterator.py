@@ -130,15 +130,15 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             "order by index"
         )
 
-        self._result = self._provider.con().execute(self.final_query)
-        self._index = 0
-
         if self._settings.debug_mode:
             self.log(
                 message="feature iterator execute query: {}".format(self.final_query),
                 log_level=4,  # 4 = info
                 push=False,
             )
+
+        self._result = self._provider.con().execute(self.final_query)
+        self._index = 0
 
     def fetchFeature(self, f: QgsFeature) -> bool:
         """fetch next feature, return true on success
