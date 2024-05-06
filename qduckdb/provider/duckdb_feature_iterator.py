@@ -111,29 +111,24 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         # build the complete where clause
         where_clause = ""
         if where_clause_list:
-            where_clause = f" where {where_clause_list[0]}"
+            where_clause = f"where {where_clause_list[0]}"
             if len(where_clause_list) > 1:
                 for clause in where_clause_list[1:]:
                     where_clause += f" and {clause}"
 
+        geom_query = f"st_aswkb({geom_column}), {geom_column}, "
         if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
-            base_query = (
-                "select * from ("
-                f"select {fields_name_for_query} "
-                f"rowid + 1 as index "
-                f"from {self._provider._from_clause})"
-            )
-        else:
-            base_query = (
-                "select * from ("
-                f"select {fields_name_for_query} "
-                f"st_aswkb({geom_column}), "
-                f"{geom_column}, "
-                "rowid + 1 as index "
-                f"from {self._provider._from_clause})"
-            )
+            geom_query = ""
 
-        self.final_query = base_query + f"{where_clause} order by index"
+        self.final_query = (
+            "select * from ("
+            f"select {fields_name_for_query} "
+            f"{geom_query} "
+            f"rowid + 1 as index "
+            f"from {self._provider._from_clause}) "
+            f"{where_clause} "
+            "order by index"
+        )
 
         self._result = self._provider.con().execute(self.final_query)
         self._index = 0
