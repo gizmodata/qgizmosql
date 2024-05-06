@@ -383,7 +383,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         self, subsetstring: str, updateFeatureCount: bool = True
     ) -> bool:
         if subsetstring:
-            # Check if the fillter is valid
+            # Check if the filter is valid
             try:
                 self._con.sql(
                     f"select count(*) from {self._from_clause} WHERE {subsetstring} LIMIT 0"
