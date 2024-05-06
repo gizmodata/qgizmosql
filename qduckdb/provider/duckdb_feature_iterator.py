@@ -26,7 +26,6 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         request: QgsFeatureRequest,
     ):
         """Constructor"""
-        # FIXME: Handle QgsFeatureRequest.FilterExpression
         super().__init__(request)
         self._provider: duckdb_provider.DuckdbProvider = source.get_provider()
         self._settings = PlgOptionsManager.get_plg_settings()
@@ -94,6 +93,35 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 feature_clause = f"{primary_key_name} in {tuple(feature_id_list)}"
 
             where_clause_list.append(feature_clause)
+
+        # Apply the filter expression
+        if self._request.filterType() == QgsFeatureRequest.FilterExpression:
+            # A provider is supposed to implement a QgsSqlExpressionCompiler
+            # in order to handle expression. However, this class is not
+            # available in the Python bindings.
+            # Try to use the expression as is. It should work in most
+            # cases for simple expression.
+            expression = self._request.filterExpression().expression()
+            if expression:
+                try:
+                    self._provider.con().sql(
+                        f"SELECT count(*)"
+                        f" FROM {self._provider._from_clause}"
+                        f" WHERE {expression}"
+                        " LIMIT 0"
+                    )
+                    self._expression = expression
+                    where_clause_list.append(expression)
+                except Exception:
+                    PlgLogger.log(
+                        f"Duckdb provider does not handle expression: {expression}",
+                        log_level=2,
+                        duration=5,
+                        push=False,
+                    )
+                    self._expression = ""
+            else:
+                self._expression = ""
 
         # Apply the subset string filter
         if self._provider.subsetString():
@@ -178,6 +206,12 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
         self._index += 1
         return True
+
+    def nextFeatureFilterExpression(self, f: QgsFeature) -> bool:
+        if not self._expression:
+            return super().nextFeatureFilterExpression(f)
+        else:
+            return self.fetchFeature(f)
 
     def __iter__(self) -> DuckdbFeatureIterator:
         """Returns self as an iterator object"""

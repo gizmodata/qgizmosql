@@ -462,6 +462,23 @@ class TestQDuckDBProvider(unittest.TestCase):
         request.setFilterRect(QgsRectangle(20, 92, 21, 93))
         self.assertEqual(len(list(provider.getFeatures(request))), 0)
 
+    def test_filter_expression(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+
+        request = QgsFeatureRequest()
+        values = [feat["name"] for feat in provider.getFeatures(request)]
+        self.assertEqual(values, ["Marseille", "Barcelona", "Turin"])
+
+        request.setFilterExpression("name ILIKE 'Barcelona'")
+        values = [feat["name"] for feat in provider.getFeatures(request)]
+        self.assertEqual(values, ["Barcelona"])
+
+        request.setFilterExpression("name not ILIKE 'Barcelona'")
+        values = [feat["name"] for feat in provider.getFeatures(request)]
+        self.assertEqual(values, ["Marseille", "Turin"])
+
     def test_filter_fid_and_fids(self) -> None:
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
