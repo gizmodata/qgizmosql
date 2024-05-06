@@ -86,37 +86,14 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             )
 
         where_clause = None
-
-        if feature_id_list and not filter_rect.isNull():
-            if self._provider.primary_key() == -1:
-                where_clause = (
-                    f" where st_intersects({geom_column}, "
-                    f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
-                    f"and index in {tuple(feature_id_list)}"
-                )
-
-            else:
-                primary_key_name = list_field_names[self._provider.primary_key()]
-                where_clause = (
-                    f" where st_intersects({geom_column}, "
-                    f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
-                    f"and {primary_key_name} in {tuple(feature_id_list)}"
-                )
-
-        if feature_id_list and filter_rect.isNull():
+        if feature_id_list:
             if self._provider.primary_key() == -1:
                 where_clause = f" where index in {tuple(feature_id_list)}"
-
             else:
                 primary_key_name = list_field_names[self._provider.primary_key()]
-                where_clause = f" where {primary_key_name} in {tuple(feature_id_list)}"
+                where_clause = f"{primary_key_name} in {tuple(feature_id_list)}"
 
-        if not filter_rect.isNull() and not feature_id_list:
-            where_clause = (
-                f" where st_intersects({geom_column}, "
-                f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
-            )
-
+        # Apply the subset string filter
         if self._provider.subsetString() and where_clause:
             where_clause = "{} and {}".format(
                 where_clause, self._provider.subsetString().replace('"', "")
@@ -127,6 +104,17 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 self._provider.subsetString().replace('"', "")
             )
 
+        # Apply the geometry filter
+        if not filter_rect.isNull():
+            filter_geom_clause = (
+                f"st_intersects({geom_column}, "
+                f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
+            )
+            if where_clause:
+                where_clause += f" and {filter_geom_clause}"
+            else:
+                where_clause = f" where {filter_geom_clause}"
+
         if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
             base_query = (
                 "select * from ("
@@ -134,7 +122,6 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 f"rowid + 1 as index "
                 f"from {self._provider._from_clause})"
             )
-
         else:
             base_query = (
                 "select * from ("
