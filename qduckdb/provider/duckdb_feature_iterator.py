@@ -90,7 +90,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         if feature_id_list and not filter_rect.isNull():
             if self._provider.primary_key() == -1:
                 where_clause = (
-                    f"where st_intersects({geom_column}, "
+                    f" where st_intersects({geom_column}, "
                     f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
                     f"and index in {tuple(feature_id_list)}"
                 )
@@ -98,22 +98,22 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             else:
                 primary_key_name = list_field_names[self._provider.primary_key()]
                 where_clause = (
-                    f"where st_intersects({geom_column}, "
+                    f" where st_intersects({geom_column}, "
                     f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
                     f"and {primary_key_name} in {tuple(feature_id_list)}"
                 )
 
         if feature_id_list and filter_rect.isNull():
             if self._provider.primary_key() == -1:
-                where_clause = f"where index in {tuple(feature_id_list)}"
+                where_clause = f" where index in {tuple(feature_id_list)}"
 
             else:
                 primary_key_name = list_field_names[self._provider.primary_key()]
-                where_clause = f"where {primary_key_name} in {tuple(feature_id_list)}"
+                where_clause = f" where {primary_key_name} in {tuple(feature_id_list)}"
 
         if not filter_rect.isNull() and not feature_id_list:
             where_clause = (
-                f"where st_intersects({geom_column}, "
+                f" where st_intersects({geom_column}, "
                 f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
             )
 
@@ -123,7 +123,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             )
 
         if self._provider.subsetString() and not where_clause:
-            where_clause = "where {}".format(
+            where_clause = " where {}".format(
                 self._provider.subsetString().replace('"', "")
             )
 
