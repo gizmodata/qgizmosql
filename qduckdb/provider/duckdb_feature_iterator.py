@@ -85,77 +85,60 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 else self._request.filterFids()
             )
 
-        where_clause = None
-
-        if feature_id_list and not filter_rect.isNull():
+        where_clause_list = []
+        if feature_id_list:
             if self._provider.primary_key() == -1:
-                where_clause = (
-                    f"where st_intersects({geom_column}, "
-                    f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
-                    f"and index in {tuple(feature_id_list)}"
-                )
-
+                feature_clause = f"index in {tuple(feature_id_list)}"
             else:
                 primary_key_name = list_field_names[self._provider.primary_key()]
-                where_clause = (
-                    f"where st_intersects({geom_column}, "
-                    f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
-                    f"and {primary_key_name} in {tuple(feature_id_list)}"
-                )
+                feature_clause = f"{primary_key_name} in {tuple(feature_id_list)}"
 
-        if feature_id_list and filter_rect.isNull():
-            if self._provider.primary_key() == -1:
-                where_clause = f"where index in {tuple(feature_id_list)}"
+            where_clause_list.append(feature_clause)
 
-            else:
-                primary_key_name = list_field_names[self._provider.primary_key()]
-                where_clause = f"where {primary_key_name} in {tuple(feature_id_list)}"
+        # Apply the subset string filter
+        if self._provider.subsetString():
+            subset_clause = self._provider.subsetString().replace('"', "")
+            where_clause_list.append(subset_clause)
 
-        if not filter_rect.isNull() and not feature_id_list:
-            where_clause = (
-                f"where st_intersects({geom_column}, "
+        # Apply the geometry filter
+        if not filter_rect.isNull():
+            filter_geom_clause = (
+                f"st_intersects({geom_column}, "
                 f"st_geomfromtext('{filter_rect.asWktPolygon()}'))"
             )
+            where_clause_list.append(filter_geom_clause)
 
-        if self._provider.subsetString() and where_clause:
-            where_clause = "{} and {}".format(
-                where_clause, self._provider.subsetString().replace('"', "")
-            )
+        # build the complete where clause
+        where_clause = ""
+        if where_clause_list:
+            where_clause = f"where {where_clause_list[0]}"
+            if len(where_clause_list) > 1:
+                for clause in where_clause_list[1:]:
+                    where_clause += f" and {clause}"
 
-        if self._provider.subsetString() and not where_clause:
-            where_clause = "where {}".format(
-                self._provider.subsetString().replace('"', "")
-            )
-
+        geom_query = f"st_aswkb({geom_column}), {geom_column}, "
         if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
-            base_query = (
-                "select * from ("
-                f"select {fields_name_for_query} "
-                f"rowid + 1 as index "
-                f"from {self._provider._from_clause})"
-            )
+            geom_query = ""
 
-        else:
-            base_query = (
-                "select * from ("
-                f"select {fields_name_for_query} "
-                f"st_aswkb({geom_column}), "
-                f"{geom_column}, "
-                "rowid + 1 as index "
-                f"from {self._provider._from_clause})"
-            )
-
-        self.final_query = base_query + f"{where_clause} order by index"
-
-        self._result = self._provider.con().execute(self.final_query)
-        self._index = 0
+        final_query = (
+            "select * from ("
+            f"select {fields_name_for_query} "
+            f"{geom_query} "
+            f"rowid + 1 as index "
+            f"from {self._provider._from_clause}) "
+            f"{where_clause} "
+            "order by index"
+        )
 
         if self._settings.debug_mode:
             self.log(
-                message="feature iterator execute query: {}".format(self.final_query),
+                message="feature iterator execute query: {}".format(final_query),
                 log_level=4,  # 4 = info
                 push=False,
             )
+
+        self._result = self._provider.con().execute(final_query)
+        self._index = 0
 
     def fetchFeature(self, f: QgsFeature) -> bool:
         """fetch next feature, return true on success
