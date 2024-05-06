@@ -462,12 +462,6 @@ class TestQDuckDBProvider(unittest.TestCase):
         request.setFilterRect(QgsRectangle(20, 92, 21, 93))
         self.assertEqual(len(list(provider.getFeatures(request))), 0)
 
-    def test_subset_string(self) -> None:
-        provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="table_with_primary_key";epsg="4326"'
-        )
-        self.assertFalse(provider.supportsSubsetString())
-
     def test_filter_fid_and_fids(self) -> None:
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
