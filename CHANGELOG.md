@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 0.7.1 - 2024-05-03
+
+- Use QgsFeatureRequest class syntax for enums !109
+
 ## 0.7.0 - 2024-05-03
 
 - Plugin package with Python 3.12, now the minimum version of QGIS to use the plugin is 3.34.6 !106
