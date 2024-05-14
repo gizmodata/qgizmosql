@@ -56,10 +56,10 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         geom_column = self._provider.get_geometry_column()
 
         # Create the list of fields that need to be retrieved
-        if (
+        self._request_sub_attributes = (
             self._request.flags() & QgsFeatureRequest.Flag.SubsetOfAttributes
-            and not self._provider.subsetString()
-        ):
+        )
+        if self._request_sub_attributes and not self._provider.subsetString():
             list_field_names = [
                 self._provider.fields()[idx].name()
                 for idx in self._request.subsetOfAttributes()
@@ -145,7 +145,10 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                     where_clause += f" and {clause}"
 
         geom_query = f"st_aswkb({geom_column}), {geom_column}, "
-        if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
+        self._request_no_geometry = (
+            self._request.flags() & QgsFeatureRequest.Flag.NoGeometry
+        )
+        if self._request_no_geometry:
             geom_query = ""
 
         final_query = (
@@ -183,9 +186,9 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             return False
 
         f.setFields(self._provider.fields())
-        f.setValid(self._provider.isValid())
+        f.setValid(True)
 
-        if not self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
+        if not self._request_no_geometry:
             geometry = QgsGeometry()
             geometry.fromWkb(next_result[self.index_geom_column])
             f.setGeometry(geometry)
@@ -198,7 +201,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             f.setId(next_result[self._provider.primary_key()])
 
         # set attributes
-        if self._request.flags() & QgsFeatureRequest.Flag.SubsetOfAttributes:
+        if self._request_sub_attributes:
             for idx, attr_idx in enumerate(self._request.subsetOfAttributes()):
                 f.setAttribute(attr_idx, next_result[idx])
         else:
