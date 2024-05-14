@@ -145,7 +145,10 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                     where_clause += f" and {clause}"
 
         geom_query = f"st_aswkb({geom_column}), {geom_column}, "
-        if self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
+        self._request_no_geometry = (
+            self._request.flags() & QgsFeatureRequest.Flag.NoGeometry
+        )
+        if self._request_no_geometry:
             geom_query = ""
 
         final_query = (
@@ -185,7 +188,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setFields(self._provider.fields())
         f.setValid(True)
 
-        if not self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
+        if not self._request_no_geometry:
             geometry = QgsGeometry()
             geometry.fromWkb(next_result[self.index_geom_column])
             f.setGeometry(geometry)
