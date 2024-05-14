@@ -183,7 +183,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             return False
 
         f.setFields(self._provider.fields())
-        f.setValid(self._provider.isValid())
+        f.setValid(True)
 
         if not self._request.flags() & QgsFeatureRequest.Flag.NoGeometry:
             geometry = QgsGeometry()
