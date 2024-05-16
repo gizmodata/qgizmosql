@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 0.7.2 - 2024-05-16
+
+- Some micro optimizations on duckdb_feature_iterator !111
+
 ## 0.7.1 - 2024-05-03
 
 - Use QgsFeatureRequest class syntax for enums !109
