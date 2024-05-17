@@ -3,15 +3,18 @@ from pathlib import Path
 
 # PyQGIS
 from qgis.core import (
+    QgsApplication,
     QgsCoordinateReferenceSystem,
     QgsProject,
     QgsProviderRegistry,
     QgsVectorLayer,
 )
 from qgis.PyQt import uic
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QDialog
 
 # plugin
+from qduckdb.__about__ import DIR_PLUGIN_ROOT
 from qduckdb.provider.duckdb_wrapper import DuckDbTools
 from qduckdb.toolbelt.log_handler import PlgLogger
 
@@ -30,6 +33,12 @@ class LoadDuckDBLayerDialog(QDialog):
         # attributes
         self.ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
 
+        # icon
+        self.setWindowIcon(
+            QIcon(str(DIR_PLUGIN_ROOT.joinpath("resources/images/logo_duckdb.png")))
+        )
+        self._add_layer_btn.setIcon(QgsApplication.getThemeIcon("mActionAddLayer.svg"))
+
         # widgets and signals connection
         self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
         self._db_path_input.fileChanged.connect(self.change_mode)
@@ -45,24 +54,24 @@ class LoadDuckDBLayerDialog(QDialog):
         self._table.clicked.connect(self._add_list_table_name_to_combobox)
         self._table.clicked.connect(self._unlock_add_layer)
 
-        self.label_sql.setVisible(False)
-        self._sql_query.setVisible(False)
+        self.label_sql.setEnabled(False)
+        self._sql_query.setEnabled(False)
 
     def change_mode(self):
         """Interface behavior when radio buttons are used to switch between full table
         mode and custom sql query mode"""
 
         if self._table.isChecked():
-            self.label_table.setVisible(True)
-            self._table_combobox.setVisible(True)
-            self.label_sql.setVisible(False)
-            self._sql_query.setVisible(False)
+            self._table_combobox.setEnabled(True)
+            self._sql_query.setEnabled(False)
+            self.label_sql.setEnabled(False)
+            self.label_table.setEnabled(True)
 
         if self._sql.isChecked():
-            self.label_table.setVisible(False)
-            self._table_combobox.setVisible(False)
-            self.label_sql.setVisible(True)
-            self._sql_query.setVisible(True)
+            self._table_combobox.setEnabled(False)
+            self._sql_query.setEnabled(True)
+            self.label_sql.setEnabled(True)
+            self.label_table.setEnabled(False)
 
             if str(self.db_path()) == ".":
                 self._sql_query.setEnabled(False)
