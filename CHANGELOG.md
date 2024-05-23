@@ -16,6 +16,11 @@ Unreleased
 
 -->
 
+## 0.7.3 - 2024-05-24
+
+- Update DuckDB version to 0.10.3 !114
+- Some micro optimizations on UI !113
+
 ## 0.7.2 - 2024-05-16
 
 - Some micro optimizations on duckdb_feature_iterator !111
