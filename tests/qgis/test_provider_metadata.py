@@ -34,7 +34,7 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
 
         cls.table = "mytable"
         cls.epsg = 4326
-        cls.sql = "SELECT * from mytable LIMIT 10"
+        cls.sql = 'SELECT id, \\"My Field\\", geom from mytable LIMIT 10'
 
         cls.expected_sql_uri = (
             f'path="{cls.full_path}";sql="{cls.sql}";epsg="{cls.epsg}"'

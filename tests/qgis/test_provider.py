@@ -577,6 +577,21 @@ class TestQDuckDBProvider(unittest.TestCase):
         # With wrong filter
         self.assertFalse(provider.setSubsetString("toto"))
 
+    def test_fields_with_space(self) -> None:
+        # Entire table
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";epsg="4326";table="table_with_column_space"'
+        )
+        self.assertIsInstance(provider.fields(), QgsFields)
+        self.assertEqual(provider.fields().field(1).name(), "The Name")
+
+        # SQL Query
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";epsg="4326";sql="select id, "The Name", geom from table_with_column_space"'
+        )
+        self.assertIsInstance(provider.fields(), QgsFields)
+        self.assertEqual(provider.fields().field(1).name(), "The Name")
+
 
 if __name__ == "__main__":
     unittest.main()

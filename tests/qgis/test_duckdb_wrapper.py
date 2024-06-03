@@ -192,6 +192,19 @@ class TestDdbWrapper(unittest.TestCase):
         self.assertEqual(parsed_sql_uri[2], "4326")
         self.assertEqual(parsed_sql_uri[3], "select * from truc where machin")
 
+        # uri with sql query with space in column name
+        test_sql_uri = (
+            f'path="{self.fixture_db_path}";epsg="4326";'
+            f'sql="select "The Column" from truc where machin"'
+        )
+        parsed_sql_uri = ddb_wrapper.parse_uri(test_sql_uri)
+        self.assertEqual(parsed_sql_uri[0], str(self.fixture_db_path))
+        self.assertEqual(parsed_sql_uri[1], None)
+        self.assertEqual(parsed_sql_uri[2], "4326")
+        self.assertEqual(
+            parsed_sql_uri[3], 'select \\"The Column\\" from truc where machin'
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
