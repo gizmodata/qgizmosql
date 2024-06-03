@@ -80,6 +80,11 @@ class DuckdbProvider(QgsVectorDataProvider):
             PlgLogger.log(message=exc)
             return
 
+        # Escapes are necessary at the encodeUri stage, but once this has been done,
+        # they must be suppressed, otherwise they will be misinterpreted when sql is run.
+        if self._sql:
+            self._sql = self._sql.replace('\\"', '"')
+
         if self._epsg:
             self._crs = QgsCoordinateReferenceSystem.fromEpsgId(int(self._epsg))
         else:
