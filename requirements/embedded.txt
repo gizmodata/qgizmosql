@@ -6,4 +6,4 @@
 # python -m pip install --no-deps -U -r requirements/embedded.txt -t qduckdb/embedded_external_libs
 # -----------------------
 
-duckdb==0.10.3
+duckdb==1.0.0
