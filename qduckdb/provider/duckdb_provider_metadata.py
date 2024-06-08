@@ -21,7 +21,7 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
         :param str uri: uri to convert
         :returns: dict of components as strings
         """
-        matches = re.findall(r'(\w+)="(.*?)"', uri)
+        matches = re.findall(r'(\w+)="((?:\\"|[^"])*)"', uri)
         params = {key: value for key, value in matches}
         return params
 

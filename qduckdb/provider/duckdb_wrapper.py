@@ -593,6 +593,9 @@ class DuckDbTools:
         duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
             "duckdb"
         )
+        escape_dict = {' "': ' \\"', ',"': ',\\"', '" ': '\\" ', '",': '\\",'}
+        for old, new in escape_dict.items():
+            uri = uri.replace(old, new)
         parsed_uri = duckdbProviderMetadata.decodeUri(uri)
         path = parsed_uri.get("path", None)
         table = parsed_uri.get("table", None)

@@ -67,7 +67,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         else:
             list_field_names = [field.name() for field in self._provider.fields()]
 
-        fields_name_for_query = ", ".join(list_field_names)
+        if len(list_field_names) > 0:
+            fields_name_for_query = '"' + '", "'.join(list_field_names) + '"'
+        else:
+            fields_name_for_query = ""
+
         if fields_name_for_query:
             fields_name_for_query += ","
         self.index_geom_column = len(list_field_names)
