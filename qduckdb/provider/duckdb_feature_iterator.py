@@ -155,14 +155,20 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         if self._request_no_geometry:
             geom_query = ""
 
+        if self._provider.primary_key() == -1:
+            index = "rowid+1 as index "
+            order_by = "index"
+        else:
+            index = self._provider._fields[self._provider.primary_key()].name()
+            order_by = index
+
         final_query = (
             "select * from ("
             f"select {fields_name_for_query} "
-            f"{geom_query} "
-            f"rowid + 1 as index "
+            f"{geom_query} {index} "
             f"from {self._provider._from_clause}) "
             f"{where_clause} "
-            "order by index"
+            f"order by {order_by}"
         )
 
         if self._settings.debug_mode:
@@ -198,11 +204,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             f.setGeometry(geometry)
             self.geometryToDestinationCrs(f, self._transform)
 
-        if self._provider.primary_key() == -1:
-            # the table does not have a primary key, use rowid as fallback
-            f.setId(next_result[-1])
-        else:
-            f.setId(next_result[self._provider.primary_key()])
+        f.setId(next_result[-1])
 
         # set attributes
         if self._request_sub_attributes:
