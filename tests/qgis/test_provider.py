@@ -410,10 +410,10 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(provider.primary_key(), 0)
         features = list(provider.getFeatures())
         self.assertEqual(len(features), 4)
-        self.assertEqual(features[0].id(), 1)
-        self.assertEqual(features[1].id(), 2)
-        self.assertEqual(features[2].id(), 3)
-        self.assertEqual(features[3].id(), 4)
+        self.assertEqual(features[0].id(), 1001)
+        self.assertEqual(features[1].id(), 1002)
+        self.assertEqual(features[2].id(), 1003)
+        self.assertEqual(features[3].id(), 1004)
 
     def test_output_crs(self) -> None:
         provider = DuckdbProvider(
