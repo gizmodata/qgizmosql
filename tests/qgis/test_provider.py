@@ -592,6 +592,24 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertIsInstance(provider.fields(), QgsFields)
         self.assertEqual(provider.fields().field(1).name(), "The Name")
 
+    def test_float_type(self):
+        """
+        Check that FLOAT columns are converted by the provider.
+        """
+        vector_layer = QgsVectorLayer(
+            f'path="{self.db_path_test}";table="table_with_float";epsg="4326"',
+            "test",
+            "duckdb",
+        )
+
+        # check fields
+        fields = vector_layer.fields()
+        self.assertEqual(fields.field(1).name(), "test_float")
+        self.assertEqual(fields.field(1).type(), QVariant.Double)
+        request = QgsFeatureRequest()
+        attributes = next(vector_layer.getFeatures(request)).attributes()
+        self.assertEqual(round(attributes[1], 3), 2458.254)
+
 
 if __name__ == "__main__":
     unittest.main()
