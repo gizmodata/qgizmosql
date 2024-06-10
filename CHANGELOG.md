@@ -16,6 +16,11 @@ Unreleased
 
 -->
 
+## 0.8.0 - 2024-06-10
+
+- Update DuckDB version to 1.0.0 !117
+- Handle columns name with space in provider !116
+
 ## 0.7.3 - 2024-05-24
 
 - Update DuckDB version to 0.10.3 !114
