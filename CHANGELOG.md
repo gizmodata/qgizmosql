@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 0.8.1 - 2024-06-12
+
+- Fix bug with tables containing a primary key !118
+
 ## 0.8.0 - 2024-06-10
 
 - Update DuckDB version to 1.0.0 !117
