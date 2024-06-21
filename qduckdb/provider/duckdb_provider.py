@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import weakref
 
 from qgis.core import (
@@ -98,7 +99,9 @@ class DuckdbProvider(QgsVectorDataProvider):
             # the table does not have a primary key.
             columns = self._con.sql(self._sql).columns
             if "rowid" not in columns:
-                self._sql = self._sql.replace("select ", "select rowid, ", 1)
+                self._sql = re.sub(
+                    "select", "select rowid, ", self._sql, flags=re.IGNORECASE
+                )
 
             self._from_clause = f"({self._sql})"
         else:
