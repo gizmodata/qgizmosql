@@ -610,6 +610,19 @@ class TestQDuckDBProvider(unittest.TestCase):
         attributes = next(vector_layer.getFeatures(request)).attributes()
         self.assertEqual(round(attributes[1], 3), 2458.254)
 
+    def test_case_on_select(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        )
+
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="Select * from cities limit 1";epsg="4326"'
+        )
+
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="SELECT * from cities limit 1";epsg="4326"'
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
