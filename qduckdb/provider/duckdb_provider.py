@@ -137,6 +137,12 @@ class DuckdbProvider(QgsVectorDataProvider):
         )
 
     def test_sql_query(self) -> bool:
+        """This method tests that the SQL query is correct and does not use DISTINCT or JOIN.
+
+        :return: True if all is ok, false if SQL is not valid or there is at least one
+                join or distinct in the query
+        :rtype: bool
+        """
         if self._sql:
             try:
                 self._con.sql(self._sql)
@@ -156,6 +162,21 @@ class DuckdbProvider(QgsVectorDataProvider):
                     push=True,
                 )
                 return False
+
+            pattern = re.compile(r"\b(DISTINCT|JOIN)\b", re.IGNORECASE)
+            if bool(pattern.search(self._sql)):
+                PlgLogger.log(
+                    self.tr(
+                        "The custom SQL function in the DuckDB provider for QGIS does "
+                        "not support DISTINCT or JOIN and is meant only for "
+                        "basic queries to filter desired entries."
+                    ),
+                    log_level=1,
+                    duration=15,
+                    push=True,
+                )
+                return False
+
         return True
 
     def featureCount(self) -> int:
