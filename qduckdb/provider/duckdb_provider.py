@@ -94,6 +94,9 @@ class DuckdbProvider(QgsVectorDataProvider):
         self.connect_database()
 
         if self._sql and not self._table:
+            if not self.test_sql_query():
+                return
+
             # If the rowid pseudocolumn is not in the sql add it to
             # the clause. It will be used to build the feature ids if
             # the table does not have a primary key.
@@ -132,6 +135,28 @@ class DuckdbProvider(QgsVectorDataProvider):
         return (
             QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId
         )
+
+    def test_sql_query(self) -> bool:
+        if self._sql:
+            try:
+                self._con.sql(self._sql)
+            except duckdb.CatalogException as e:
+                PlgLogger.log(
+                    self.tr("The sql query is invalid: {}".format(e)),
+                    log_level=2,
+                    duration=15,
+                    push=True,
+                )
+                return False
+            except duckdb.ParserException as e:
+                PlgLogger.log(
+                    self.tr("The sql query is invalid: {}".format(e)),
+                    log_level=2,
+                    duration=15,
+                    push=True,
+                )
+                return False
+        return True
 
     def featureCount(self) -> int:
         """returns the number of entities in the table"""
