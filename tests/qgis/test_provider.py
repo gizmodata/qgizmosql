@@ -623,6 +623,22 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}";sql="SELECT * from cities limit 1";epsg="4326"'
         )
 
+    def test_view(self) -> None:
+        # Marseille is a view (CREATE VIEW marseille SELECT 'toto' as toto, FROM cities where name = 'Marseille' ;)
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";epsg="4326";table="marseille"'
+        )
+        self.assertTrue(provider.is_view())
+        self.assertTrue(provider.isValid())
+        # In this way, we check that the provider returns the correct view entity
+        self.assertEqual(provider.featureCount(), 1)
+
+        # cities is a table
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";epsg="4326";table="cities"'
+        )
+        self.assertFalse(provider.is_view())
+
 
 if __name__ == "__main__":
     unittest.main()
