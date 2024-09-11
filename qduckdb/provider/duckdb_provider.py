@@ -350,6 +350,23 @@ class DuckdbProvider(QgsVectorDataProvider):
         else:
             return self._table
 
+    def is_view(self) -> bool:
+        """
+        Checks if the given table name corresponds to a view in the database.
+
+        :return: True if the object is a view, False otherwise.
+        :rtype: bool
+        """
+        if self._sql:
+            return False
+
+        query = (
+            "SELECT table_name FROM information_schema.tables WHERE table_type = 'VIEW'"
+        )
+        view_list = [elem[0] for elem in self._con.sql(query).fetchall()]
+
+        return self._table in view_list
+
     def uniqueValues(self, fieldIndex: int, limit: int = -1) -> set:
         """Returns the unique values of a field
 
