@@ -1,5 +1,7 @@
+import tempfile
 from pathlib import Path
 
+import duckdb
 from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
@@ -14,6 +16,7 @@ from qgis.core import (
     QgsWkbTypes,
 )
 from qgis.PyQt.Qt import QVariant
+from qgis.PyQt.QtCore import QDate, QDateTime, QTime
 from qgis.testing import unittest
 
 from qduckdb.provider.duckdb_provider import DuckdbProvider
@@ -660,6 +663,34 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}";epsg="4326";table="cities"'
         )
         self.assertFalse(provider.is_view())
+
+    def test_date_time_field_type(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_db = Path(tmp_dir) / "base.db"
+            con = duckdb.connect(str(tmp_db))
+            con.sql(
+                "INSTALL SPATIAL ; LOAD SPATIAL ; create table test as SELECT TIMESTAMP "
+                "'1992-09-20 11:30:00.123456789' as datetime, DATE '1992-09-20' as date, "
+                "TIME '1992-09-20 11:30:00.1234' as time,  "
+                "st_geomfromtext('POINT (1 1)') ; "
+            )
+            con.close()
+            layer = DuckdbProvider(uri=f'path="{str(tmp_db)}";table="test";epsg="4326"')
+            self.assertTrue(layer.isValid())
+
+            self.assertIsInstance(layer.fields(), QgsFields)
+            fields = layer.fields()
+            self.assertEqual(fields[0].type(), QVariant.DateTime)
+            self.assertEqual(fields[1].type(), QVariant.Date)
+            self.assertEqual(fields[2].type(), QVariant.Time)
+
+            list_feature = [
+                attr for sublist in layer.getFeatures() for attr in sublist.attributes()
+            ]
+
+            self.assertEqual(list_feature[0], QDateTime(1992, 9, 20, 11, 30, 0, 123))
+            self.assertEqual(list_feature[1], QDate(1992, 9, 20))
+            self.assertEqual(list_feature[2], QTime(11, 30, 0, 123))
 
 
 if __name__ == "__main__":
