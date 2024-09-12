@@ -108,8 +108,6 @@ class DuckdbProvider(QgsVectorDataProvider):
             self._from_clause = self._table
 
         self.get_geometry_column()
-        if not self._column_geom:
-            return
 
         self._provider_options = providerOptions
         self._flags = flags
@@ -177,6 +175,8 @@ class DuckdbProvider(QgsVectorDataProvider):
         """Detects the geometry type of the table, converts and return it to
         QgsWkbTypes.
         """
+        if not self._column_geom:
+            return QgsWkbTypes.NoGeometry
         if not self._wkb_type:
             if not self._is_valid:
                 self._wkb_type = QgsWkbTypes.Unknown
@@ -257,14 +257,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                         break
 
             if not self._column_geom:
-                PlgLogger.log(
-                    message=self.tr(
-                        "The table does not contain any geometry columns, so the table cannot be displayed."
-                    ),
-                    log_level=2,
-                    push=True,
-                    duration=10,
-                )
+                return None
 
         return self._column_geom
 
