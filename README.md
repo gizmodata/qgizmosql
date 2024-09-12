@@ -37,7 +37,6 @@ As a result :
 - Read-only : with this provider it's only possible  for now to **read** a geographic layer from a DuckDB database
 - It is not possible to edit or create features in the layer yet
 - Duckdb allows you to connect to database files as well as CSV, JSON and Parquet files. For the moment, the provider only allows you to connect to a file database.
-- This is an early release : bugs and various issues are expected to arise
 
 ## Documentation
 
