@@ -15,6 +15,7 @@ from qgis.core import (
     QgsVectorDataProvider,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QMetaType
 
 from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
 from qduckdb.provider.mappings import (
@@ -477,3 +478,18 @@ class DuckdbProvider(QgsVectorDataProvider):
 
     def supportsSubsetString(self) -> bool:
         return True
+
+    def get_field_index_by_type(self, field_type: QMetaType) -> list:
+        """This method identifies the field index for the type passed as an argument.
+
+        :return: List of column indexes for type requested
+        :rtype: list
+        """
+        fields_index = []
+
+        for i in range(self._fields.count()):
+            field = self._fields[i]
+            if field.type() == field_type:
+                fields_index.append(i)
+
+        return fields_index
