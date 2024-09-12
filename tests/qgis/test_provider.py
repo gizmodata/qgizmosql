@@ -61,7 +61,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
         )
-        self.assertFalse(provider.isValid())
+        self.assertTrue(provider.isValid())
 
     def test_wrong_uri(self) -> None:
         provider = DuckdbProvider(uri='path="wrong/path/zidane.db"')
@@ -108,13 +108,13 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="zidane";epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
 
         # Table without geom
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
 
     def test_extent(self) -> None:
         # Test linestring layer
@@ -190,7 +190,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(
             provider.extent().asWktPolygon(), QgsRectangle().asWktPolygon()
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Unknown)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
 
     def test_featureCount(self) -> None:
         provider = DuckdbProvider(
