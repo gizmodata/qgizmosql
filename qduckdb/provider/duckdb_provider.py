@@ -206,12 +206,14 @@ class DuckdbProvider(QgsVectorDataProvider):
     def extent(self) -> QgsRectangle:
         """Calculates the extent of the bend and returns a QgsRectangle"""
         # TODO : Replace by ST_Extent when the function is implemented
+
         if not self._extent:
-            if not self._is_valid:
+            if not self._is_valid or not self._column_geom:
                 self._extent = QgsRectangle()
                 PlgLogger.log(
-                    message="Using empty extent because geometry is not valid",
+                    message="Table without geometry, can not compute an extent",
                     log_level=4,
+                    push=False,
                 )
             else:
                 extent_bounds = self._con.sql(
