@@ -538,6 +538,28 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
 
         self.assertTrue(provider._sql, "select * from cities limit 1")
+        self.assertTrue(provider.test_sql_query())
+
+        # Test custom sql with a table that doesn't exist.
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from drogba limit 1";epsg="4326"'
+        )
+        self.assertFalse(provider.test_sql_query())
+        self.assertFalse(provider.isValid())
+
+        # Test custom sql with DISTINCT on sql query
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select distinct * from cities";epsg="4326"'
+        )
+        self.assertFalse(provider.test_sql_query())
+        self.assertFalse(provider.isValid())
+
+        # Wrong sql syntax
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="selectt ;|+ fromm &-abc";epsg="4326"'
+        )
+        self.assertFalse(provider.test_sql_query())
+        self.assertFalse(provider.isValid())
 
     def test_no_geometry_flag(self) -> None:
         provider = DuckdbProvider(

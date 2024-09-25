@@ -94,6 +94,9 @@ class DuckdbProvider(QgsVectorDataProvider):
         self.connect_database()
 
         if self._sql and not self._table:
+            if not self.test_sql_query():
+                return
+
             # If the rowid pseudocolumn is not in the sql add it to
             # the clause. It will be used to build the feature ids if
             # the table does not have a primary key.
@@ -132,6 +135,49 @@ class DuckdbProvider(QgsVectorDataProvider):
         return (
             QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId
         )
+
+    def test_sql_query(self) -> bool:
+        """This method tests that the SQL query is correct and does not use DISTINCT or JOIN.
+
+        :return: True if all is ok, false if SQL is not valid or there is at least one
+                join or distinct in the query
+        :rtype: bool
+        """
+        if self._sql:
+            try:
+                self._con.sql(self._sql)
+            except duckdb.CatalogException as e:
+                PlgLogger.log(
+                    self.tr("The sql query is invalid: {}".format(e)),
+                    log_level=2,
+                    duration=15,
+                    push=True,
+                )
+                return False
+            except duckdb.ParserException as e:
+                PlgLogger.log(
+                    self.tr("The sql query is invalid: {}".format(e)),
+                    log_level=2,
+                    duration=15,
+                    push=True,
+                )
+                return False
+
+            pattern = re.compile(r"\b(DISTINCT|JOIN)\b", re.IGNORECASE)
+            if bool(pattern.search(self._sql)):
+                PlgLogger.log(
+                    self.tr(
+                        "The custom SQL function in the DuckDB provider for QGIS does "
+                        "not support DISTINCT or JOIN and is meant only for "
+                        "basic queries to filter desired entries."
+                    ),
+                    log_level=1,
+                    duration=15,
+                    push=True,
+                )
+                return False
+
+        return True
 
     def featureCount(self) -> int:
         """returns the number of entities in the table"""
