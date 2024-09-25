@@ -60,9 +60,17 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             self._request.flags() & QgsFeatureRequest.Flag.SubsetOfAttributes
         )
         if self._request_sub_attributes and not self._provider.subsetString():
+            idx_required = [idx for idx in self._request.subsetOfAttributes()]
+
+            # The primary key column must be added if it is not present in the field list.
+            if (
+                self._provider.primary_key() != -1
+                and self._provider.primary_key() not in idx_required
+            ):
+                idx_required.append(self._provider.primary_key())
+
             list_field_names = [
-                self._provider.fields()[idx].name()
-                for idx in self._request.subsetOfAttributes()
+                self._provider.fields()[idx].name() for idx in idx_required
             ]
         else:
             list_field_names = [field.name() for field in self._provider.fields()]
