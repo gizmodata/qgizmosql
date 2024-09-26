@@ -30,12 +30,12 @@ tracker=https://gitlab.com/Oslandia/qgis/qduckdb/-/issues
 
 # experimental flag
 deprecated=False
-experimental=True
+experimental=False
 qgisMinimumVersion=3.34.6
 qgisMaximumVersion=3.99
 
 # versioning
-version=0.8.1
+version=1.0.0
 changelog=
 
 [oslandia]

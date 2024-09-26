@@ -16,6 +16,16 @@ Unreleased
 
 -->
 
+## 1.0.0 - 2024-09-26
+
+- First stable version
+- Enhanced custom sql query function, crash cases are managed in exceptions !124
+- Fixed the bug that prevented loading a view !123
+- Upgrade to DuckDB version 1.1.1 !129
+- Correctly support DATE, TIME and DATETIME fields types !131
+- The provider now supports tables without geometries !127
+- Fix bug on tables containing a primary key !130
+
 ## 0.8.1 - 2024-06-12
 
 - Fix bug with tables containing a primary key !118
