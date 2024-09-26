@@ -15,6 +15,7 @@ mapping_duckdb_qgis_type = {
     "BIGINT": QVariant.Int,
     "BOOLEAN": QVariant.Bool,
     "DATE": QVariant.Date,
+    "TIME": QVariant.Time,
     "DOUBLE": QVariant.Double,
     "FLOAT": QVariant.Double,
     "INTEGER": QVariant.Int,

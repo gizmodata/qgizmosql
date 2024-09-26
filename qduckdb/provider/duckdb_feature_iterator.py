@@ -3,6 +3,10 @@ from __future__ import (
     annotations,  # used to manage type annotation for method that return Self in Python < 3.11
 )
 
+from typing import Any, Callable
+
+from PyQt5.QtCore import QDate, QDateTime, QMetaType, QTime
+
 # PyQGIS
 from qgis.core import (
     QgsAbstractFeatureIterator,
@@ -54,6 +58,28 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             return
 
         geom_column = self._provider.get_geometry_column()
+
+        # Check if some attributes which contain date or time
+        # In that case, they need to be converted to a Qt type
+        # to be correctly handled by QGIS.
+        attributes_conversion_functions: dict[QMetaType, Callable[[Any], Any]] = {
+            QMetaType.QDate: QDate,
+            QMetaType.QTime: QTime,
+            QMetaType.QDateTime: QDateTime,
+        }
+        # By default, do not convert
+        self._attributes_converters = {}
+        for idx in range(len(self._provider.fields())):
+            self._attributes_converters[idx] = lambda x: x
+
+        # Check if some fields need to be converted
+        # If that's the case, enable the _attributes_need_conversion flag
+        # and assign the converter with the attributes index.
+        self._attributes_need_conversion = False
+        for field_type, converter in attributes_conversion_functions.items():
+            for index in self._provider.get_field_index_by_type(field_type):
+                self._attributes_need_conversion = True
+                self._attributes_converters[index] = converter
 
         # Create the list of fields that need to be retrieved
         self._request_sub_attributes = (
@@ -219,11 +245,23 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         f.setId(next_result[-1])
 
         # set attributes
-        if self._request_sub_attributes:
-            for idx, attr_idx in enumerate(self._request.subsetOfAttributes()):
-                f.setAttribute(attr_idx, next_result[idx])
+        if self._attributes_need_conversion:
+            # Some attributes need to be converted
+            if self._request_sub_attributes:
+                for idx, attr_idx in enumerate(self._request.subsetOfAttributes()):
+                    attribute = self._attributes_converters[idx](next_result[idx])
+                    f.setAttribute(attr_idx, attribute)
+            else:
+                for idx, attribute in enumerate(next_result[: self.index_geom_column]):
+                    converted_attribute = self._attributes_converters[idx](attribute)
+                    f.setAttribute(idx, converted_attribute)
         else:
-            f.setAttributes(list(next_result[: self.index_geom_column]))
+            # No need for conversion, the values can directly be used
+            if self._request_sub_attributes:
+                for idx, attr_idx in enumerate(self._request.subsetOfAttributes()):
+                    f.setAttribute(attr_idx, next_result[idx])
+            else:
+                f.setAttributes(list(next_result[: self.index_geom_column]))
 
         self._index += 1
         return True
