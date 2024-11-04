@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 1.0.1 - 2024-11-04
+
+- Upgrade to DuckDB version 1.1.3 !132
+
 ## 1.0.0 - 2024-09-26
 
 - First stable version
