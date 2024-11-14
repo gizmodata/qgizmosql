@@ -190,11 +190,8 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             geom_query = ""
 
         if self._provider.primary_key() == -1:
-            if self._provider._table and self._provider.is_view():
-                index_word = "ROW_NUMBER() OVER ()"
-            else:
-                index_word = "rowid"
-            index = f"{index_word}+1 as index "
+            index_word = "ROW_NUMBER() OVER ()"
+            index = f"{index_word} as index "
             order_by = "index"
         else:
             index = self._provider._fields[self._provider.primary_key()].name()
