@@ -319,6 +319,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         # check fields
         fields = vector_layer2.fields()
         self.assertTrue(len(fields), 1)
+        print(fields.names())
         self.assertEqual(fields.field(0).name(), "name")
         self.assertEqual(fields.field(0).type(), QVariant.String)
 
@@ -500,6 +501,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         req.setFilterFids([1, 2])
         self.assertEqual(req.filterType(), req.FilterFids)
         features = list(provider.getFeatures(req))
+        print(features)
         self.assertEqual(len(features), 2)
         self.assertEqual(features[0].id(), 1)
         self.assertEqual(features[1].id(), 2)
@@ -554,8 +556,8 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}";sql="select distinct * from cities";epsg="4326"'
         )
-        self.assertFalse(provider.test_sql_query())
-        self.assertFalse(provider.isValid())
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
 
         # Wrong sql syntax
         provider = DuckdbProvider(
@@ -691,6 +693,50 @@ class TestQDuckDBProvider(unittest.TestCase):
             self.assertEqual(list_feature[0], QDateTime(1992, 9, 20, 11, 30, 0, 123))
             self.assertEqual(list_feature[1], QDate(1992, 9, 20))
             self.assertEqual(list_feature[2], QTime(11, 30, 0, 123))
+
+    def test_advanced_sql_query(self) -> None:
+        # CSV without geom
+        url_csv = "https://raw.githubusercontent.com/datasets/airport-codes/refs/heads/main/data/airport-codes.csv"
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select * from read_csv(\'{url_csv}\')";epsg="4326"'
+        )
+
+        self.assertTrue(provider._sql, "select * from cities limit 1")
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
+        # Join
+        sql = "select a.*, b.pop from cities as a left join cities_population as b on a.name = b.name where a.name = 'Marseille'"
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326"'
+        )
+        self.assertTrue(provider._sql, sql)
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
+        expected_attributes = [2995469, "Marseille", 873076]
+        # check result data
+        features = provider.getFeatures()
+        first_feature = next(features, None)
+        self.assertEqual(first_feature.attributes(), expected_attributes)
+
+        # Select distinct with geom column
+        sql = "select distinct name from cities"
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326"'
+        )
+        self.assertTrue(provider._sql, sql)
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
+        # Read online parquet
+        sql = "select * from read_parquet('https://github.com/opengeospatial/geoparquet/raw/refs/heads/main/examples/example.parquet') ;"
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326"'
+        )
+        self.assertTrue(provider._sql, sql)
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
 
 
 if __name__ == "__main__":
