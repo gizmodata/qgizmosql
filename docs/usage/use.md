@@ -30,8 +30,6 @@ You can then do everything you're used to doing in QGIS (query features, open th
 
 ## Use the graphical interface for custom SQL Query
 
-:warning: This function does not support advanced SQL, e.g. DISTINCT and JOIN. This feature was designed for simple selection with filters, not for advanced sql. Currently, it's only possible to make a simple SELECT FROM WHERE.
-
 As for an entire table, you must designate the projection system if there is a spatial column.
 
 ![QDuckDB window](../static/ihm_sql.png)
