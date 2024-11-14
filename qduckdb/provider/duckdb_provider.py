@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import weakref
 
 from qgis.core import (
@@ -97,16 +96,6 @@ class DuckdbProvider(QgsVectorDataProvider):
         if self._sql and not self._table:
             if not self.test_sql_query():
                 return
-
-            # If the rowid pseudocolumn is not in the sql add it to
-            # the clause. It will be used to build the feature ids if
-            # the table does not have a primary key.
-            columns = self._con.sql(self._sql).columns
-            if "rowid" not in columns:
-                self._sql = re.sub(
-                    "select", "select rowid, ", self._sql, flags=re.IGNORECASE
-                )
-
             self._from_clause = f"({self._sql})"
         else:
             self._from_clause = self._table
@@ -138,10 +127,9 @@ class DuckdbProvider(QgsVectorDataProvider):
         )
 
     def test_sql_query(self) -> bool:
-        """This method tests that the SQL query is correct and does not use DISTINCT or JOIN.
+        """This method tests that the SQL query is correct.
 
-        :return: True if all is ok, false if SQL is not valid or there is at least one
-                join or distinct in the query
+        :return: True if all is ok, false if SQL is not valid.
         :rtype: bool
         """
         if self._sql:
@@ -159,20 +147,6 @@ class DuckdbProvider(QgsVectorDataProvider):
                 PlgLogger.log(
                     self.tr("The sql query is invalid: {}".format(e)),
                     log_level=2,
-                    duration=15,
-                    push=True,
-                )
-                return False
-
-            pattern = re.compile(r"\b(DISTINCT|JOIN)\b", re.IGNORECASE)
-            if bool(pattern.search(self._sql)):
-                PlgLogger.log(
-                    self.tr(
-                        "The custom SQL function in the DuckDB provider for QGIS does "
-                        "not support DISTINCT or JOIN and is meant only for "
-                        "basic queries to filter desired entries."
-                    ),
-                    log_level=1,
                     duration=15,
                     push=True,
                 )
