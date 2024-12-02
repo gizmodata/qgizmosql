@@ -319,7 +319,6 @@ class TestQDuckDBProvider(unittest.TestCase):
         # check fields
         fields = vector_layer2.fields()
         self.assertTrue(len(fields), 1)
-        print(fields.names())
         self.assertEqual(fields.field(0).name(), "name")
         self.assertEqual(fields.field(0).type(), QVariant.String)
 
@@ -501,7 +500,6 @@ class TestQDuckDBProvider(unittest.TestCase):
         req.setFilterFids([1, 2])
         self.assertEqual(req.filterType(), req.FilterFids)
         features = list(provider.getFeatures(req))
-        print(features)
         self.assertEqual(len(features), 2)
         self.assertEqual(features[0].id(), 1)
         self.assertEqual(features[1].id(), 2)
