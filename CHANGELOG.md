@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 1.1.0 - 2024-12-02
+
+- It's now possible to execute any sql query with the provider (instead of simple select from where) !133
+
 ## 1.0.1 - 2024-11-04
 
 - Upgrade to DuckDB version 1.1.3 !132
