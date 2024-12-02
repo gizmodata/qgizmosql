@@ -2,3 +2,4 @@
 # ---------
 
 qgis-plugin-ci>=2.8.9,<3
+six>=1.16.0 # Temporary fix for https://github.com/transifex/transifex-python/issues/121 / https://github.com/opengisch/qgis-plugin-ci/pull/316
