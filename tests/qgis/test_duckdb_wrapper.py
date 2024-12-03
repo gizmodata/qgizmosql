@@ -29,7 +29,7 @@ class TestDdbWrapper(unittest.TestCase):
         register_provider_if_necessary()
 
         cls.fixture_db_path = Path(__file__).parent.parent.joinpath(
-            "fixtures/base_test.db"
+            "fixtures/unitests_database.db"
         )
         cls.fixture_csv_path = Path(__file__).parent.parent.joinpath(
             "fixtures/capitals.csv"

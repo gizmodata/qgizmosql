@@ -59,6 +59,25 @@ flake8:
     - flake8 $PROJECT_FOLDER --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
 # -- TEST JOBS --------------------------------------------------------------------------
+tests:build_base:
+  stage: 🤞 test
+  image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
+  tags:
+    - oslandia_docker
+  rules:
+    - changes:
+        - "tests/fixtures/*.py"
+        - "tests/fixtures/*.sql"
+        - "tests/fixtures/*.csv"
+        - ".gitlab-ci.yml"
+  script:
+    - python3 -m pip install -U -r requirements/embedded.txt
+    - python3 tests/fixtures/build_unitests_database.py
+  artifacts:
+    paths:
+      - tests/fixtures/unitests_database.db
+  when: always
+
 tests:unit:
   stage: 🤞 test
   image: python:${PYTHON_MINIMAL_VERSION}-slim-bullseye
@@ -105,6 +124,9 @@ tests:qgis:
     - python3 -m pip install -U -r requirements/testing.txt
     - python3 -m pip install -U -r requirements/embedded.txt
     - Xvfb :1 &
+  needs:
+    - job: tests:build_base
+      artifacts: true
   script:
     - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
