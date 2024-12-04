@@ -746,6 +746,34 @@ class TestQDuckDBProvider(unittest.TestCase):
         features = list(provider.getFeatures())
         self.assertEqual(len(features), 1)
 
+    def test_query_with_s3(self):
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/2024-11-13.0/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1";epsg="4326"'
+        )
+        self.assertTrue(provider.isValid())
+
+    def test_query_with_h3(self):
+        # With extension in uri
+        sql = "select name, st_geomfromtext(h3_cell_to_boundary_wkt(h3_latlng_to_cell(st_y(geom), st_x(geom), 9))) as h3_geom from cities ;"
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326";extension="h3"'
+        )
+        self.assertTrue(provider.isValid())
+
+    def test_query_with_several_extensions(self):
+        sql = "SELECT excel_text(1_234_567.897, 'h:mm AM/PM') AS timestamp, name, st_geomfromtext(h3_cell_to_boundary_wkt(h3_latlng_to_cell(st_y(geom), st_x(geom), 9))) as h3_geom from cities;"
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326";extension="h3,excel"'
+        )
+        self.assertTrue(provider.isValid())
+
+    def test_query_with_unknow_extensions(self):
+        sql = "SELECT balerdi(name) as new_name from cities;"
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326";extension="om,slmfc"'
+        )
+        self.assertFalse(provider.isValid())
+
 
 if __name__ == "__main__":
     unittest.main()
