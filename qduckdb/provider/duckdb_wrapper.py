@@ -82,6 +82,7 @@ class DuckDbTools:
         self._table_name: str = None
         self._epsg_code: str = None
         self._sql: str = None
+        self._extension: str = None
 
     def connect(
         self,
@@ -573,7 +574,9 @@ class DuckDbTools:
 
     def parse_uri(
         self, uri: str
-    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    ) -> tuple[
+        Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]
+    ]:
         """Parse the input URI and returns the path to the database and the name of the
         table. If the parsing is successfull, the path, table, and epsg are set at wrapper's level.
 
@@ -601,10 +604,11 @@ class DuckDbTools:
         table = parsed_uri.get("table", None)
         epsg = parsed_uri.get("epsg", None)
         sql = parsed_uri.get("sql", None)
+        extension = parsed_uri.get("extension", None)
 
         PlgLogger.log(
-            message="URI parsed successfully: path={} ; table={} ; epsg={} ; sql={}".format(
-                path, table, epsg, sql
+            message="URI parsed successfully: path={} ; table={} ; epsg={} ; sql={} ; extension={}".format(
+                path, table, epsg, sql, extension
             ),
             log_level=4,
             push=False,
@@ -613,8 +617,8 @@ class DuckDbTools:
         # check parsing results
         if not path:
             raise ValueError(
-                "Invalid URI. Expected something like: path=/fake_path/database_duck.db "
-                "table=table_name epsg=4326. Received: {}".format(uri)
+                "Invalid URI. Expected something like: path=/fake_path/database_duck.db;"
+                "table=table_name;epsg=4326;extension=h3. Received: {}".format(uri)
             )
 
         # check database path
@@ -628,6 +632,7 @@ class DuckDbTools:
         self._table_name = table
         self._epsg_code = epsg
         self._sql = sql
+        self._extension = extension
 
         PlgLogger.log(
             message="Results from URI parsing are now used as wrapper attributes.",
@@ -635,4 +640,4 @@ class DuckDbTools:
             push=False,
         )
 
-        return path, table, epsg, sql
+        return path, table, epsg, sql, extension
