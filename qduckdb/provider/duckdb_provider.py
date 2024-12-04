@@ -17,6 +17,7 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QMetaType
 
 from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
+from qduckdb.provider.extension import community_extensions, core_extensions
 from qduckdb.provider.mappings import (
     mapping_duckdb_qgis_geometry,
     mapping_duckdb_qgis_type,
@@ -72,9 +73,13 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._primary_key = None
         self.filter_where_clause = None
         try:
-            self._path, self._table, self._epsg, self._sql = self.ddb_wrapper.parse_uri(
-                uri
-            )
+            (
+                self._path,
+                self._table,
+                self._epsg,
+                self._sql,
+                self._extension,
+            ) = self.ddb_wrapper.parse_uri(uri)
 
         except (FileNotFoundError, ValueError) as exc:
             self._is_valid = False
@@ -92,6 +97,9 @@ class DuckdbProvider(QgsVectorDataProvider):
             self._crs = QgsCoordinateReferenceSystem()
 
         self.connect_database()
+
+        if self._extension:
+            self.install_extension()
 
         if self._sql and not self._table:
             if not self.test_sql_query():
@@ -125,6 +133,44 @@ class DuckdbProvider(QgsVectorDataProvider):
         return (
             QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId
         )
+
+    @property
+    def parse_extension(self) -> list:
+        """This property returns a list of extensions separated by commas.
+
+        :return: A list containing the separated extensions from the `_extension` string.
+        :rtype: list
+        """
+        return self._extension.split(",")
+
+    def install_extension(self):
+        """This method installs and loads SQL extensions from the community.
+
+        For each extension obtained via `parse_extension`, it executes the necessary SQL commands
+        to install and load the extension.
+
+        :return: None
+        :rtype: None
+        """
+        if self._extension:
+            for extension in self.parse_extension:
+                if extension in community_extensions:
+                    self._con.sql(
+                        f"INSTALL {extension} FROM community; LOAD {extension};"
+                    )
+                elif extension in core_extensions:
+                    self._con.sql(f"INSTALL {extension} ; LOAD {extension};")
+                else:
+                    PlgLogger.log(
+                        self.tr(
+                            "{} unknown extension, open an issue if it exists to add its support.".format(
+                                extension
+                            )
+                        ),
+                        log_level=2,
+                        duration=15,
+                        push=True,
+                    )
 
     def test_sql_query(self) -> bool:
         """This method tests that the SQL query is correct.
