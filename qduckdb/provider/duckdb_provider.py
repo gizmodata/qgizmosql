@@ -159,7 +159,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                         f"INSTALL {extension} FROM community; LOAD {extension};"
                     )
                 elif extension in core_extensions:
-                    self._con.sql(f"INSTALL {extension} ; LOAD {extension};")
+                    self._con.sql(f"INSTALL {extension}; LOAD {extension};")
                 else:
                     PlgLogger.log(
                         self.tr(
