@@ -24,8 +24,6 @@ from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
 
 from .utilities import compare_rectangles, register_provider_if_necessary
 
-db_path = Path(__file__).parent.joinpath("data/base_test.db")
-
 
 class TestQDuckDBProvider(unittest.TestCase):
     @classmethod
@@ -37,7 +35,9 @@ class TestQDuckDBProvider(unittest.TestCase):
         register_provider_if_necessary()
 
         cls.db_path_test = (
-            Path(__file__).parent.parent.joinpath("fixtures/base_test.db").as_posix()
+            Path(__file__)
+            .parent.parent.joinpath("fixtures/unitests_database.db")
+            .as_posix()
         )
         cls.wrong_db_path = 'path="wrong/path/zidane.db"'
 

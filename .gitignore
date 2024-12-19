@@ -132,6 +132,7 @@ dmypy.json
 symbology-style.db
 tests/fixtures/capitals.db
 tests/fixtures/tmp_*.db
+tests/fixtures/unitests_database.db
 
 # -- MANDATORY -----
 

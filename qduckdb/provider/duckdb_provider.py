@@ -196,6 +196,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         """Detects the geometry type of the table, converts and return it to
         QgsWkbTypes.
         """
+
         if not self._column_geom:
             return QgsWkbTypes.NoGeometry
         if not self._wkb_type:
