@@ -135,7 +135,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         )
 
     @property
-    def parse_extension(self) -> list:
+    def extensions(self) -> list:
         """This property returns a list of extensions separated by commas.
 
         :return: A list containing the separated extensions from the `_extension` string.
@@ -146,14 +146,14 @@ class DuckdbProvider(QgsVectorDataProvider):
     def install_extension(self):
         """This method installs and loads SQL extensions from the community.
 
-        For each extension obtained via `parse_extension`, it executes the necessary SQL commands
+        For each extension obtained via `extensions`, it executes the necessary SQL commands
         to install and load the extension.
 
         :return: None
         :rtype: None
         """
         if self._extension:
-            for extension in self.parse_extension:
+            for extension in self.extensions:
                 if extension in community_extensions:
                     self._con.sql(
                         f"INSTALL {extension} FROM community; LOAD {extension};"
