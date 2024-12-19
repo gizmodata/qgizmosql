@@ -65,7 +65,13 @@ tests:build_base:
   tags:
     - oslandia_docker
   rules:
+    - if: "$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH"
+      when: always
+    # on a tag
+    - if: $CI_COMMIT_TAG
     - changes:
+        - "**/*.py"
+        - ".gitlab-ci.yml"
         - "tests/fixtures/*.py"
         - "tests/fixtures/*.sql"
         - "tests/fixtures/*.csv"
