@@ -144,7 +144,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         return self._extension.split(",")
 
     def install_extension(self):
-        """This method installs and loads SQL extensions from the community.
+        """This method installs and loads SQL extensions from the community and only load for core extensions.
 
         For each extension obtained via `extensions`, it executes the necessary SQL commands
         to install and load the extension.
