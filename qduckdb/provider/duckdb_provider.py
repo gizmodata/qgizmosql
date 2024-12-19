@@ -98,7 +98,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 return
             self._from_clause = f"({self._sql})"
         else:
-            self._from_clause = self._table
+            self._from_clause = f'"{self._table}"'
 
         self.get_geometry_column()
 

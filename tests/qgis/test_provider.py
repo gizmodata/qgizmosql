@@ -736,6 +736,16 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertTrue(provider.test_sql_query())
         self.assertTrue(provider.isValid())
 
+    def test_table_with_special_character(self) -> None:
+        # Test with a table whose name contains a special character
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}";table="table-test";epsg="4326"'
+        )
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
+        self.assertTrue(provider.isValid())
+        features = list(provider.getFeatures())
+        self.assertEqual(len(features), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
