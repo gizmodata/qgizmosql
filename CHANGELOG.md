@@ -16,6 +16,11 @@ Unreleased
 
 -->
 
+## 1.2.0 - 2024-12-23
+
+- Fixed a bug when a table name contained a special character !138
+- Proivder now supports DuckDB extensions !142
+
 ## 1.1.0 - 2024-12-02
 
 - It's now possible to execute any sql query with the provider (instead of simple select from where) !133
