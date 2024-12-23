@@ -16,6 +16,7 @@ from qgis.PyQt.QtWidgets import QDialog
 # plugin
 from qduckdb.__about__ import DIR_PLUGIN_ROOT
 from qduckdb.provider.duckdb_wrapper import DuckDbTools
+from qduckdb.provider.extension import community_extensions, core_extensions
 from qduckdb.toolbelt.log_handler import PlgLogger
 
 
@@ -39,6 +40,11 @@ class LoadDuckDBLayerDialog(QDialog):
         )
         self._add_layer_btn.setIcon(QgsApplication.getThemeIcon("mActionAddLayer.svg"))
 
+        # extensions
+        list_extension = community_extensions + core_extensions
+        list_extension.sort()
+        self._cbb_extension.addItems(list_extension)
+
         # widgets and signals connection
         self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
         self._db_path_input.fileChanged.connect(self.change_mode)
@@ -56,6 +62,8 @@ class LoadDuckDBLayerDialog(QDialog):
 
         self.label_sql.setEnabled(False)
         self._sql_query.setEnabled(False)
+        self.label_extension.setEnabled(False)
+        self._cbb_extension.setEnabled(False)
 
     def change_mode(self):
         """Interface behavior when radio buttons are used to switch between full table
@@ -66,12 +74,16 @@ class LoadDuckDBLayerDialog(QDialog):
             self._sql_query.setEnabled(False)
             self.label_sql.setEnabled(False)
             self.label_table.setEnabled(True)
+            self._cbb_extension.setEnabled(False)
+            self.label_extension.setEnabled(False)
 
         if self._sql.isChecked():
             self._table_combobox.setEnabled(False)
             self._sql_query.setEnabled(True)
             self.label_sql.setEnabled(True)
             self.label_table.setEnabled(False)
+            self._cbb_extension.setEnabled(True)
+            self.label_extension.setEnabled(True)
 
             if str(self.db_path()) == ".":
                 self._sql_query.setEnabled(False)
@@ -161,11 +173,14 @@ class LoadDuckDBLayerDialog(QDialog):
         else:
             table_name = self._table_combobox.currentText()
 
+        extension = ",".join(self._cbb_extension.checkedItems())
+
         uri_parts = {
             "path": str(self.db_path()),
             "sql": sql_query,
             "table": table_name,
             "epsg": epsg,
+            "extension": extension,
         }
         uri = duckdbProviderMetadata.encodeUri(uri_parts)
         layer = QgsVectorLayer(uri, table_name, "duckdb")

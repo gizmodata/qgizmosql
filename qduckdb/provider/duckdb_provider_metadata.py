@@ -42,6 +42,9 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
         path = parts["path"]
         epsg = parts["epsg"]
         uri = f'path="{path}";{sql_part};epsg="{epsg}"'
+        if "extension" in parts:
+            extension = parts["extension"]
+            uri = f'{uri};extension="{extension}"'
         return uri
 
     def absoluteToRelativeUri(self, uri: str, context: QgsReadWriteContext) -> str:
