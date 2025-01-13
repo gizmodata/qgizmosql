@@ -244,10 +244,10 @@ class DuckdbProvider(QgsVectorDataProvider):
         """
 
         if not self._column_geom:
-            return QgsWkbTypes.NoGeometry
+            return QgsWkbTypes.Type.NoGeometry
         if not self._wkb_type:
             if not self._is_valid:
-                self._wkb_type = QgsWkbTypes.Unknown
+                self._wkb_type = QgsWkbTypes.Type.Unknown
             else:
                 str_geom_duckdb = self._con.sql(
                     f"select st_geometrytype({self._column_geom}) from {self._from_clause}"
@@ -264,7 +264,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                         duration=15,
                         push=True,
                     )
-                    self._wkb_type = QgsWkbTypes.Unknown
+                    self._wkb_type = QgsWkbTypes.Type.Unknown
                     return self._wkb_type
 
                 self._wkb_type = geometry_type

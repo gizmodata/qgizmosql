@@ -1,13 +1,13 @@
 from qgis.core import QgsWkbTypes
-from qgis.PyQt.Qt import QVariant
+from qgis.PyQt.QtCore import QVariant
 
 mapping_duckdb_qgis_geometry = {
-    "LINESTRING": QgsWkbTypes.LineString,
-    "MULTILINESTRING": QgsWkbTypes.MultiLineString,
-    "MULTIPOINT": QgsWkbTypes.MultiPolygon,
-    "MULTIPOLYGON": QgsWkbTypes.MultiPolygon,
-    "POINT": QgsWkbTypes.Point,
-    "POLYGON": QgsWkbTypes.Polygon,
+    "LINESTRING": QgsWkbTypes.Type.LineString,
+    "MULTILINESTRING": QgsWkbTypes.Type.MultiLineString,
+    "MULTIPOINT": QgsWkbTypes.Type.MultiPolygon,
+    "MULTIPOLYGON": QgsWkbTypes.Type.MultiPolygon,
+    "POINT": QgsWkbTypes.Type.Point,
+    "POLYGON": QgsWkbTypes.Type.Polygon,
     # ...
 }
 

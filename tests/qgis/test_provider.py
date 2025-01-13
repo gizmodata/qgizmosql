@@ -15,8 +15,7 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
-from qgis.PyQt.Qt import QVariant
-from qgis.PyQt.QtCore import QDate, QDateTime, QTime
+from qgis.PyQt.QtCore import QDate, QDateTime, QTime, QVariant
 from qgis.testing import unittest
 
 from qduckdb.provider.duckdb_provider import DuckdbProvider
