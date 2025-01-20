@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 1.2.1 - 2025-01-20
+
+- Support DATETIME field type !145
+
 ## 1.2.0 - 2024-12-23
 
 - Fixed a bug when a table name contained a special character !138
