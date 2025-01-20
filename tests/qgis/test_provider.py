@@ -672,6 +672,7 @@ class TestQDuckDBProvider(unittest.TestCase):
                 "INSTALL SPATIAL ; LOAD SPATIAL ; create table test as SELECT TIMESTAMP "
                 "'1992-09-20 11:30:00.123456789' as datetime, DATE '1992-09-20' as date, "
                 "TIME '1992-09-20 11:30:00.1234' as time,  "
+                "DATETIME '2024-02-06 04:19:46' as timestamp_ns,"
                 "st_geomfromtext('POINT (1 1)') ; "
             )
             con.close()
@@ -683,6 +684,7 @@ class TestQDuckDBProvider(unittest.TestCase):
             self.assertEqual(fields[0].type(), QVariant.DateTime)
             self.assertEqual(fields[1].type(), QVariant.Date)
             self.assertEqual(fields[2].type(), QVariant.Time)
+            self.assertEqual(fields[3].type(), QVariant.DateTime)
 
             list_feature = [
                 attr for sublist in layer.getFeatures() for attr in sublist.attributes()
