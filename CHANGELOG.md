@@ -16,6 +16,10 @@ Unreleased
 
 -->
 
+## 1.3.0 - 2025-01-31
+
+- The plugin now supports QGIS with Qt6 !144
+
 ## 1.2.1 - 2025-01-20
 
 - Support DATETIME field type !145
