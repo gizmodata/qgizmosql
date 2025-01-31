@@ -17,7 +17,7 @@ description[fr]=Ce plugin ajoute un nouveau fournisseur de données capable de l
 
 hasProcessingProvider=False
 icon=resources/images/logo_duckdb.png
-supportsQt6=no
+supportsQt6=True
 server=True
 tags=duckdb,database,parquet,sql,overture,insee-fr
 

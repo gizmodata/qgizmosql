@@ -5,8 +5,6 @@ from __future__ import (
 
 from typing import Any, Callable
 
-from PyQt5.QtCore import QDate, QDateTime, QMetaType, QTime
-
 # PyQGIS
 from qgis.core import (
     QgsAbstractFeatureIterator,
@@ -16,6 +14,7 @@ from qgis.core import (
     QgsFeatureRequest,
     QgsGeometry,
 )
+from qgis.PyQt.QtCore import QDate, QDateTime, QMetaType, QTime
 
 # plugin
 from qduckdb.provider import duckdb_feature_source, duckdb_provider
@@ -62,10 +61,10 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         # Check if some attributes which contain date or time
         # In that case, they need to be converted to a Qt type
         # to be correctly handled by QGIS.
-        attributes_conversion_functions: dict[QMetaType, Callable[[Any], Any]] = {
-            QMetaType.QDate: QDate,
-            QMetaType.QTime: QTime,
-            QMetaType.QDateTime: QDateTime,
+        attributes_conversion_functions: dict[QMetaType.Type, Callable[[Any], Any]] = {
+            QMetaType.Type.QDate: QDate,
+            QMetaType.Type.QTime: QTime,
+            QMetaType.Type.QDateTime: QDateTime,
         }
         # By default, do not convert
         self._attributes_converters = {}
