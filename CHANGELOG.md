@@ -15,6 +15,9 @@ Unreleased
 ### Removed
 
 -->
+## 1.3.1 - 2024-11-04
+
+- Upgrade to DuckDB version 1.2.0 !146
 
 ## 1.3.0 - 2025-01-31
 
