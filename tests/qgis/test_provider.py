@@ -577,6 +577,18 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertTrue(provider.test_sql_query())
         self.assertTrue(provider.isValid())
 
+        # multi line sql query
+        query = """
+        SELECT *
+        FROM cities
+        LIMIT 1
+        """
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}"|sql="{query}"|epsg="4326"'
+        )
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
     def test_no_geometry_flag(self) -> None:
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
