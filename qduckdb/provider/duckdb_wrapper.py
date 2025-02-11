@@ -590,15 +590,13 @@ class DuckDbTools:
 
             .. code-block:: python
 
-                >>> test_uri = f'path="/home/test/gis/insee/bureaux_vote.db";table="cities";epsg="4326"'
+                >>> test_uri = f'path="/home/test/gis/insee/bureaux_vote.db"|table="cities"|epsg="4326"'
                 >>> db_path, table_name, epsg_code = ddb_wrapper.parse_uri(test_uri)
         """
         duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
             "duckdb"
         )
-        escape_dict = {' "': ' \\"', ',"': ',\\"', '" ': '\\" ', '",': '\\",'}
-        for old, new in escape_dict.items():
-            uri = uri.replace(old, new)
+
         parsed_uri = duckdbProviderMetadata.decodeUri(uri)
         path = parsed_uri.get("path", None)
         table = parsed_uri.get("table", None)
@@ -607,7 +605,7 @@ class DuckDbTools:
         extension = parsed_uri.get("extension", None)
 
         PlgLogger.log(
-            message="URI parsed successfully: path={} ; table={} ; epsg={} ; sql={} ; extension={}".format(
+            message="URI parsed successfully: path={} | table={} | epsg={} | sql={} | extension={}".format(
                 path, table, epsg, sql, extension
             ),
             log_level=4,
@@ -617,8 +615,8 @@ class DuckDbTools:
         # check parsing results
         if not path:
             raise ValueError(
-                "Invalid URI. Expected something like: path=/fake_path/database_duck.db;"
-                "table=table_name;epsg=4326;extension=h3. Received: {}".format(uri)
+                "Invalid URI. Expected something like: path=/fake_path/database_duck.db|"
+                "table=table_name|epsg=4326|extension=h3. Received: {}".format(uri)
             )
 
         # check database path
