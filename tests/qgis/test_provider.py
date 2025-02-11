@@ -563,6 +563,20 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertFalse(provider.test_sql_query())
         self.assertFalse(provider.isValid())
 
+        # sql query with space at the end
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1      "|epsg="4326"'
+        )
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
+        # sql query with semicolon at the end
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1 ;"|epsg="4326"'
+        )
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
     def test_no_geometry_flag(self) -> None:
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
