@@ -107,23 +107,31 @@ class DuckDbTools:
         """
         # determine which database to use
         if self.database_path is None:
-            raise FileNotFoundError("Database path cannot be None on connection.")
+            PlgLogger.log(
+                message="No database file provided. Using in-memory database.",
+                log_level=4,
+                push=False,
+            )
 
-        if not self.database_path.is_file() and read_only is True:
+        if (
+            self.database_path
+            and not self.database_path.is_file()
+            and read_only is True
+        ):
             raise FileNotFoundError(
                 "In read-only mode, database must exist before. "
                 "Database path passed as parameter does not: {}".format(
                     self.database_path
                 )
             )
-
-        PlgLogger.log(
-            message="Using the database path defined at object level: {}".format(
-                self.database_path
-            ),
-            log_level=4,
-            push=False,
-        )
+        if self.database_path:
+            PlgLogger.log(
+                message="Using the database path defined at object level: {}".format(
+                    self.database_path
+                ),
+                log_level=4,
+                push=False,
+            )
 
         # check if connection is already alive
         if self.is_connection_alive():
@@ -136,14 +144,20 @@ class DuckDbTools:
             return self.ddb_conn
 
         try:
-            self.ddb_conn = duckdb.connect(
-                database=f"{self.database_path.resolve()}", read_only=read_only
-            )
+            if self.database_path:
+                self.ddb_conn = duckdb.connect(
+                    database=f"{self.database_path.resolve()}", read_only=read_only
+                )
 
+            else:
+                # Cannot launch in-memory database in read-only mode
+                self.ddb_conn = duckdb.connect(read_only=False)
+
+            db_path_message = (
+                self.database_path.resolve() if self.database_path else "in memory"
+            )
             PlgLogger.log(
-                message="Connection to database {} succeeded.".format(
-                    self.database_path.resolve()
-                ),
+                message="Connection to database {} succeeded.".format(db_path_message),
                 log_level=0,
                 push=False,
             )
@@ -152,7 +166,7 @@ class DuckDbTools:
                 self.ddb_conn.sql(query=self.SQL_QUERIES.get("spatial_load"))
                 PlgLogger.log(
                     message="Spatial extension loaded on database {}.".format(
-                        self.database_path.resolve()
+                        db_path_message
                     ),
                     log_level=0,
                     push=False,
@@ -178,10 +192,11 @@ class DuckDbTools:
             )
             raise exc
         except Exception as exc:
+            db_path = (
+                self.database_path.resolve() if self.database_path else "memory base"
+            )
             PlgLogger.log(
-                "Connection to {} failed for a generic reason. Trace: {}".format(
-                    self.database_path.resolve(), exc
-                ),
+                f"Connection to {db_path} failed for a generic reason. Trace: {exc}",
                 log_level=2,
                 push=True,
             )
@@ -613,20 +628,21 @@ class DuckDbTools:
         )
 
         # check parsing results
-        if not path:
+        if table and not path:
             raise ValueError(
-                "Invalid URI. Expected something like: path=/fake_path/database_duck.db|"
+                "Invalid URI: when a table is specified, a database is also required. Expected something like: path=/fake_path/database_duck.db|"
                 "table=table_name|epsg=4326|extension=h3. Received: {}".format(uri)
             )
 
         # check database path
-        if not Path(path).is_file():
+        if path and not Path(path).is_file():
             raise FileNotFoundError(
                 "Database does not exist at the specified path: {}".format(path)
             )
 
         # set results as wrapper attributes
-        self.database_path = Path(path)
+        self.database_path = Path(path) if path else None
+
         self._table_name = table
         self._epsg_code = epsg
         self._sql = sql
