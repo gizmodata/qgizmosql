@@ -85,19 +85,19 @@ class LoadDuckDBLayerDialog(QDialog):
             self._cbb_extension.setEnabled(True)
             self.label_extension.setEnabled(True)
 
-            if str(self.db_path()) == ".":
-                self._sql_query.setEnabled(False)
-            else:
-                self._sql_query.setEnabled(True)
-
-    def db_path(self) -> Path:
+    @property
+    def db_path(self) -> Path | None:
         """Return the db path specified entered in the appropriate field as pathlib.Path
             object.
 
-        :return: path to the file picked by the user through the UI.
+        :return: path to the file picked by the user through the UI. This may return None if no database is provided in the ihm.
         :rtype: Path
         """
-        return Path(self._db_path_input.filePath())
+
+        if not self._db_path_input.filePath():
+            return None
+        else:
+            return Path(self._db_path_input.filePath())
 
     def crs(self) -> QgsCoordinateReferenceSystem:
         """Return the crs will"""
@@ -115,7 +115,7 @@ class LoadDuckDBLayerDialog(QDialog):
         try:
             if not self.list_table:
                 self.list_table = self.ddb_wrapper.run_sql(
-                    database_path=self.db_path(),
+                    database_path=self.db_path,
                     query_sql="list_tables",
                     requires_spatial=False,
                     results_fetcher="fetchall",
@@ -134,7 +134,7 @@ class LoadDuckDBLayerDialog(QDialog):
     def _add_list_table_name_to_combobox(self) -> None:
         """Add list of table to combobox"""
         # set selected path as wrapper's default database path
-        self.ddb_wrapper.database_path = self.db_path()
+        self.ddb_wrapper.database_path = self.db_path
 
         # update table list
         self._table_combobox.clear()
@@ -142,9 +142,9 @@ class LoadDuckDBLayerDialog(QDialog):
         self._table_combobox.addItems(self.list_table_in_db())
 
     def _push_add_layer_button(self) -> None:
-        if not self.db_path().exists():
+        if self.db_path and not self.db_path.exists():
             PlgLogger.log(
-                self.tr("The database {} does not exist.".format(self.db_path())),
+                self.tr("The database {} does not exist.".format(self.db_path)),
                 log_level=2,
                 duration=10,
                 push=True,
@@ -176,7 +176,7 @@ class LoadDuckDBLayerDialog(QDialog):
         extension = ",".join(self._cbb_extension.checkedItems())
 
         uri_parts = {
-            "path": str(self.db_path()),
+            "path": str(self.db_path) if self.db_path else "",
             "sql": sql_query,
             "table": table_name,
             "epsg": epsg,
@@ -191,17 +191,20 @@ class LoadDuckDBLayerDialog(QDialog):
         or valid sql query is input"""
 
         if self._table.isChecked():
-            if self._table_combobox.currentText() and self.db_path().exists():
+            if self._table_combobox.currentText() and self.db_path.exists():
                 self._add_layer_btn.setEnabled(True)
             else:
                 self._add_layer_btn.setEnabled(False)
 
         if self._sql.isChecked():
-            if (
-                "select" in self._sql_query.text().lower()
-                and "from" in self._sql_query.text().lower()
-                and self.db_path().exists()
+            if not self.db_path and "select" in self._sql_query.text().lower():
+                self._add_layer_btn.setEnabled(True)
+            elif (
+                self.db_path
+                and self.db_path.exists()
+                and "select" in self._sql_query.text().lower()
             ):
                 self._add_layer_btn.setEnabled(True)
+
             else:
                 self._add_layer_btn.setEnabled(False)
