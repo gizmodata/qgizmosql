@@ -36,6 +36,7 @@ from qduckdb.toolbelt.log_handler import PlgLogger
 # conditional imports
 try:
     from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
+    from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
     from qduckdb.provider.duckdb_provider import DuckdbProvider
     from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
 
@@ -150,6 +151,14 @@ class QduckdbPlugin(QduckdbBasePlugin):
         self.iface.addToolBarIcon(self.action_main)
         self.action_main.triggered.connect(self.display_duckdb_dialog)
 
+        self.action_open_parquet = QAction(
+            QIcon(str(DIR_PLUGIN_ROOT / "resources/images/parquet.png")),
+            self.tr("Open Parquet with DuckDB"),
+            self.iface.mainWindow(),
+        )
+        self.iface.addToolBarIcon(self.action_open_parquet)
+        self.action_open_parquet.triggered.connect(self.display_open_parquet)
+
         # -- Menu
         self.iface.addPluginToMenu(__title__, self.action_main)
         self.iface.addPluginToMenu(__title__, self.action_settings)
@@ -177,6 +186,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
 
         # below come everything which depends on external dependencies
         self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
+        self._dlg_open_parquet = OpenParquetDialog(self.iface.mainWindow())
 
         # register custom provider
         self.register_duckdb_provider()
@@ -192,6 +202,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
 
         # -- Clean up toolbar
         self.iface.removeToolBarIcon(self.action_main)
+        self.iface.removeToolBarIcon(self.action_open_parquet)
 
         # -- Clean up preferences panel in QGIS settings
         self.iface.unregisterOptionsWidgetFactory(self.options_factory)
@@ -225,6 +236,13 @@ class QduckdbPlugin(QduckdbBasePlugin):
             self._dlg_add_layer = LoadDuckDBLayerDialog()
 
         self._dlg_add_layer.show()
+
+    def display_open_parquet(self) -> None:
+        """Display instance parquet add layer dialog"""
+        if self._dlg_open_parquet is None:
+            self._dlg_open_parquet = OpenParquetDialog()
+
+        self._dlg_open_parquet.show()
 
     def check_dependencies(self) -> bool:
         """Check if all dependencies are satisfied. If not, warn the user and disable plugin.
