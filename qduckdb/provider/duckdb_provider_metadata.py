@@ -1,4 +1,3 @@
-import re
 from typing import Dict
 
 from qgis.core import QgsProviderMetadata, QgsReadWriteContext
@@ -21,9 +20,14 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
         :param str uri: uri to convert
         :returns: dict of components as strings
         """
-        matches = re.findall(r'(\w+)="((?:\\"|[^"])*)"', uri)
-        params = {key: value for key, value in matches}
-        return params
+        # Anticipate the case where a separator is trailing at the beginning or end of a uri.
+        uri = uri.strip("|")
+
+        result = {}
+        for element in uri.split("|"):
+            key, value = element.split("=", 1)
+            result[key] = value.strip('"')
+        return result
 
     def encodeUri(self, parts: Dict[str, str]) -> str:
         """Reassembles a provider data source URI from its component paths
@@ -41,10 +45,10 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
 
         path = parts["path"]
         epsg = parts["epsg"]
-        uri = f'path="{path}";{sql_part};epsg="{epsg}"'
+        uri = f'path="{path}"|{sql_part}|epsg="{epsg}"'
         if "extension" in parts:
             extension = parts["extension"]
-            uri = f'{uri};extension="{extension}"'
+            uri = f'{uri}|extension="{extension}"'
         return uri
 
     def absoluteToRelativeUri(self, uri: str, context: QgsReadWriteContext) -> str:

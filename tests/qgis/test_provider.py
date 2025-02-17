@@ -54,14 +54,14 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertFalse(registry.registerProvider(duckdb_metadata))
 
     def test_valid(self) -> None:
-        correct_uri = f'path="{self.db_path_test}";table="cities";epsg="4326"'
+        correct_uri = f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         provider = DuckdbProvider(uri=correct_uri)
         self.assertTrue(provider.isValid())
         self.assertEqual(provider.dataSourceUri(), correct_uri)
 
         # Test table without geom
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="table_no_geom"|epsg="4326"'
         )
         self.assertTrue(provider.isValid())
 
@@ -72,56 +72,56 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_geom_mapping(self) -> None:
         # Point
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from cities limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
 
         # Linestring
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="highway";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="highway"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from highway limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from highway limit 1"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
 
         # Polygon
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="building";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="building"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from building limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from building limit 1"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
 
         # MultiPolygon
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="test_multi";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="test_multi"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.MultiPolygon)
 
         # Geom with wrong uri
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="zidane";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="zidane"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
 
         # Table without geom
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="table_no_geom"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
 
     def test_extent(self) -> None:
         # Test linestring layer
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="highway";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="highway"|epsg="4326"'
         )
         self.assertIsInstance(provider.extent(), QgsRectangle)
         expected_extent = QgsRectangle(-0.75799, 48.08263, -0.75523, 48.08447)
@@ -129,7 +129,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # Test point layer
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertIsInstance(provider.extent(), QgsRectangle)
         expected_extent = QgsRectangle(2.15899, 41.38879, 7.68682, 45.07049)
@@ -143,14 +143,14 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_fields(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         self.assertEqual(provider.fields().field(0).name(), "id")
         self.assertEqual(provider.fields().field(0).type(), QVariant.Int)
 
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="test_multi";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="test_multi"|epsg="4326"'
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         fields = provider.fields()
@@ -162,7 +162,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(fields[4].type(), QVariant.Bool)
 
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select name, geom from cities limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select name, geom from cities limit 1"|epsg="4326"'
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         fields = provider.fields()
@@ -170,23 +170,23 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(fields[0].type(), QVariant.String)
 
         # Fields with wrong uri
-        provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db";table="zidane"')
+        provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db"|table="zidane"')
         self.assertEqual(provider.fields().count(), 0)
 
     def test_get_geometry_column(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertEqual(provider.get_geometry_column(), "geom")
 
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from cities limit 2";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 2"|epsg="4326"'
         )
         self.assertEqual(provider.get_geometry_column(), "geom")
 
     def test_table_without_geom_column(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="table_no_geom";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="table_no_geom"|epsg="4326"'
         )
         self.assertEqual(provider.get_geometry_column(), None)
         self.assertEqual(
@@ -196,22 +196,22 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_featureCount(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertEqual(provider.featureCount(), 3)
 
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from cities limit 2";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 2"|epsg="4326"'
         )
         self.assertEqual(provider.featureCount(), 2)
 
         # Count with wrong uri
-        provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db";table="zidane"')
+        provider = DuckdbProvider(uri='path="wrong/uri/biuycdzohd.db"|table="zidane"')
         self.assertEqual(provider.featureCount(), 0)
 
     def test_unique_values(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertEqual(len(provider.fields()), 2)
 
@@ -223,10 +223,10 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_get_features(self) -> None:
         v1 = QgsVectorLayer(
-            f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
+            f'path="{self.db_path_test}"|table="cities"|epsg="4326"', "test", "duckdb"
         )
         v2 = QgsVectorLayer(
-            f'path="{self.db_path_test}";sql="select id::int as id, name, geom from cities limit 3";epsg="4326"',
+            f'path="{self.db_path_test}"|sql="select id::int as id, name, geom from cities limit 3"|epsg="4326"',
             "test",
             "duckdb",
         )
@@ -253,14 +253,14 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_rowid_in_sql_subquery(self) -> None:
         layer_without_rowid = QgsVectorLayer(
-            f'path="{self.db_path_test}";sql="select name, geom from cities limit 3";epsg="4326"',
+            f'path="{self.db_path_test}"|sql="select name, geom from cities limit 3"|epsg="4326"',
             "test_without_id",
             "duckdb",
         )
         self.assertTrue(layer_without_rowid.isValid())
 
         layer_with_rowid = QgsVectorLayer(
-            f'path="{self.db_path_test}";sql="select rowid, name, geom from cities limit 3";epsg="4326"',
+            f'path="{self.db_path_test}"|sql="select rowid, name, geom from cities limit 3"|epsg="4326"',
             "test_without_id",
             "duckdb",
         )
@@ -288,7 +288,7 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_attributes(self):
         # No sql subquery, it should return all the fields
         vector_layer1 = QgsVectorLayer(
-            f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
+            f'path="{self.db_path_test}"|table="cities"|epsg="4326"', "test", "duckdb"
         )
 
         # check fields
@@ -310,7 +310,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # A sql subquery, it should only return the fields from the subquery
         vector_layer2 = QgsVectorLayer(
-            f'path="{self.db_path_test}";sql="select name, geom from cities limit 3";epsg="4326"',
+            f'path="{self.db_path_test}"|sql="select name, geom from cities limit 3"|epsg="4326"',
             "test",
             "duckdb",
         )
@@ -336,7 +336,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         the SubsetOfAttributes flag
         """
         vector_layer = QgsVectorLayer(
-            f'path="{self.db_path_test}";table="cities";epsg="4326"', "test", "duckdb"
+            f'path="{self.db_path_test}"|table="cities"|epsg="4326"', "test", "duckdb"
         )
 
         # check fields
@@ -388,7 +388,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_crs(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertEqual(provider.crs().authid(), "EPSG:4326")
         self.assertIsInstance(provider.crs(), QgsCoordinateReferenceSystem)
@@ -396,7 +396,7 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_primary_key(self) -> None:
         # table does not have a primary key
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertEqual(provider.primary_key(), -1)
         features = list(provider.getFeatures())
@@ -407,7 +407,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # table has a primary key
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="table_with_primary_key";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="table_with_primary_key"|epsg="4326"'
         )
         self.assertEqual(provider.primary_key(), 0)
         features = list(provider.getFeatures())
@@ -419,7 +419,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_output_crs(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         list_point = [
             "Point (5.38107000000000024 43.29695000000000249)",
@@ -451,7 +451,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_filter_rect(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         request = QgsFeatureRequest()
         # All features
@@ -466,7 +466,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_filter_expression(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
 
         request = QgsFeatureRequest()
@@ -483,7 +483,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_filter_fid_and_fids(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
 
         # Fid
@@ -505,7 +505,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_filter_fids_and_rect(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         request = QgsFeatureRequest()
 
@@ -536,7 +536,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_sql_query(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from cities limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1"|epsg="4326"'
         )
 
         self.assertTrue(provider._sql, "select * from cities limit 1")
@@ -544,28 +544,54 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # Test custom sql with a table that doesn't exist.
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from drogba limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from drogba limit 1"|epsg="4326"'
         )
         self.assertFalse(provider.test_sql_query())
         self.assertFalse(provider.isValid())
 
         # Test custom sql with DISTINCT on sql query
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select distinct * from cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select distinct * from cities"|epsg="4326"'
         )
         self.assertTrue(provider.test_sql_query())
         self.assertTrue(provider.isValid())
 
         # Wrong sql syntax
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="selectt ;|+ fromm &-abc";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="selectt ;|+ fromm &-abc";epsg="4326"'
         )
         self.assertFalse(provider.test_sql_query())
         self.assertFalse(provider.isValid())
 
+        # sql query with space at the end
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1      "|epsg="4326"'
+        )
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
+        # sql query with semicolon at the end
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1 ;"|epsg="4326"'
+        )
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
+        # multi line sql query
+        query = """
+        SELECT *
+        FROM cities
+        LIMIT 1
+        """
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}"|sql="{query}"|epsg="4326"'
+        )
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
     def test_no_geometry_flag(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
 
         # With NoGeometry flag
@@ -587,7 +613,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_subset_string(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
         self.assertTrue(provider.supportsSubsetString())
 
@@ -604,14 +630,14 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_fields_with_space(self) -> None:
         # Entire table
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";epsg="4326";table="table_with_column_space"'
+            uri=f'path="{self.db_path_test}"|epsg="4326"|table="table_with_column_space"'
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         self.assertEqual(provider.fields().field(1).name(), "The Name")
 
         # SQL Query
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";epsg="4326";sql="select id, "The Name", geom from table_with_column_space"'
+            uri=f'path="{self.db_path_test}"|epsg="4326"|sql="select id, "The Name", geom from table_with_column_space"'
         )
         self.assertIsInstance(provider.fields(), QgsFields)
         self.assertEqual(provider.fields().field(1).name(), "The Name")
@@ -621,7 +647,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         Check that FLOAT columns are converted by the provider.
         """
         vector_layer = QgsVectorLayer(
-            f'path="{self.db_path_test}";table="table_with_float";epsg="4326"',
+            f'path="{self.db_path_test}"|table="table_with_float"|epsg="4326"',
             "test",
             "duckdb",
         )
@@ -636,21 +662,21 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_case_on_select(self) -> None:
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="cities";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
 
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="Select * from cities limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="Select * from cities limit 1"|epsg="4326"'
         )
 
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="SELECT * from cities limit 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="SELECT * from cities limit 1"|epsg="4326"'
         )
 
     def test_view(self) -> None:
-        # Marseille is a view (CREATE VIEW marseille SELECT 'toto' as toto, FROM cities where name = 'Marseille' ;)
+        # Marseille is a view (CREATE VIEW marseille SELECT 'toto' as toto, FROM cities where name = 'Marseille' |)
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";epsg="4326";table="marseille"'
+            uri=f'path="{self.db_path_test}"|epsg="4326"|table="marseille"'
         )
         self.assertTrue(provider.is_view())
         self.assertTrue(provider.isValid())
@@ -659,7 +685,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         # cities is a table
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";epsg="4326";table="cities"'
+            uri=f'path="{self.db_path_test}"|epsg="4326"|table="cities"'
         )
         self.assertFalse(provider.is_view())
 
@@ -675,7 +701,7 @@ class TestQDuckDBProvider(unittest.TestCase):
                 "st_geomfromtext('POINT (1 1)') ; "
             )
             con.close()
-            layer = DuckdbProvider(uri=f'path="{str(tmp_db)}";table="test";epsg="4326"')
+            layer = DuckdbProvider(uri=f'path="{str(tmp_db)}"|table="test"|epsg="4326"')
             self.assertTrue(layer.isValid())
 
             self.assertIsInstance(layer.fields(), QgsFields)
@@ -697,7 +723,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         # CSV without geom
         url_csv = "https://raw.githubusercontent.com/datasets/airport-codes/refs/heads/main/data/airport-codes.csv"
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select * from read_csv(\'{url_csv}\')";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select * from read_csv(\'{url_csv}\')"|epsg="4326"'
         )
 
         self.assertTrue(provider._sql, "select * from cities limit 1")
@@ -707,7 +733,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         # Join
         sql = "select a.*, b.pop from cities as a left join cities_population as b on a.name = b.name where a.name = 'Marseille'"
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"'
         )
         self.assertTrue(provider._sql, sql)
         self.assertTrue(provider.test_sql_query())
@@ -722,7 +748,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         # Select distinct with geom column
         sql = "select distinct name from cities"
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"'
         )
         self.assertTrue(provider._sql, sql)
         self.assertTrue(provider.test_sql_query())
@@ -731,7 +757,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         # Read online parquet
         sql = "select * from read_parquet('https://github.com/opengeospatial/geoparquet/raw/refs/heads/main/examples/example.parquet') ;"
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"'
         )
         self.assertTrue(provider._sql, sql)
         self.assertTrue(provider.test_sql_query())
@@ -740,7 +766,7 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_table_with_special_character(self) -> None:
         # Test with a table whose name contains a special character
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";table="table-test";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|table="table-test"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
         self.assertTrue(provider.isValid())
@@ -749,7 +775,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_query_with_s3(self):
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/2024-11-13.0/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1";epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/2024-11-13.0/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1"|epsg="4326"'
         )
         self.assertTrue(provider.isValid())
 
@@ -757,21 +783,21 @@ class TestQDuckDBProvider(unittest.TestCase):
         # With extension in uri
         sql = "select name, st_geomfromtext(h3_cell_to_boundary_wkt(h3_latlng_to_cell(st_y(geom), st_x(geom), 9))) as h3_geom from cities ;"
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326";extension="h3"'
+            uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"|extension="h3"'
         )
         self.assertTrue(provider.isValid())
 
     def test_query_with_several_extensions(self):
         sql = "SELECT excel_text(1_234_567.897, 'h:mm AM/PM') AS timestamp, name, st_geomfromtext(h3_cell_to_boundary_wkt(h3_latlng_to_cell(st_y(geom), st_x(geom), 9))) as h3_geom from cities;"
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326";extension="h3,excel"'
+            uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"|extension="h3,excel"'
         )
         self.assertTrue(provider.isValid())
 
     def test_query_with_unknow_extensions(self):
         sql = "SELECT balerdi(name) as new_name from cities;"
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}";sql="{sql}";epsg="4326";extension="om,slmfc"'
+            uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"|extension="om,slmfc"'
         )
         self.assertFalse(provider.isValid())
 

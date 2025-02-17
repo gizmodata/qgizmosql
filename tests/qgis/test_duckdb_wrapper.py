@@ -173,7 +173,7 @@ class TestDdbWrapper(unittest.TestCase):
         ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
 
         # uri with a table
-        test_table_uri = f'path="{self.fixture_db_path}";table="cities";epsg="4326"'
+        test_table_uri = f'path="{self.fixture_db_path}"|table="cities"|epsg="4326"'
         parsed_table_uri = ddb_wrapper.parse_uri(test_table_uri)
 
         self.assertEqual(parsed_table_uri[0], str(self.fixture_db_path))
@@ -183,7 +183,7 @@ class TestDdbWrapper(unittest.TestCase):
 
         # uri with a sql
         test_sql_uri = (
-            f'path="{self.fixture_db_path}";epsg="4326";'
+            f'path="{self.fixture_db_path}"|epsg="4326"|'
             f'sql="select * from truc where machin"'
         )
         parsed_sql_uri = ddb_wrapper.parse_uri(test_sql_uri)
@@ -194,7 +194,7 @@ class TestDdbWrapper(unittest.TestCase):
 
         # uri with sql query with space in column name
         test_sql_uri = (
-            f'path="{self.fixture_db_path}";epsg="4326";'
+            f'path="{self.fixture_db_path}"|epsg="4326"|'
             f'sql="select "The Column" from truc where machin"'
         )
         parsed_sql_uri = ddb_wrapper.parse_uri(test_sql_uri)
@@ -202,8 +202,27 @@ class TestDdbWrapper(unittest.TestCase):
         self.assertEqual(parsed_sql_uri[1], None)
         self.assertEqual(parsed_sql_uri[2], "4326")
         self.assertEqual(
-            parsed_sql_uri[3], 'select \\"The Column\\" from truc where machin'
+            parsed_sql_uri[3], 'select "The Column" from truc where machin'
         )
+
+        # uri with space at the end
+        test_sql_uri = f'path="{self.fixture_db_path}"|sql="select * from truc where machin "|epsg="4326"'
+        parsed_sql_uri = ddb_wrapper.parse_uri(test_sql_uri)
+        self.assertEqual(parsed_sql_uri[0], str(self.fixture_db_path))
+        self.assertEqual(parsed_sql_uri[1], None)
+        self.assertEqual(parsed_sql_uri[2], "4326")
+        self.assertEqual(parsed_sql_uri[3], "select * from truc where machin ")
+
+        # uri with semicolon at the end
+        test_sql_uri = (
+            f'path="{self.fixture_db_path}"|'
+            f'sql="select * from truc where machin;"|epsg="4326"'
+        )
+        parsed_sql_uri = ddb_wrapper.parse_uri(test_sql_uri)
+        self.assertEqual(parsed_sql_uri[0], str(self.fixture_db_path))
+        self.assertEqual(parsed_sql_uri[1], None)
+        self.assertEqual(parsed_sql_uri[2], "4326")
+        self.assertEqual(parsed_sql_uri[3], "select * from truc where machin;")
 
 
 if __name__ == "__main__":

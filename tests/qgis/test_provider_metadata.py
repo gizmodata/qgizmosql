@@ -37,14 +37,14 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
         cls.sql = 'SELECT id, \\"My Field\\", geom from mytable LIMIT 10'
 
         cls.expected_sql_uri = (
-            f'path="{cls.full_path}";sql="{cls.sql}";epsg="{cls.epsg}"'
+            f'path="{cls.full_path}"|sql="{cls.sql}"|epsg="{cls.epsg}"'
         )
 
         cls.expected_abs_table_uri = (
-            f'path="{cls.full_path}";table="{cls.table}";epsg="{cls.epsg}"'
+            f'path="{cls.full_path}"|table="{cls.table}"|epsg="{cls.epsg}"'
         )
         cls.expected_rel_table_uri = (
-            f'path="{cls.db_filename}";table="{cls.table}";epsg="{cls.epsg}"'
+            f'path="{cls.db_filename}"|table="{cls.table}"|epsg="{cls.epsg}"'
         )
 
     def test_encode_uri(self):
