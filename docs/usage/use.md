@@ -32,6 +32,8 @@ You can then do everything you're used to doing in QGIS (query features, open th
 
 As for an entire table, you must designate the projection system if there is a spatial column.
 
+If your SQL query uses functions from extensions, check them in the extensions drop-down menu to load them.
+
 ![QDuckDB window](../static/ihm_sql.png)
 
 ## Loading a layer from the command line
@@ -41,7 +43,7 @@ You can also use the plugin's command-line data provider.
 In the uri you need to provide the same things as in the UI, i.e. the base path, the table name and the EPSG code to define the projection. Here's an example of python code you can use in the qgis python console to do this.
 
 ```python
-uri = 'path="path/to/my/db.duckdb";table="my_spatial_table";epsg="4326"'
+uri = 'path="path/to/my/db.duckdb"|table="my_spatial_table"|epsg="4326"'
 layer = QgsVectorLayer(uri, "my_table", "duckdb")
 QgsProject.instance().addMapLayer(layer)
 ```
@@ -49,5 +51,5 @@ QgsProject.instance().addMapLayer(layer)
 You can also use a custom sql query directly in the uri.
 
 ```python
-uri = 'path="path/to/my/my_base.db";sql="SELECT name, geom FROM cities WHERE id = 1";epsg="4326"'
+uri = 'path="path/to/my/my_base.db"|sql="SELECT name, geom FROM cities WHERE id = 1"|epsg="4326"'
 ```
