@@ -29,10 +29,10 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
         """Check that the database path is correctly returned"""
         # Good path
         self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
-        self.assertEqual(self.dialog.db_path(), self.db_path_test)
+        self.assertEqual(self.dialog.db_path, self.db_path_test)
         # Wrong path
         self.dialog._db_path_input.setFilePath(self.wrong_db_path.as_posix())
-        self.assertEqual(self.dialog.db_path(), self.wrong_db_path)
+        self.assertEqual(self.dialog.db_path, self.wrong_db_path)
 
     def test_list_table_in_db(self) -> None:
         """We test that the list of tables in the database is correctly returned"""

@@ -801,6 +801,22 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertFalse(provider.isValid())
 
+    def test_provider_without_database(self) -> None:
+        # No database for SQL allowed
+        geom = "'POINT (0 0)'"
+        provider = DuckdbProvider(
+            uri=f'path=""|sql="select 1 as id, st_geomfromtext({geom}) as geom"|epsg="4326"'
+        )
+        self.assertTrue(
+            provider._sql, "select 1 as id, st_geomfromtext('POINT (0 0)') as geom"
+        )
+        self.assertTrue(provider.test_sql_query())
+        self.assertTrue(provider.isValid())
+
+        # Without a database for a table, it's not possible
+        provider = DuckdbProvider(uri='path=""|table="my_table"|epsg="4326"')
+        self.assertFalse(provider.isValid())
+
 
 if __name__ == "__main__":
     unittest.main()
