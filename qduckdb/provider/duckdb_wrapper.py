@@ -619,6 +619,10 @@ class DuckDbTools:
         sql = parsed_uri.get("sql", None)
         extension = parsed_uri.get("extension", None)
 
+        # Queries that end with ";" are a problem, as we don't multitransact, so we can afford to delete them.
+        if sql:
+            sql = sql.rstrip().rstrip(";")
+
         PlgLogger.log(
             message="URI parsed successfully: path={} | table={} | epsg={} | sql={} | extension={}".format(
                 path, table, epsg, sql, extension
