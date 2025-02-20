@@ -53,3 +53,11 @@ You can also use a custom sql query directly in the uri.
 ```python
 uri = 'path="path/to/my/my_base.db"|sql="SELECT name, geom FROM cities WHERE id = 1"|epsg="4326"'
 ```
+
+## Load geoparquet
+
+This plugin also lets you load a geoparquet directly via the DuckDB provider.
+
+![Load parquet GUI](../static/load_parquet.png)
+
+In detail, we create an instance of the provider with a temporary base in memory and then perform a `select * from read_parquet`.
