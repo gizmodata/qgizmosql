@@ -40,6 +40,41 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         cls.wrong_db_path = 'path="wrong/path/zidane.db"'
 
+    # Protected method, is not a test is a generic methord for test.
+    def _test_all_provider_method(self, provider: DuckdbProvider) -> None:
+        with self.subTest(msg="Provider should be valid"):
+            self.assertTrue(provider.isValid())
+
+        with self.subTest(msg="wkbType should be QgsWkbTypes"):
+            self.assertIsInstance(provider.wkbType(), QgsWkbTypes.Type)
+
+        with self.subTest(msg="extent should be QgsRectangle"):
+            self.assertIsInstance(provider.extent(), QgsRectangle)
+
+        with self.subTest(msg="fields should be QgsFields"):
+            self.assertIsInstance(provider.fields(), QgsFields)
+
+        with self.subTest(msg="featureCount should be int"):
+            self.assertIsInstance(provider.featureCount(), int)
+
+        with self.subTest(msg="get_table should return str"):
+            self.assertIsInstance(provider.get_table(), str)
+
+        with self.subTest(msg="dataSourceUri should return str"):
+            self.assertIsInstance(provider.dataSourceUri(), str)
+
+        with self.subTest(msg="storageType should return str"):
+            self.assertIsInstance(provider.storageType(), str)
+
+        with self.subTest(msg="crs should return an object"):
+            self.assertIsInstance(provider.crs(), object)
+
+        with self.subTest(msg="primary_key should return an int"):
+            self.assertIsInstance(provider.primary_key(), int)
+
+        with self.subTest(msg="get_field_index_by_type(2) should return a list"):
+            self.assertIsInstance(provider.get_field_index_by_type(2), list)
+
     def test_get_capabilities(self) -> None:
         provider = DuckdbProvider()
         self.assertEqual(
@@ -56,14 +91,14 @@ class TestQDuckDBProvider(unittest.TestCase):
     def test_valid(self) -> None:
         correct_uri = f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         provider = DuckdbProvider(uri=correct_uri)
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
         self.assertEqual(provider.dataSourceUri(), correct_uri)
 
         # Test table without geom
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="table_no_geom"|epsg="4326"'
         )
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
     def test_wrong_uri(self) -> None:
         provider = DuckdbProvider(uri='path="wrong/path/zidane.db"')
@@ -554,7 +589,7 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}"|sql="select distinct * from cities"|epsg="4326"'
         )
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
         # Wrong sql syntax
         provider = DuckdbProvider(
@@ -568,14 +603,14 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1      "|epsg="4326"'
         )
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
         # sql query with semicolon at the end
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1 ;"|epsg="4326"'
         )
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
         # multi line sql query
         query = """
@@ -587,7 +622,7 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}"|sql="{query}"|epsg="4326"'
         )
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
     def test_no_geometry_flag(self) -> None:
         provider = DuckdbProvider(
@@ -679,7 +714,8 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}"|epsg="4326"|table="marseille"'
         )
         self.assertTrue(provider.is_view())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
+
         # In this way, we check that the provider returns the correct view entity
         self.assertEqual(provider.featureCount(), 1)
 
@@ -728,7 +764,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
         self.assertTrue(provider._sql, "select * from cities limit 1")
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
         # Join
         sql = "select a.*, b.pop from cities as a left join cities_population as b on a.name = b.name where a.name = 'Marseille'"
@@ -737,7 +773,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertTrue(provider._sql, sql)
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
         expected_attributes = [2995469, "Marseille", 873076]
         # check result data
@@ -752,16 +788,16 @@ class TestQDuckDBProvider(unittest.TestCase):
         )
         self.assertTrue(provider._sql, sql)
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
         # Read online parquet
-        sql = "select * from read_parquet('https://github.com/opengeospatial/geoparquet/raw/refs/heads/main/examples/example.parquet') ;"
+        sql = "select pop_est, continent, name, geometry from read_parquet('https://github.com/opengeospatial/geoparquet/raw/refs/heads/main/examples/example.parquet')  where st_geometrytype(geometry) = 'MULTIPOLYGON' ;"
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"'
         )
         self.assertTrue(provider._sql, sql)
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
     def test_table_with_special_character(self) -> None:
         # Test with a table whose name contains a special character
@@ -769,7 +805,7 @@ class TestQDuckDBProvider(unittest.TestCase):
             uri=f'path="{self.db_path_test}"|table="table-test"|epsg="4326"'
         )
         self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
         features = list(provider.getFeatures())
         self.assertEqual(len(features), 1)
 
@@ -777,7 +813,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/2024-11-13.0/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1"|epsg="4326"'
         )
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
     def test_query_with_h3(self):
         # With extension in uri
@@ -785,14 +821,14 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"|extension="h3"'
         )
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
     def test_query_with_several_extensions(self):
         sql = "SELECT excel_text(1_234_567.897, 'h:mm AM/PM') AS timestamp, name, st_geomfromtext(h3_cell_to_boundary_wkt(h3_latlng_to_cell(st_y(geom), st_x(geom), 9))) as h3_geom from cities;"
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="{sql}"|epsg="4326"|extension="h3,excel"'
         )
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
     def test_query_with_unknow_extensions(self):
         sql = "SELECT balerdi(name) as new_name from cities;"
@@ -811,7 +847,7 @@ class TestQDuckDBProvider(unittest.TestCase):
             provider._sql, "select 1 as id, st_geomfromtext('POINT (0 0)') as geom"
         )
         self.assertTrue(provider.test_sql_query())
-        self.assertTrue(provider.isValid())
+        self._test_all_provider_method(provider)
 
         # Without a database for a table, it's not possible
         provider = DuckdbProvider(uri='path=""|table="my_table"|epsg="4326"')

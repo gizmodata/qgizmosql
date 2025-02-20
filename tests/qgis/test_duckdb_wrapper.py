@@ -211,7 +211,7 @@ class TestDdbWrapper(unittest.TestCase):
         self.assertEqual(parsed_sql_uri[0], str(self.fixture_db_path))
         self.assertEqual(parsed_sql_uri[1], None)
         self.assertEqual(parsed_sql_uri[2], "4326")
-        self.assertEqual(parsed_sql_uri[3], "select * from truc where machin ")
+        self.assertEqual(parsed_sql_uri[3], "select * from truc where machin")
 
         # uri with semicolon at the end
         test_sql_uri = (
@@ -222,7 +222,7 @@ class TestDdbWrapper(unittest.TestCase):
         self.assertEqual(parsed_sql_uri[0], str(self.fixture_db_path))
         self.assertEqual(parsed_sql_uri[1], None)
         self.assertEqual(parsed_sql_uri[2], "4326")
-        self.assertEqual(parsed_sql_uri[3], "select * from truc where machin;")
+        self.assertEqual(parsed_sql_uri[3], "select * from truc where machin")
 
 
 if __name__ == "__main__":
