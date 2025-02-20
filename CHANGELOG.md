@@ -15,6 +15,14 @@ Unreleased
 ### Removed
 
 -->
+## 2.0.0 - 2025-02-21
+
+- Improved execution of SQL queries in the provider (bug with irgules, multiline query, trailing space) !155 !147
+- WARNING: These bug fixes involve changing the separator in the URI. We've switched from the semicolon (;) to the pipe (|).
+This change is breaking. As a result, your DuckDB layers built with an older version of the plugin will no longer work with version 2.0.0 and higher.
+- It is now possible to use the provider without supplying a database, in which case DuckDB will use an in-memory database. !148
+- A new GUI for loading a parquet file via the DuckDB provider !149
+
 ## 1.3.1 - 2025-02-06
 
 - Upgrade to DuckDB version 1.2.0 !146
