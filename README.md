@@ -13,7 +13,7 @@ DuckDB is an in-process SQL OLAP database management system, designed to be simp
 
 [QGIS](https://qgis.org) is the most dynamic OpenSource Geographical Information System platform, including the QGIS Desktop software application.
 
-## :warning: Version information
+## ⚠️ Version information
 
 Between QGIS versions `3.34.5` and `3.34.6`, the packaging for the Windows version of QGIS changed from Python `3.9` to Python `3.12`.
 
