@@ -162,6 +162,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
 
         # -- Menu
         self.iface.addPluginToMenu(__title__, self.action_main)
+        self.iface.addPluginToMenu(__title__, self.action_open_parquet)
         self.iface.addPluginToMenu(__title__, self.action_settings)
         self.iface.addPluginToMenu(__title__, self.action_help)
 
