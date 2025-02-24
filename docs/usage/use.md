@@ -58,6 +58,8 @@ uri = 'path="path/to/my/my_base.db"|sql="SELECT name, geom FROM cities WHERE id 
 
 This plugin also lets you load a geoparquet directly via the DuckDB provider.
 
+Both local and remote parquet files can be supplied.
+
 ![Load parquet GUI](../static/load_parquet.png)
 
 In detail, we create an instance of the provider with a temporary base in memory and then perform a `select * from read_parquet`.
