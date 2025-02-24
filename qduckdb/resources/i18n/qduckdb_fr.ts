@@ -127,11 +127,11 @@
     </message>
     <message>
         <location filename="../../plugin_main.py" line="155"/>
-        <source>Open Parquet with DuckDB</source>
-        <translation>Ouvrir Parquet avec DuckDB</translation>
+        <source>Open (geo)Parquet with DuckDB</source>
+        <translation type="unfinished">Ouvrir un fichier (geo)Parquer avec DuckDB</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="256"/>
+        <location filename="../../plugin_main.py" line="257"/>
         <source>Error importing dependencies. Plugin disabled.</source>
         <translation>Erreur dans l&apos;importation des dépendances. Plugin désactivé.</translation>
     </message>

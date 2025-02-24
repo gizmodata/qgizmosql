@@ -154,7 +154,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
 
         self.action_open_parquet = QAction(
             QIcon(str(DIR_PLUGIN_ROOT / "resources/images/parquet.png")),
-            self.tr("Open Parquet with DuckDB"),
+            self.tr("Open (geo)Parquet with DuckDB"),
             self.iface.mainWindow(),
         )
         self.iface.addToolBarIcon(self.action_open_parquet)
