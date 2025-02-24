@@ -38,5 +38,5 @@ sudo apt install qttools5-dev-tools
     It's only necessary for local development since CI build and ship it.
 
     ```bash
-    lrelease qduckdb/i18n/*.ts
+    lrelease qduckdb/resources/i18n/*.ts
     ```
