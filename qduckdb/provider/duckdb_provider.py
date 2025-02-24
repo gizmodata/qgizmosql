@@ -236,7 +236,16 @@ class DuckdbProvider(QgsVectorDataProvider):
 
     def connect_database(self):
         """Connects the database and loads the spatial extension"""
-        self._con = self.ddb_wrapper.connect(read_only=True, requires_spatial=True)
+
+        # To read remote files, especially parquets, you need to activate this on the connection.
+        force_download = False
+        protocoles = ("http://", "https://", "ftp://", "s3://")
+        if self._sql and any(proto in self._sql for proto in protocoles):
+            force_download = True
+
+        self._con = self.ddb_wrapper.connect(
+            read_only=True, requires_spatial=True, force_download=force_download
+        )
 
     def wkbType(self) -> QgsWkbTypes:
         """Detects the geometry type of the table, converts and return it to
