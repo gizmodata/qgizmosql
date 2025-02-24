@@ -58,6 +58,7 @@ class DuckDbTools:
         "list_tables": "SELECT table_name from information_schema.tables;",
         "spatial_install": "INSTALL spatial;",
         "spatial_load": "LOAD spatial;",
+        "force_download": "SET force_download=true;",
     }
 
     def __init__(
@@ -88,6 +89,7 @@ class DuckDbTools:
         self,
         read_only: bool = True,
         requires_spatial: bool = True,
+        force_download: bool = False,
     ) -> duckdb.DuckDBPyConnection:
         """Open a connection to the DuckDB database and let it opened. Useful to
             perform multiple requests at different points of a workflow. But don't
@@ -171,6 +173,10 @@ class DuckDbTools:
                     log_level=0,
                     push=False,
                 )
+
+            if force_download:
+                self.enable_force_download()
+
             return self.ddb_conn
 
         except duckdb.IOException as exc:
@@ -375,6 +381,29 @@ class DuckDbTools:
                 message="Unable to install spatial extension in DuckDB. Trace: {}".format(
                     exc
                 ),
+                log_level=2,
+                push=True,
+            )
+            raise exc
+
+    def enable_force_download(self) -> None:
+        """
+        Activates the 'force download' setting for reading parquet files.
+        This method executes an SQL query to enable the 'force download' setting in DuckDB.
+        If successful, a log message is generated indicating that the force download has been activated.
+        In case of an error, an exception is caught, logged, and re-raised.
+        """
+
+        try:
+            self.ddb_conn.sql(self.SQL_QUERIES.get("force_download"))
+            PlgLogger.log(
+                message="Force download has been activated.",
+                log_level=0,
+                push=False,
+            )
+        except Exception as exc:
+            PlgLogger.log(
+                message="Force download cannot be activated. Trace: {}".format(exc),
                 log_level=2,
                 push=True,
             )
