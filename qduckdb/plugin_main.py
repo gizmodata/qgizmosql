@@ -259,6 +259,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
                 push=True,
                 duration=60,
                 button=True,
+                button_text=self.tr("How to fix it..."),
                 button_connect=partial(
                     QDesktopServices.openUrl,
                     QUrl(f"{__uri_homepage__}/usage/installation.html"),

@@ -136,25 +136,30 @@
         <translation>Erreur dans l&apos;importation des dépendances. Plugin désactivé.</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="272"/>
+        <location filename="../../plugin_main.py" line="273"/>
         <source>Plugin disabled. Please install all dependencies and then restart QGIS. Refer to the documentation for more information.</source>
         <translation>Plugin désactivé. Veuillez installer toutes les dépendances et redémarrer QGIS. Reportez-vous à la documentation pour plus d&apos;informations.</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="279"/>
+        <location filename="../../plugin_main.py" line="280"/>
         <source>Dependencies satisfied</source>
         <translation>Dépendances satisfaites</translation>
+    </message>
+    <message>
+        <location filename="../../plugin_main.py" line="256"/>
+        <source>How to fix it...</source>
+        <translation>Comment y remédier...</translation>
     </message>
 </context>
 <context>
     <name>QduckdbServerPlugin</name>
     <message>
-        <location filename="../../plugin_main.py" line="295"/>
+        <location filename="../../plugin_main.py" line="296"/>
         <source>Error importing dependencies. Plugin disabled.</source>
         <translation>Erreur dans l&apos;importation des dépendances. Plugin désactivé.</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="303"/>
+        <location filename="../../plugin_main.py" line="304"/>
         <source>Dependencies satisfied</source>
         <translation>Dépendances satisfaites</translation>
     </message>
