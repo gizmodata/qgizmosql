@@ -26,15 +26,38 @@ class TestDlgOpenParquet(unittest.TestCase):
 
     def test_get_path(self) -> None:
         """Check that the parquet path is correctly returned"""
-        self.dialog.qfw_parquet.setFilePath(self.parquet_test.as_posix())
+        self.dialog.qfw_local_file.setFilePath(self.parquet_test.as_posix())
         self.assertEqual(self.dialog.get_file_path, [str(self.parquet_test)])
 
     def test_check_parquet_exists(self) -> None:
         self.assertTrue(self.dialog.check_parquet_exists(str(self.parquet_test)))
 
-    def test_open_parquet(self) -> None:
+    def test_open_local_parquet(self) -> None:
         """Test that a layer has been added to the canvas"""
-        self.dialog.qfw_parquet.setFilePath(self.parquet_test.as_posix())
+        self.dialog.qfw_local_file.setFilePath(self.parquet_test.as_posix())
         self.dialog.load_parquet()
         project = QgsProject.instance()
         self.assertTrue(project.mapLayersByName("points.parquet"))
+
+    def test_open_remote_parquet(self) -> None:
+        """Test that a layer has been added to the canvas"""
+        self.dialog.rb_remote_file.setChecked(True)
+        self.assertTrue(
+            self.dialog.is_valid_url(
+                "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/qualite-de-lair-france/exports/parquet?lang=fr&timezone=Europe%2FBerlin"
+            )
+        )
+        self.dialog.load_parquet()
+        project = QgsProject.instance()
+        self.assertTrue(project.mapLayersByName("points.parquet"))
+
+    def test_is_valid_url(self) -> None:
+        """Test is_valid_url method"""
+        self.assertTrue(self.dialog.is_valid_url("http://example.com/file.txt"))
+        self.assertFalse(self.dialog.is_valid_url("gignac"))
+
+    def test_get_url(self) -> None:
+        """Check that the file url is correctly returned"""
+        url = "http://example.com/file.parquet"
+        self.dialog.le_remote_url.setText(url)
+        self.assertEqual(self.dialog.get_file_url, url)
