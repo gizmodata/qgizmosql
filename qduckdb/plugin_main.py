@@ -46,6 +46,7 @@ except ImportError:
     DuckdbProvider = None
     DuckdbProviderMetadata = None
     LoadDuckDBLayerDialog = None
+    OpenParquetDialog = None
 
 # ############################################################################
 # ########## Classes ###############
@@ -265,6 +266,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
             )
             # disable plugin widgets
             self.action_main.setEnabled(False)
+            self.action_open_parquet.setEnabled(False)
 
             # add tooltip over menu
             msg_disable = self.tr(
