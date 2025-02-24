@@ -10,17 +10,10 @@ sudo apt install qttools5-dev-tools
 
 ## Workflow
 
-1. Complete `plugin_translation.pro` in `i18n` folder:
-    Complete with what you wish to translate (`.ui` or `.py` file)
-    For example
+1. Complete `plugin_translation.pro` in `i18n` folder with what you wish to translate (`.ui` or `.py` file) or run the script:
 
-    ```ts
-    FORMS = ../gui/dlg_settings.ui
-
-    SOURCES= ../../plugin_main.py \
-        ../../gui/dlg_settings.py \
-
-    TRANSLATIONS = qduckdb_fr.ts
+    ```sh
+    python scripts/generate_translation_profile.py
     ```
 
 2. Update `.ts` files:
