@@ -15,6 +15,13 @@ Unreleased
 ### Removed
 
 -->
+## 2.0.1 - 2025-02-24
+
+- Bug fix: disable open parquet icon when duckdb dependency is missing !157
+- Set the size of the open parquet dialog window !158
+- French translation update !162
+- Minors UI enhancement !163 !164
+
 ## 2.0.0 - 2025-02-21
 
 - Improved execution of SQL queries in the provider (bug with irgules, multiline query, trailing space) !155 !147
