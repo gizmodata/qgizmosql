@@ -15,6 +15,10 @@ Unreleased
 ### Removed
 
 -->
+## 2.1.0 - 2025-02-25
+
+- Ability to read a remote parquet with a URL !165
+
 ## 2.0.1 - 2025-02-24
 
 - Bug fix: disable open parquet icon when duckdb dependency is missing !157
