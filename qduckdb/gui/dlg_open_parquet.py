@@ -1,7 +1,6 @@
 # standard
 import shlex
 from pathlib import Path
-from urllib.parse import urlparse
 
 # PyQGIS
 from qgis.core import (
@@ -19,7 +18,7 @@ from qgis.utils import OverrideCursor
 # plugin
 from qduckdb.__about__ import DIR_PLUGIN_ROOT
 from qduckdb.provider.protocoles import PROTOCOLES
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
 
 
 class OpenParquetDialog(QDialog):
@@ -62,13 +61,13 @@ class OpenParquetDialog(QDialog):
         for parquet in self.get_file_path:
             # Is URL
             if any(parquet.startswith(proto) for proto in PROTOCOLES):
-                if not self.is_valid_url(parquet):
+                if not is_valid_url(parquet):
                     continue
                 layer_name = "Remote parquet file"
 
             # Local file
             else:
-                if not self.check_parquet_exists(parquet):
+                if not check_file_exists(parquet):
                     continue
                 layer_name = Path(parquet).name
 
@@ -114,42 +113,3 @@ class OpenParquetDialog(QDialog):
         :rtype: QgsCoordinateReferenceSystem
         """
         return self.qw_crs.crs()
-
-    def check_file_exists(self, path: str) -> bool:
-        """Checks if a file exists at the given path.
-
-        If the file does not exist, a warning is logged using `PlgLogger.log()`.
-
-        :param path: The file path to check.
-        :type path: str
-        :return: True if the file exists, False otherwise.
-        :rtype: bool
-        """
-        if not Path(path).exists():
-            PlgLogger.log(
-                self.tr("The parquet file {} does not exist.".format(path)),
-                log_level=2,
-                duration=10,
-                push=True,
-            )
-            return False
-        return True
-
-    def is_valid_url(self, url: str) -> bool:
-        """Checks if the given URL is valid by ensuring it contains a scheme and a netloc.
-
-        :param url: The URL to validate.
-        :type url: str
-        :return: True if the URL has both a scheme and a netloc, otherwise False.
-        :rtype: bool
-        """
-        parsed = urlparse(url)
-        if not bool(parsed.scheme) and not bool(parsed.netloc):
-            PlgLogger.log(
-                self.tr("{} is not a valid URL".format(url)),
-                log_level=2,
-                duration=10,
-                push=True,
-            )
-            return False
-        return True

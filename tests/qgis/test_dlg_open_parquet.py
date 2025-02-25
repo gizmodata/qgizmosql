@@ -4,6 +4,7 @@ from qgis.core import QgsProject
 from qgis.testing import start_app, unittest
 
 from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
+from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
 
 from .utilities import register_provider_if_necessary
 
@@ -29,12 +30,10 @@ class TestDlgOpenParquet(unittest.TestCase):
         self.dialog.qfw_local_file.setFilePath(self.parquet_test.as_posix())
         self.assertEqual(self.dialog.get_file_path, [str(self.parquet_test)])
 
-    def test_check_file_exists(self) -> None:
-        self.assertTrue(self.dialog.check_file_exists(str(self.parquet_test)))
-
     def test_open_local_parquet(self) -> None:
         """Test that a layer has been added to the canvas"""
         self.dialog.qfw_local_file.setFilePath(self.parquet_test.as_posix())
+        self.assertTrue(check_file_exists(self.parquet_test))
         self.dialog.load_parquet()
         project = QgsProject.instance()
         self.assertTrue(project.mapLayersByName("points.parquet"))
@@ -43,12 +42,7 @@ class TestDlgOpenParquet(unittest.TestCase):
         """Test that a layer has been added to the canvas"""
         parquet_url = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/qualite-de-lair-france/exports/parquet?lang=fr&timezone=Europe%2FBerlin"
         self.dialog.qfw_local_file.setFilePath(parquet_url)
-        self.assertTrue(self.dialog.is_valid_url(parquet_url))
+        self.assertTrue(is_valid_url(parquet_url))
         self.dialog.load_parquet()
         project = QgsProject.instance()
         self.assertTrue(project.mapLayersByName("Remote parquet file"))
-
-    def test_is_valid_url(self) -> None:
-        """Test is_valid_url method"""
-        self.assertTrue(self.dialog.is_valid_url("http://example.com/file.txt"))
-        self.assertFalse(self.dialog.is_valid_url("gignac"))
