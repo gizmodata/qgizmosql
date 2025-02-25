@@ -18,6 +18,7 @@ from qgis.utils import OverrideCursor
 
 # plugin
 from qduckdb.__about__ import DIR_PLUGIN_ROOT
+from qduckdb.provider.protocoles import PROTOCOLES
 from qduckdb.toolbelt.log_handler import PlgLogger
 
 
@@ -37,11 +38,6 @@ class OpenParquetDialog(QDialog):
             QIcon(str(DIR_PLUGIN_ROOT.joinpath("resources/images/parquet.png")))
         )
 
-        # Radio buttons source behavior
-        self.on_source_change()
-        self.rb_local_file.clicked.connect(self.on_source_change)
-        self.rb_remote_file.clicked.connect(self.on_source_change)
-
         self.qfw_local_file.setFilter("Parquet (*.parquet)")
         self.pb_open.clicked.connect(self.load_parquet)
 
@@ -54,16 +50,6 @@ class OpenParquetDialog(QDialog):
         """
         return shlex.split(self.qfw_local_file.filePath())
 
-    @property
-    def get_file_url(self) -> str:
-        """Returns the remote file URL as a string.
-
-        :return: The remote file URL.
-        :rtype: str
-        """
-        raw_url = self.le_remote_url.text()
-        return raw_url
-
     def load_parquet(self) -> None:
         """
         Loads a Parquet file (local or remote) and adds it as a vector layer to the map.
@@ -73,26 +59,21 @@ class OpenParquetDialog(QDialog):
             "duckdb"
         )
 
-        if self.rb_local_file.isChecked():
-            for parquet in self.get_file_path:
+        for parquet in self.get_file_path:
+            # Is URL
+            if any(parquet.startswith(proto) for proto in PROTOCOLES):
+                if not self.is_valid_url(parquet):
+                    continue
+                layer_name = "Remote parquet file"
+
+            # Local file
+            else:
                 if not self.check_parquet_exists(parquet):
                     continue
-                uri_parts = self._get_uri_parts(parquet)
                 layer_name = Path(parquet).name
 
-        elif self.rb_remote_file.isChecked():
-            if not self.is_valid_url(self.get_file_url):
-                PlgLogger.log(
-                    self.tr("{} is not a valid URL".format(self.get_file_url)),
-                    log_level=2,
-                    duration=10,
-                    push=True,
-                )
-                return
-            uri_parts = self._get_uri_parts(self.get_file_url)
-            layer_name = "Remote parquet file"
-
-        self._add_layer_to_project(duckdbProviderMetadata, uri_parts, layer_name)
+            uri_parts = self._get_uri_parts(parquet)
+            self._add_layer_to_project(duckdbProviderMetadata, uri_parts, layer_name)
 
     def _get_uri_parts(self, path: str) -> dict:
         """
@@ -154,21 +135,6 @@ class OpenParquetDialog(QDialog):
             return False
         return True
 
-    def on_source_change(self) -> None:
-        """Manages the behavior of radio buttons for file source selection.
-
-        This method activates or deactivates the corresponding fields according to the
-        user's choice between a local file and a remote URL.
-        between a local file and a remote URL.
-        """
-        if self.rb_local_file.isChecked():
-            self.qfw_local_file.setVisible(True)
-            self.le_remote_url.setVisible(False)
-
-        elif self.rb_remote_file.isChecked():
-            self.qfw_local_file.setVisible(False)
-            self.le_remote_url.setVisible(True)
-
     def is_valid_url(self, url: str) -> bool:
         """Checks if the given URL is valid by ensuring it contains a scheme and a netloc.
 
@@ -178,4 +144,12 @@ class OpenParquetDialog(QDialog):
         :rtype: bool
         """
         parsed = urlparse(url)
-        return bool(parsed.scheme) and bool(parsed.netloc)
+        if not bool(parsed.scheme) and not bool(parsed.netloc):
+            PlgLogger.log(
+                self.tr("{} is not a valid URL".format(url)),
+                log_level=2,
+                duration=10,
+                push=True,
+            )
+            return False
+        return True

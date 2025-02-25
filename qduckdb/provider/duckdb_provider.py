@@ -22,6 +22,7 @@ from qduckdb.provider.mappings import (
     mapping_duckdb_qgis_geometry,
     mapping_duckdb_qgis_type,
 )
+from qduckdb.provider.protocoles import PROTOCOLES
 from qduckdb.toolbelt.log_handler import PlgLogger
 
 # conditional imports
@@ -239,8 +240,7 @@ class DuckdbProvider(QgsVectorDataProvider):
 
         # To read remote files, especially parquets, you need to activate this on the connection.
         force_download = False
-        protocoles = ("http://", "https://", "ftp://", "s3://")
-        if self._sql and any(proto in self._sql for proto in protocoles):
+        if self._sql and any(proto in self._sql for proto in PROTOCOLES):
             force_download = True
 
         self._con = self.ddb_wrapper.connect(
