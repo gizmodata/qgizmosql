@@ -115,8 +115,8 @@ class OpenParquetDialog(QDialog):
         """
         return self.qw_crs.crs()
 
-    def check_parquet_exists(self, path: str) -> bool:
-        """Checks if a Parquet file exists at the given path.
+    def check_file_exists(self, path: str) -> bool:
+        """Checks if a file exists at the given path.
 
         If the file does not exist, a warning is logged using `PlgLogger.log()`.
 

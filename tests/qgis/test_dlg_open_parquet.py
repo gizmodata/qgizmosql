@@ -29,8 +29,8 @@ class TestDlgOpenParquet(unittest.TestCase):
         self.dialog.qfw_local_file.setFilePath(self.parquet_test.as_posix())
         self.assertEqual(self.dialog.get_file_path, [str(self.parquet_test)])
 
-    def test_check_parquet_exists(self) -> None:
-        self.assertTrue(self.dialog.check_parquet_exists(str(self.parquet_test)))
+    def test_check_file_exists(self) -> None:
+        self.assertTrue(self.dialog.check_file_exists(str(self.parquet_test)))
 
     def test_open_local_parquet(self) -> None:
         """Test that a layer has been added to the canvas"""
