@@ -59,12 +59,12 @@
         <translation>Ouvrir des fichiers (Geo)Parquet avec DuckDB</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_open_parquet.ui" line="38"/>
+        <location filename="../../gui/dlg_open_parquet.ui" line="86"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;You can open one or more parquet files and choose whether or not to group the results. To do this, the plugin doesn&apos;t use QGIS&apos;s native parquet provider; a DuckDB memory base will be created to read the parquet file(s), then the plugin&apos;s QDuckDB provider will be used to create the layer in QGIS.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Vous pouvez ouvrir un ou plusieurs fichiers parquet et choisir de grouper ou non les résultats. Pour ce faire, le plugin n&apos;utilise pas le fournisseur de parquet natif de QGIS ; une base de mémoire DuckDB sera créée pour lire le(s) fichier(s) parquet, puis le fournisseur QDuckDB du plugin sera utilisé pour créer la couche dans QGIS.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_open_parquet.ui" line="61"/>
+        <location filename="../../gui/dlg_open_parquet.ui" line="99"/>
         <source>Open</source>
         <translation>Ouvrir</translation>
     </message>
@@ -72,22 +72,22 @@
 <context>
     <name>DuckdbProvider</name>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="164"/>
+        <location filename="../../provider/duckdb_provider.py" line="165"/>
         <source>{} unknown extension, open an issue if it exists to add its support.</source>
         <translation>{} extension inconnue, ouvrez une question si elle existe pour ajouter son support.</translation>
     </message>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="193"/>
+        <location filename="../../provider/duckdb_provider.py" line="194"/>
         <source>The sql query is invalid: {}</source>
         <translation>La requête SQL n&apos;est pas valide : {}</translation>
     </message>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="259"/>
+        <location filename="../../provider/duckdb_provider.py" line="268"/>
         <source>Geometry type {} not supported</source>
         <translation>Le type de géométrie {} n&apos;est pas pris en charge</translation>
     </message>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="480"/>
+        <location filename="../../provider/duckdb_provider.py" line="489"/>
         <source>SQL error in filter : {}</source>
         <translation>Erreur SQL dans le filtre : {}</translation>
     </message>
@@ -103,9 +103,14 @@
 <context>
     <name>OpenParquetDialog</name>
     <message>
-        <location filename="../../gui/dlg_open_parquet.py" line="73"/>
+        <location filename="../../gui/dlg_open_parquet.py" line="129"/>
         <source>The parquet file {} does not exist.</source>
         <translation>Le fichier parquet {} n&apos;existe pas.</translation>
+    </message>
+    <message>
+        <location filename="../../gui/dlg_open_parquet.py" line="148"/>
+        <source>{} is not a valid URL</source>
+        <translation>{} n&apos;est pas une URL valide</translation>
     </message>
 </context>
 <context>
@@ -128,7 +133,7 @@
     <message>
         <location filename="../../plugin_main.py" line="155"/>
         <source>Open (geo)Parquet with DuckDB</source>
-        <translation type="unfinished">Ouvrir un fichier (geo)Parquer avec DuckDB</translation>
+        <translation>Ouvrir un fichier (geo)Parquer avec DuckDB</translation>
     </message>
     <message>
         <location filename="../../plugin_main.py" line="257"/>
@@ -136,17 +141,17 @@
         <translation>Erreur dans l&apos;importation des dépendances. Plugin désactivé.</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="273"/>
+        <location filename="../../plugin_main.py" line="274"/>
         <source>Plugin disabled. Please install all dependencies and then restart QGIS. Refer to the documentation for more information.</source>
         <translation>Plugin désactivé. Veuillez installer toutes les dépendances et redémarrer QGIS. Reportez-vous à la documentation pour plus d&apos;informations.</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="280"/>
+        <location filename="../../plugin_main.py" line="281"/>
         <source>Dependencies satisfied</source>
         <translation>Dépendances satisfaites</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="256"/>
+        <location filename="../../plugin_main.py" line="257"/>
         <source>How to fix it...</source>
         <translation>Comment y remédier...</translation>
     </message>
@@ -154,12 +159,12 @@
 <context>
     <name>QduckdbServerPlugin</name>
     <message>
-        <location filename="../../plugin_main.py" line="296"/>
+        <location filename="../../plugin_main.py" line="297"/>
         <source>Error importing dependencies. Plugin disabled.</source>
         <translation>Erreur dans l&apos;importation des dépendances. Plugin désactivé.</translation>
     </message>
     <message>
-        <location filename="../../plugin_main.py" line="304"/>
+        <location filename="../../plugin_main.py" line="305"/>
         <source>Dependencies satisfied</source>
         <translation>Dépendances satisfaites</translation>
     </message>
