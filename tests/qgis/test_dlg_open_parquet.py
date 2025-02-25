@@ -45,4 +45,4 @@ class TestDlgOpenParquet(unittest.TestCase):
         self.assertTrue(is_valid_url(parquet_url))
         self.dialog.load_parquet()
         project = QgsProject.instance()
-        self.assertTrue(project.mapLayersByName("Remote parquet file"))
+        self.assertTrue(project.mapLayersByName("qualite-de-lair-france.parquet"))
