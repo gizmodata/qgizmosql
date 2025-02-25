@@ -17,7 +17,7 @@ from qgis.utils import OverrideCursor
 
 # plugin
 from qduckdb.__about__ import DIR_PLUGIN_ROOT
-from qduckdb.provider.protocoles import PROTOCOLES
+from qduckdb.provider.protocols import PROTOCOLS
 from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
 
 
@@ -60,7 +60,7 @@ class OpenParquetDialog(QDialog):
 
         for parquet in self.get_file_path:
             # Is URL
-            if any(parquet.startswith(proto) for proto in PROTOCOLES):
+            if any(parquet.startswith(proto) for proto in PROTOCOLS):
                 if not is_valid_url(parquet):
                     continue
                 layer_name = "Remote parquet file"
