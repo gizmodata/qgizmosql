@@ -97,7 +97,7 @@ tests:unit:
     - python3 -m pip install -U -r requirements/testing.txt
     - python3 -m pip install -U -r requirements/embedded.txt
   script:
-    - env PYTHONPATH=/usr/share/qgis/python:. pytest -p no:qgis tests/unit --junitxml=junit/test-results-unit.xml --cov-report=xml:coverage-reports/coverage-unit.xml
+    - pytest -p no:qgis tests/unit --junitxml=junit/test-results-unit.xml --cov-report=xml:coverage-reports/coverage-unit.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
