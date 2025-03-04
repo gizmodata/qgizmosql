@@ -116,7 +116,6 @@ tests:qgis:
   tags:
     - oslandia_docker
   variables:
-    DISPLAY: ":1"
     PYTHONPATH: "/usr/share/qgis/python/plugins:/usr/share/qgis/python:."
   rules:
     - if: "$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH"
@@ -129,12 +128,11 @@ tests:qgis:
   before_script:
     - python3 -m pip install -U -r requirements/testing.txt
     - python3 -m pip install -U -r requirements/embedded.txt
-    - Xvfb :1 &
   needs:
     - job: tests:build_base
       artifacts: true
   script:
-    - pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
+    - xvfb-run pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
