@@ -134,7 +134,7 @@ tests:qgis:
     - job: tests:build_base
       artifacts: true
   script:
-    - env PYTHONPATH=/usr/share/qgis/python:. pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
+    - pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
