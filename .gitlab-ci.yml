@@ -112,7 +112,7 @@ tests:unit:
 
 tests:qgis:
   stage: 🤞 test
-  image: qgis/qgis:release-3_34
+  image: qgis/qgis:ltr-noble
   tags:
     - oslandia_docker
   rules:
