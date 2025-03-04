@@ -115,8 +115,6 @@ tests:qgis:
   image: qgis/qgis:release-3_34
   tags:
     - oslandia_docker
-  variables:
-    PYTHONPATH: "/usr/share/qgis/python/plugins:/usr/share/qgis/python:."
   rules:
     - if: "$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH"
       when: always
@@ -126,13 +124,16 @@ tests:qgis:
         - "**/*.py"
         - ".gitlab-ci.yml"
   before_script:
+    # use system-site-packages to have QGIS python dependency
+    - python3 -m venv .venv --system-site-packages
+    - source .venv/bin/activate
     - python3 -m pip install -U -r requirements/testing.txt
     - python3 -m pip install -U -r requirements/embedded.txt
   needs:
     - job: tests:build_base
       artifacts: true
   script:
-    - xvfb-run pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
+    - xvfb-run python3 -m pytest tests/qgis --junitxml=junit/test-results-qgis.xml --cov-report=xml:coverage-reports/coverage-qgis.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
