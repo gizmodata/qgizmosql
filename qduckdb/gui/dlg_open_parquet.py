@@ -72,9 +72,9 @@ class OpenParquetDialog(QDialog):
 
         except Exception as exc:
             PlgLogger.log(
-                message="Unable to determine the name of the remote file, a default name will be applied. . Trace: {}".format(
-                    exc
-                ),
+                message=self.tr(
+                    "Unable to determine the name of the remote file, a default name will be applied. Trace: {}"
+                ).format(exc),
                 log_level=1,
                 push=True,
             )

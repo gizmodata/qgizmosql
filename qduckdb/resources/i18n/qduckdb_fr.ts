@@ -105,12 +105,17 @@
     <message>
         <location filename="../../gui/dlg_open_parquet.py" line="129"/>
         <source>The parquet file {} does not exist.</source>
-        <translation>Le fichier parquet {} n&apos;existe pas.</translation>
+        <translation type="obsolete">Le fichier parquet {} n&apos;existe pas.</translation>
     </message>
     <message>
         <location filename="../../gui/dlg_open_parquet.py" line="148"/>
         <source>{} is not a valid URL</source>
-        <translation>{} n&apos;est pas une URL valide</translation>
+        <translation type="obsolete">{} n&apos;est pas une URL valide</translation>
+    </message>
+    <message>
+        <location filename="../../gui/dlg_open_parquet.py" line="74"/>
+        <source>Unable to determine the name of the remote file, a default name will be applied. Trace: {}</source>
+        <translation>Impossible de déterminer le nom du fichier distant, un nom par défaut sera appliqué. Trace : {}</translation>
     </message>
 </context>
 <context>
