@@ -1,7 +1,6 @@
 # standard
 import shlex
 from pathlib import Path
-from urllib.parse import urlparse
 
 # PyQGIS
 from qgis.core import (
@@ -11,16 +10,15 @@ from qgis.core import (
     QgsVectorLayer,
 )
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QEventLoop, Qt, QUrl
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from qgis.PyQt.QtWidgets import QDialog
 from qgis.utils import OverrideCursor
 
 # plugin
 from qduckdb.__about__ import DIR_PLUGIN_ROOT
 from qduckdb.provider.protocols import PROTOCOLS
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qduckdb.toolbelt.network import get_filename_from_url
 from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
 
 
@@ -42,45 +40,6 @@ class OpenParquetDialog(QDialog):
 
         self.qfw_local_file.setFilter("Parquet (*.parquet)")
         self.pb_open.clicked.connect(self.load_parquet)
-
-    def get_filename_from_url(self, url: str) -> str:
-        """Method that returns the name of the downloaded file. This method finds the file name in the header.
-
-        :param url: File url
-        :type url: str
-        :return: Filename
-        :rtype: str
-        """
-        try:
-            manager = QNetworkAccessManager()
-            request = QNetworkRequest(QUrl(url))
-            reply = manager.head(request)
-
-            loop = QEventLoop()
-            reply.finished.connect(loop.quit)
-            loop.exec_()
-
-            content_disposition = (
-                reply.rawHeader(b"Content-Disposition").data().decode("utf-8")
-            )
-
-            if "filename=" in content_disposition:
-                filename = content_disposition.split('filename="')[1].split('"')[0]
-            else:
-                parsed_url = urlparse(url)
-                filename = parsed_url.path.split("/")[-1]
-
-        except Exception as exc:
-            PlgLogger.log(
-                message=self.tr(
-                    "Unable to determine the name of the remote file, a default name will be applied. Trace: {}"
-                ).format(exc),
-                log_level=1,
-                push=True,
-            )
-            filename = "Remote parquet file"
-
-        return filename
 
     @property
     def get_file_path(self) -> list[str]:
@@ -105,7 +64,7 @@ class OpenParquetDialog(QDialog):
             if any(parquet.startswith(proto) for proto in PROTOCOLS):
                 if not is_valid_url(parquet):
                     continue
-                layer_name = self.get_filename_from_url(parquet)
+                layer_name = get_filename_from_url(parquet)
 
             # Local file
             else:
