@@ -15,6 +15,7 @@ SOURCES =	../../gui/dlg_add_duckdb_layer.py \
 	../../provider/mappings.py \
 	../../provider/models.py \
 	../../toolbelt/log_handler.py \
-	../../toolbelt/preferences.py
+	../../toolbelt/preferences.py \
+	../../toolbelt/network.py
 
 TRANSLATIONS =	qduckdb_fr.ts

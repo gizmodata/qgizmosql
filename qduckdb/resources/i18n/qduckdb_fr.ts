@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fr" sourcelanguage="en">
 <context>
+    <name></name>
+    <message>
+        <location filename="../../toolbelt/network.py" line="35"/>
+        <source>Unable to determine the name of the remote file, a default name will be applied. Trace: {}</source>
+        <translation>Impossible de déterminer le nom du fichier distant, un nom par défaut sera appliqué. Trace : {}</translation>
+    </message>
+</context>
+<context>
     <name>Dialog</name>
     <message>
         <location filename="../../gui/dlg_add_duckdb_layer.ui" line="32"/>
@@ -115,7 +123,7 @@
     <message>
         <location filename="../../gui/dlg_open_parquet.py" line="74"/>
         <source>Unable to determine the name of the remote file, a default name will be applied. Trace: {}</source>
-        <translation>Impossible de déterminer le nom du fichier distant, un nom par défaut sera appliqué. Trace : {}</translation>
+        <translation type="obsolete">Impossible de déterminer le nom du fichier distant, un nom par défaut sera appliqué. Trace : {}</translation>
     </message>
 </context>
 <context>
