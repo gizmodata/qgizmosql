@@ -33,9 +33,9 @@ def get_filename_from_url(url: str) -> str:
 
     except Exception as exc:
         PlgLogger.log(
-            message=self.tr(
-                "Unable to determine the name of the remote file, a default name will be applied. Trace: {}"
-            ).format(exc),
+            message="Unable to determine the name of the remote file, a default name will be applied. Trace: {}".format(
+                exc
+            ),
             log_level=1,
             push=True,
         )
