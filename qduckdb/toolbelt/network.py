@@ -1,4 +1,5 @@
 # Standard
+from typing import Optional
 from urllib.parse import urlparse
 
 # qgis
@@ -7,7 +8,39 @@ from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtNetwork import QNetworkRequest
 
 # Plugin
+from qduckdb.__about__ import __title__, __version__
 from qduckdb.toolbelt.log_handler import PlgLogger
+
+
+def build_request(
+    url: Optional[QUrl] = None,
+    http_content_type: str = "application/json",
+    http_user_agent: str = f"{__title__}/{__version__}",
+) -> QNetworkRequest:
+    """Build request object using plugin settings.
+
+    :param url: request url, defaults to None
+    :type url: QUrl, optional
+    :param http_content_type: content type, defaults to "application/json"
+    :type http_content_type: str, optional
+    :param http_user_agent: http user agent, defaults to f"{__title__}/{__version__}"
+    :type http_user_agent: str, optional
+
+    :return: network request object.
+    :rtype: QNetworkRequest
+    """
+    # create network object
+    qreq = QNetworkRequest(url=url)
+
+    # headers
+    headers = {
+        b"Accept": bytes(http_content_type, "utf8"),
+        b"User-Agent": bytes(http_user_agent, "utf8"),
+    }
+    for k, v in headers.items():
+        qreq.setRawHeader(k, v)
+
+    return qreq
 
 
 def get_filename_from_url(url: str) -> str:
@@ -20,7 +53,7 @@ def get_filename_from_url(url: str) -> str:
     """
     try:
         request = QgsBlockingNetworkRequest()
-        request.head(QNetworkRequest(QUrl(url)))
+        request.head(build_request(QUrl(url)))
         content_disposition = (
             request.reply().rawHeader(b"Content-Disposition").data().decode("utf-8")
         )
