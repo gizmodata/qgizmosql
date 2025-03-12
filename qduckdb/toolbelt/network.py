@@ -58,17 +58,29 @@ def get_filename_from_url(url: str) -> str:
             request.reply().rawHeader(b"Content-Disposition").data().decode("utf-8")
         )
 
+    except Exception as exc:
+        PlgLogger.log(
+            message="Error retrieving downloaded file name. Trace: {}".format(exc),
+            log_level=1,
+            push=True,
+        )
+
+    if content_disposition:
         if "filename=" in content_disposition:
             filename = content_disposition.split('filename="')[1].split('"')[0]
         else:
             parsed_url = urlparse(url)
             filename = parsed_url.path.split("/")[-1]
 
-    except Exception as exc:
         PlgLogger.log(
-            message="Unable to determine the name of the remote file, a default name will be applied. Trace: {}".format(
-                exc
-            ),
+            message="The file name is: {}".format(filename),
+            log_level=3,
+            push=False,
+        )
+
+    else:
+        PlgLogger.log(
+            message="Unable to determine the name of the remote file, a default name will be applied.",
             log_level=1,
             push=True,
         )
