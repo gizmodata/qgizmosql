@@ -37,13 +37,11 @@ from qduckdb.toolbelt.log_handler import PlgLogger
 try:
     from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
     from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
-    from qduckdb.provider.duckdb_provider import DuckdbProvider
     from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
 
     EXTERNAL_DEPENDENCIES_AVAILABLE: bool = True
 except ImportError:
     EXTERNAL_DEPENDENCIES_AVAILABLE: bool = False
-    DuckdbProvider = None
     DuckdbProviderMetadata = None
     LoadDuckDBLayerDialog = None
     OpenParquetDialog = None
