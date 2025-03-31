@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import weakref
+from typing import Optional
 
 from qgis.core import (
     QgsCoordinateReferenceSystem,
@@ -466,7 +467,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             )
         )
 
-    def con(self) -> duckdb.DuckDBPyConnection | None:
+    def con(self) -> Optional[duckdb.DuckDBPyConnection]:
         """Start DuckDB cursor"""
         if not self._is_valid:
             return None

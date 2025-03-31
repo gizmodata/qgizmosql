@@ -1,5 +1,6 @@
 # standard
 from pathlib import Path
+from typing import Optional
 
 # PyQGIS
 from qgis.core import (
@@ -86,7 +87,7 @@ class LoadDuckDBLayerDialog(QDialog):
             self.label_extension.setEnabled(True)
 
     @property
-    def db_path(self) -> Path | None:
+    def db_path(self) -> Optional[Path]:
         """Return the db path specified entered in the appropriate field as pathlib.Path
             object.
 
