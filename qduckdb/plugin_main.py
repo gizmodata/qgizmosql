@@ -10,6 +10,7 @@ from __future__ import annotations
 import typing
 from functools import partial
 from pathlib import Path
+from typing import Optional
 
 # PyQGIS
 from qgis.core import QgsApplication, QgsProject, QgsProviderRegistry, QgsSettings
@@ -39,12 +40,9 @@ try:
     from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
     from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
 
-    EXTERNAL_DEPENDENCIES_AVAILABLE: bool = True
+    EXTERNAL_DEPENDENCIES_AVAILABLE = True
 except ImportError:
-    EXTERNAL_DEPENDENCIES_AVAILABLE: bool = False
-    DuckdbProviderMetadata = None
-    LoadDuckDBLayerDialog = None
-    OpenParquetDialog = None
+    EXTERNAL_DEPENDENCIES_AVAILABLE = False
 
 # ############################################################################
 # ########## Classes ###############
@@ -112,7 +110,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
             QCoreApplication.installTranslator(self.translator)
 
         # dialogs placeholders
-        self._dlg_add_layer = None
+        self._dlg_add_layer: Optional[LoadDuckDBLayerDialog] = None
 
     def initGui(self):
         """Set up plugin UI elements."""
