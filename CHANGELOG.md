@@ -15,6 +15,10 @@ Unreleased
 ### Removed
 
 -->
+## 2.1.1 - 2025-04-01
+
+- Fix Python syntax to maintain compatibility with QGIS versions still using Python 3.9 !172
+
 ## 2.1.0 - 2025-02-25
 
 - Ability to read a remote parquet with a URL !165
