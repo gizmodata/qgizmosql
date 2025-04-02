@@ -133,7 +133,8 @@ class DuckdbProvider(QgsVectorDataProvider):
 
     def capabilities(self) -> QgsVectorDataProvider.Capabilities:
         return (
-            QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId
+            QgsVectorDataProvider.Capability.CreateSpatialIndex
+            | QgsVectorDataProvider.Capability.SelectAtId
         )
 
     @property

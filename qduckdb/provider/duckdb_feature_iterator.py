@@ -112,12 +112,12 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         # Create fid/fids list
         feature_id_list = None
         if (
-            self._request.filterType() == QgsFeatureRequest.FilterFid
-            or self._request.filterType() == QgsFeatureRequest.FilterFids
+            self._request.filterType() == QgsFeatureRequest.FilterType.FilterFid
+            or self._request.filterType() == QgsFeatureRequest.FilterType.FilterFids
         ):
             feature_id_list = (
                 [self._request.filterFid()]
-                if self._request.filterType() == QgsFeatureRequest.FilterFid
+                if self._request.filterType() == QgsFeatureRequest.FilterType.FilterFid
                 else self._request.filterFids()
             )
 
@@ -132,7 +132,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             where_clause_list.append(feature_clause)
 
         # Apply the filter expression
-        if self._request.filterType() == QgsFeatureRequest.FilterExpression:
+        if self._request.filterType() == QgsFeatureRequest.FilterType.FilterExpression:
             # A provider is supposed to implement a QgsSqlExpressionCompiler
             # in order to handle expression. However, this class is not
             # available in the Python bindings.

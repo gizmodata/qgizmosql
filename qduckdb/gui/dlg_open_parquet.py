@@ -99,7 +99,7 @@ class OpenParquetDialog(QDialog):
         :param uri_parts: URI parts for the Parquet file.
         :param layer_name: Name of the layer.
         """
-        with OverrideCursor(Qt.WaitCursor):
+        with OverrideCursor(Qt.CursorShape.WaitCursor):
             uri = provider_metadata.encodeUri(uri_parts)
             layer = QgsVectorLayer(uri, layer_name, "duckdb")
             QgsProject.instance().addMapLayer(layer)

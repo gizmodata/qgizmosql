@@ -79,7 +79,8 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider()
         self.assertEqual(
             provider.capabilities(),
-            QgsVectorDataProvider.CreateSpatialIndex | QgsVectorDataProvider.SelectAtId,
+            QgsVectorDataProvider.Capability.CreateSpatialIndex
+            | QgsVectorDataProvider.Capability.SelectAtId,
         )
 
     def test_register_same_provider_twice(self) -> None:
@@ -109,49 +110,49 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="cities"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.Point)
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="select * from cities limit 1"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.Point)
 
         # Linestring
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="highway"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.LineString)
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="select * from highway limit 1"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.LineString)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.LineString)
 
         # Polygon
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="building"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.Polygon)
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|sql="select * from building limit 1"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Polygon)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.Polygon)
 
         # MultiPolygon
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="test_multi"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.MultiPolygon)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.MultiPolygon)
 
         # Geom with wrong uri
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="zidane"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.NoGeometry)
 
         # Table without geom
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="table_no_geom"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.NoGeometry)
 
     def test_extent(self) -> None:
         # Test linestring layer
@@ -227,7 +228,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(
             provider.extent().asWktPolygon(), QgsRectangle().asWktPolygon()
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.NoGeometry)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.NoGeometry)
 
     def test_featureCount(self) -> None:
         provider = DuckdbProvider(
@@ -273,7 +274,7 @@ class TestQDuckDBProvider(unittest.TestCase):
             count_feature = 0
             for feature in features:
                 count_feature += 1
-                self.assertEqual(feature.geometry().wkbType(), QgsWkbTypes.Point)
+                self.assertEqual(feature.geometry().wkbType(), QgsWkbTypes.Type.Point)
                 list_type_field = []
                 for field in feature.fields():
                     list_type_field.append(field.type())
@@ -804,7 +805,7 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(
             uri=f'path="{self.db_path_test}"|table="table-test"|epsg="4326"'
         )
-        self.assertEqual(provider.wkbType(), QgsWkbTypes.Point)
+        self.assertEqual(provider.wkbType(), QgsWkbTypes.Type.Point)
         self._test_all_provider_method(provider)
         features = list(provider.getFeatures())
         self.assertEqual(len(features), 1)
