@@ -58,6 +58,32 @@ flake8:
     - flake8 $PROJECT_FOLDER --count --select=E9,F63,F7,F82 --show-source --statistics
     - flake8 $PROJECT_FOLDER --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+lint:qt6:
+  stage: 🐍 lint
+  image: registry.gitlab.com/oslandia/qgis/pyqgis-4-checker/pyqgis-qt-checker:latest
+  tags:
+    - docker
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "$PROJECT_FOLDER/**/*.py"
+        - ".gitlab-ci.yml"
+      when: on_success
+    - when: never
+  script:
+    # just print the script help
+    # - pyqt5_to_pyqt6.py --help
+    # first, a dry run to get the log file
+    - pyqt5_to_pyqt6.py --dry_run --logfile pyqt6_checker.log $PROJECT_FOLDER/
+    # then running with edit enabled to
+    - pyqt5_to_pyqt6.py $PROJECT_FOLDER/
+  artifacts:
+    paths:
+      - pyqt6_checker.log
+    when: always
+    access: all
+    expire_in: 3 days
+
 # -- TEST JOBS --------------------------------------------------------------------------
 tests:build_base:
   stage: 🤞 test
