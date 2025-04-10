@@ -15,6 +15,10 @@ Unreleased
 ### Removed
 
 -->
+## 2.1.2 - 2025-04-10
+
+- Upgrade to DuckDB version 1.2.2 !177
+
 ## 2.1.1 - 2025-04-01
 
 - Fix Python syntax to maintain compatibility with QGIS versions still using Python 3.9 !172
