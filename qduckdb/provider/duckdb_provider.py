@@ -4,6 +4,7 @@ import weakref
 from typing import Optional
 
 from qgis.core import (
+    Qgis,
     QgsCoordinateReferenceSystem,
     QgsDataProvider,
     QgsFeature,
@@ -20,6 +21,7 @@ from qgis.PyQt.QtCore import QMetaType
 from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
 from qduckdb.provider.extension import community_extensions, core_extensions
 from qduckdb.provider.mappings import (
+    deprecate_mapping_duckdb_qgis_type,
     mapping_duckdb_qgis_geometry,
     mapping_duckdb_qgis_type,
 )
@@ -116,6 +118,11 @@ class DuckdbProvider(QgsVectorDataProvider):
         self._flags = flags
         self._is_valid = True
         weakref.finalize(self, self.disconnect_database)
+
+        if Qgis.QGIS_VERSION_INT < 33800:
+            self.mapping_field_type = deprecate_mapping_duckdb_qgis_type
+        else:
+            self.mapping_field_type = mapping_duckdb_qgis_type
 
     @classmethod
     def providerKey(cls) -> str:
@@ -389,7 +396,7 @@ class DuckdbProvider(QgsVectorDataProvider):
 
                 for field_name, field_type in field_info:
                     qgs_field = QgsField(
-                        field_name, mapping_duckdb_qgis_type[field_type]
+                        field_name, self.mapping_field_type[field_type]
                     )
                     self._fields.append(qgs_field)
 

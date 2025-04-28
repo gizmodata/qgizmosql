@@ -1,5 +1,5 @@
 from qgis.core import QgsWkbTypes
-from qgis.PyQt.QtCore import QMetaType
+from qgis.PyQt.QtCore import QMetaType, QVariant
 
 mapping_duckdb_qgis_geometry = {
     "LINESTRING": QgsWkbTypes.Type.LineString,
@@ -29,4 +29,25 @@ mapping_duckdb_qgis_type = {
     "bool": QMetaType.Type.Bool,
     "JSON": QMetaType.Type.QString,
     "DATETIME": QMetaType.Type.QDateTime,
+}
+
+# Use to keep QGIS 3.34 compatibility
+deprecate_mapping_duckdb_qgis_type = {
+    "BIGINT": QVariant.Int,
+    "BOOLEAN": QVariant.Bool,
+    "DATE": QVariant.Date,
+    "TIME": QVariant.Time,
+    "DOUBLE": QVariant.Double,
+    "FLOAT": QVariant.Double,
+    "INTEGER": QVariant.Int,
+    "TIMESTAMP": QVariant.DateTime,
+    "VARCHAR": QVariant.String,
+    # Type used for custom sql when table is not created
+    # Not difference betwenn float and integer so all the numeric field are NUMBER
+    "NUMBER": QVariant.Double,
+    "STRING": QVariant.String,
+    "Date": QVariant.Date,
+    "bool": QVariant.Bool,
+    "JSON": QVariant.String,
+    "DATETIME": QVariant.DateTime,
 }
