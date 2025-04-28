@@ -15,6 +15,10 @@ Unreleased
 ### Removed
 
 -->
+## 2.1.3 - 2025-04-28
+
+- Fix of a regression bug on QGIS versions lower than 3.38 introduced when fixing the deprecated QgsField constructor. !185
+
 ## 2.1.2 - 2025-04-10
 
 - Upgrade to DuckDB version 1.2.2 !177
