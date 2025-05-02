@@ -57,4 +57,13 @@ VALUES
 
 INSERT INTO table_with_float (id, test_float, geom)
 VALUES
-  (1, 2458.254, ST_GeomFromText('POINT(1 1)'))
+  (1, 2458.254, ST_GeomFromText('POINT(1 1)')); 
+
+CREATE SCHEMA data_schema;
+CREATE TABLE data_schema.geodata(id INTEGER PRIMARY KEY, text VARCHAR, geom GEOMETRY);
+INSERT INTO data_schema.geodata (id, text, geom)
+VALUES
+  (1001, 'value1', ST_GeomFromText('POINT(5 10)')),
+  (1002, 'value2', ST_GeomFromText('POINT(42 4)')),
+  (1003, 'value3', ST_GeomFromText('POINT(55 1)')),
+  (1004, 'value4', ST_GeomFromText('POINT(-3 -20)'));

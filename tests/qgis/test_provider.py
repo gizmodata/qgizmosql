@@ -854,6 +854,18 @@ class TestQDuckDBProvider(unittest.TestCase):
         provider = DuckdbProvider(uri='path=""|table="my_table"|epsg="4326"')
         self.assertFalse(provider.isValid())
 
+    def test_table_in_schema(self) -> None:
+        provider = DuckdbProvider(
+            uri=f'path="{self.db_path_test}"|schema="data_schema"|table="geodata"|epsg="4326"'
+        )
+        self.assertEqual(provider.featureCount(), 4)
+
+        self.assertIsInstance(provider.fields(), QgsFields)
+        fields = provider.fields()
+        self.assertEqual(fields[0].name(), "id")
+        self.assertEqual(fields[0].type(), QVariant.Int)
+        self.assertEqual(fields[1].type(), QVariant.String)
+
 
 if __name__ == "__main__":
     unittest.main()
