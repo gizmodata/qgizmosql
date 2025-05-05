@@ -35,17 +35,15 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
         cls.table = "mytable"
         cls.epsg = 4326
         cls.sql = 'SELECT id, \\"My Field\\", geom from mytable LIMIT 10'
+        cls.schema = "the_schema"
 
         cls.expected_sql_uri = (
             f'path="{cls.full_path}"|sql="{cls.sql}"|epsg="{cls.epsg}"'
         )
 
-        cls.expected_abs_table_uri = (
-            f'path="{cls.full_path}"|table="{cls.table}"|epsg="{cls.epsg}"'
-        )
-        cls.expected_rel_table_uri = (
-            f'path="{cls.db_filename}"|table="{cls.table}"|epsg="{cls.epsg}"'
-        )
+        cls.expected_abs_table_uri = f'path="{cls.full_path}"|table="{cls.table}"|schema="main"|epsg="{cls.epsg}"'
+        cls.expected_rel_table_uri = f'path="{cls.db_filename}"|table="{cls.table}"|schema="main"|epsg="{cls.epsg}"'
+        cls.expected_uri_with_schema = f'path="{cls.db_filename}"|table="{cls.table}"|schema="{cls.schema}"|epsg="{cls.epsg}"'
 
     def test_encode_uri(self):
         # encoding does not have any effect on the path
@@ -95,6 +93,15 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
             self.assertEqual(rel_parts["path"], expected_path)
             self.assertEqual(rel_parts["table"], self.table)
             self.assertEqual(int(rel_parts["epsg"]), self.epsg)
+
+            schema_parts = self.provider_metadata.decodeUri(
+                self.expected_uri_with_schema
+            )
+            self.assertTrue("sql" not in rel_parts)
+            self.assertEqual(schema_parts["path"], expected_path)
+            self.assertEqual(schema_parts["table"], self.table)
+            self.assertEqual(int(schema_parts["epsg"]), self.epsg)
+            self.assertEqual(schema_parts["schema"], self.schema)
 
         QgsProject.instance().setFileName("")
 

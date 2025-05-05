@@ -173,15 +173,17 @@ class LoadDuckDBLayerDialog(QDialog):
             table_name = "query"
         else:
             table_name = self._table_combobox.currentText()
+            schema, table = table_name.split(".")
 
         extension = ",".join(self._cbb_extension.checkedItems())
 
         uri_parts = {
             "path": str(self.db_path) if self.db_path else "",
             "sql": sql_query,
-            "table": table_name,
+            "table": table,
             "epsg": epsg,
             "extension": extension,
+            "schema": schema,
         }
         uri = duckdbProviderMetadata.encodeUri(uri_parts)
         layer = QgsVectorLayer(uri, table_name, "duckdb")

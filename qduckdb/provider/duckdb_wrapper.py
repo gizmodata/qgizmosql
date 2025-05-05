@@ -55,7 +55,7 @@ class DuckDbTools:
         "connection_alive": "SELECT 1;",
         "duckdb_settings": "SELECT * FROM duckdb_settings();",
         "list_extensions": "SELECT extension_name, installed, loaded FROM duckdb_extensions();",
-        "list_tables": "SELECT table_name from information_schema.tables;",
+        "list_tables": "SELECT concat(table_schema,'.',table_name) AS table_name from information_schema.tables;",
         "spatial_install": "INSTALL spatial;",
         "spatial_load": "LOAD spatial;",
         "force_download": "SET force_download=true;",
@@ -619,7 +619,12 @@ class DuckDbTools:
     def parse_uri(
         self, uri: str
     ) -> tuple[
-        Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]
+        Optional[str],
+        Optional[str],
+        Optional[str],
+        Optional[str],
+        Optional[str],
+        Optional[str],
     ]:
         """Parse the input URI and returns the path to the database and the name of the
         table. If the parsing is successfull, the path, table, and epsg are set at wrapper's level.
@@ -647,14 +652,15 @@ class DuckDbTools:
         epsg = parsed_uri.get("epsg", None)
         sql = parsed_uri.get("sql", None)
         extension = parsed_uri.get("extension", None)
+        schema = parsed_uri.get("schema", "main")
 
         # Queries that end with ";" are a problem, as we don't multitransact, so we can afford to delete them.
         if sql:
             sql = sql.rstrip().rstrip(";")
 
         PlgLogger.log(
-            message="URI parsed successfully: path={} | table={} | epsg={} | sql={} | extension={}".format(
-                path, table, epsg, sql, extension
+            message="URI parsed successfully: path={} | table={} | epsg={} | sql={} | extension={} | schema ={}".format(
+                path, table, epsg, sql, extension, schema
             ),
             log_level=4,
             push=False,
@@ -680,6 +686,7 @@ class DuckDbTools:
         self._epsg_code = epsg
         self._sql = sql
         self._extension = extension
+        self._schema = schema
 
         PlgLogger.log(
             message="Results from URI parsing are now used as wrapper attributes.",
@@ -687,4 +694,4 @@ class DuckDbTools:
             push=False,
         )
 
-        return path, table, epsg, sql, extension
+        return path, table, epsg, sql, extension, schema

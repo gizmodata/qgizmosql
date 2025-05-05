@@ -41,7 +41,8 @@ class DuckdbProviderMetadata(QgsProviderMetadata):
             sql_part = f'sql="{sql_query}"'
         else:
             table_name = parts["table"]
-            sql_part = f'table="{table_name}"'
+            schema = parts.get("schema", "main")
+            sql_part = f'table="{table_name}"|schema="{schema}"'
 
         path = parts["path"]
         epsg = parts["epsg"]

@@ -83,6 +83,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 self._epsg,
                 self._sql,
                 self._extension,
+                self._schema,
             ) = self.ddb_wrapper.parse_uri(uri)
 
         except (FileNotFoundError, ValueError) as exc:
@@ -110,7 +111,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 return
             self._from_clause = f"({self._sql})"
         else:
-            self._from_clause = f'"{self._table}"'
+            self._from_clause = f'"{self._schema}"."{self._table}"'
 
         self.get_geometry_column()
 
@@ -332,7 +333,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             if not self._sql:
                 cols = self._con.sql(
                     "SELECT column_name FROM information_schema.columns "
-                    f"WHERE table_name = '{self._table}' AND data_type = 'GEOMETRY'"
+                    f"WHERE table_name = '{self._table}' AND table_schema = '{self._schema}' AND data_type = 'GEOMETRY'"
                 ).fetchone()
                 if cols:
                     self._column_geom = cols[0]
@@ -354,7 +355,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             if not self._sql:
                 res = self._con.sql(
                     "SELECT constraint_column_indexes FROM duckdb_constraints() "
-                    f"WHERE table_name='{self.get_table()}' "
+                    f"WHERE table_name='{self.get_table()}' AND schema_name = '{self._schema}' "
                     "AND constraint_type = 'PRIMARY KEY';"
                 ).fetchone()
 
@@ -379,7 +380,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 if not self._sql:
                     field_info = self._con.sql(
                         "select column_name, data_type from "
-                        f"information_schema.columns WHERE table_name = '{self._table}' AND "
+                        f"information_schema.columns WHERE table_name = '{self._table}' AND table_schema = '{self._schema}' AND "
                         " data_type not in ('GEOMETRY', 'WKB_BLOB')"
                     ).fetchall()
                 else:
@@ -441,12 +442,10 @@ class DuckdbProvider(QgsVectorDataProvider):
         if self._sql:
             return False
 
-        query = (
-            "SELECT table_name FROM information_schema.tables WHERE table_type = 'VIEW'"
-        )
+        query = "SELECT concat(table_schema,'.',table_name) as table_name FROM information_schema.tables WHERE table_type = 'VIEW'"
         view_list = [elem[0] for elem in self._con.sql(query).fetchall()]
 
-        return self._table in view_list
+        return f"{self._schema}.{self._table}" in view_list
 
     def uniqueValues(self, fieldIndex: int, limit: int = -1) -> set:
         """Returns the unique values of a field
