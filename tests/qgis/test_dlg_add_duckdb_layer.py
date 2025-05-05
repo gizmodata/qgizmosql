@@ -53,11 +53,11 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
     def test_push_add_layer_button(self) -> None:
         """Test that a layer has been added to the canvas"""
         self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
-        self.dialog._table_combobox.setCurrentText("highway")
+        self.dialog._table_combobox.setCurrentText("main.highway")
         self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
         self.dialog._push_add_layer_button()
         project = QgsProject.instance()
-        self.assertTrue(project.mapLayersByName("highway"))
+        self.assertTrue(project.mapLayersByName("main.highway"))
 
     def test_lock_button_with_wrong_path(self) -> None:
         """We test that the button remains locked when the wrong base is entered."""
