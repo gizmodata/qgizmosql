@@ -40,10 +40,12 @@ If your SQL query uses functions from extensions, check them in the extensions d
 
 You can also use the plugin's command-line data provider.
 
-In the uri you need to provide the same things as in the UI, i.e. the base path, the table name and the EPSG code to define the projection. Here's an example of python code you can use in the qgis python console to do this.
+In the URI, you need to provide the same things as in the UI: the base path, the table name, and the EPSG code to define the projection. Schema management has also been added via `schema="schema_name"`, but it is optional. If no schema is specified, the default is to search in the `main` schema.
+
+Here's an example of python code you can use in the qgis python console to do this.
 
 ```python
-uri = 'path="path/to/my/db.duckdb"|table="my_spatial_table"|epsg="4326"'
+uri = 'path="path/to/my/db.duckdb"|table="my_spatial_table"|epsg="4326"|schema="data"'
 layer = QgsVectorLayer(uri, "my_table", "duckdb")
 QgsProject.instance().addMapLayer(layer)
 ```
