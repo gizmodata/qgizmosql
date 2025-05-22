@@ -171,6 +171,8 @@ class LoadDuckDBLayerDialog(QDialog):
         if self._sql.isChecked() and self._sql_query.text():
             sql_query = self._sql_query.text()
             table_name = "query"
+            table = ""
+            schema = ""
         else:
             table_name = self._table_combobox.currentText()
             schema, table = table_name.split(".")
