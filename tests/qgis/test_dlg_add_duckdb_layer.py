@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QgsWkbTypes
 from qgis.testing import start_app, unittest
 
 from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
@@ -63,3 +63,21 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
         """We test that the button remains locked when the wrong base is entered."""
         self.dialog._db_path_input.setFilePath(self.wrong_db_path.as_posix())
         self.assertFalse(self.dialog._add_layer_btn.isEnabled())
+
+    def test_sql_query(self) -> None:
+        """Test dialog with custom sql query"""
+        self.dialog._sql.setChecked(True)
+        self.dialog._db_path_input.setFilePath(self.db_path_test.as_posix())
+        self.dialog._sql_query.setText(
+            "SELECT * FROM cities where name = 'Marseille' ;"
+        )
+        self.dialog._push_add_layer_button()
+        project = QgsProject.instance()
+        self.assertTrue(project.mapLayersByName("query"))
+        layer = QgsProject.instance().mapLayersByName("query")[0]
+        assert len(layer) == 1
+        features = list(layer.getFeatures())
+        assert len(features) == 1
+        feature = features[0]
+        assert feature["name"] == "Marseille"
+        assert layer.geometryType() == QgsWkbTypes.PointGeometry
