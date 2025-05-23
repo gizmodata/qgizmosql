@@ -15,6 +15,12 @@ Unreleased
 ### Removed
 
 -->
+
+## 2.2.1 - 2025-05-23
+
+- Upgrade to DuckDB version 1.3.0 !188
+- Fixed a bug when executing a custom sql query from the GUI !189
+
 ## 2.2.0 - 2025-05-15
 
 - Add support for specifying schemas in the QDuckDB provider URI, enabling access to tables beyond the default main schema while maintaining backward compatibility. !186
