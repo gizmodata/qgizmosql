@@ -146,7 +146,7 @@
     <message>
         <location filename="../../plugin_main.py" line="155"/>
         <source>Open (geo)Parquet with DuckDB</source>
-        <translation>Ouvrir un fichier (geo)Parquer avec DuckDB</translation>
+        <translation>Ouvrir un fichier (geo)Parquet avec DuckDB</translation>
     </message>
     <message>
         <location filename="../../plugin_main.py" line="257"/>
