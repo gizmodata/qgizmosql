@@ -15,7 +15,7 @@ Then use it:
 
 ```bash
 # package a specific version
-qgis-plugin-ci package 1.3.1
+qgis-plugin-ci package 1.0.0
 # package latest version
 qgis-plugin-ci package latest
 ```
