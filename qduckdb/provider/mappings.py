@@ -4,7 +4,7 @@ from qgis.PyQt.QtCore import QMetaType, QVariant
 mapping_duckdb_qgis_geometry = {
     "LINESTRING": QgsWkbTypes.Type.LineString,
     "MULTILINESTRING": QgsWkbTypes.Type.MultiLineString,
-    "MULTIPOINT": QgsWkbTypes.Type.MultiPolygon,
+    "MULTIPOINT": QgsWkbTypes.Type.MultiPoint,
     "MULTIPOLYGON": QgsWkbTypes.Type.MultiPolygon,
     "POINT": QgsWkbTypes.Type.Point,
     "POLYGON": QgsWkbTypes.Type.Polygon,
