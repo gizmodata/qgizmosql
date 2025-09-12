@@ -31,4 +31,5 @@ community_extensions = [
     "prql",
     "scrooge",
     "shellfs",
+    "bigquery",
 ]
