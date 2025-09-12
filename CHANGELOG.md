@@ -16,6 +16,11 @@ Unreleased
 
 -->
 
+## 2.2.4 - 2025-09-12
+
+- Correct geometry mapping for MULTIPOINT !193
+- Add bigquery extension from comunity extension !194
+
 ## 2.2.3 - 2025-07-25
 
 - Upgrade to DuckDB version 1.3.2 !191
