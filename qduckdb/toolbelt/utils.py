@@ -1,6 +1,8 @@
 from pathlib import Path
 from urllib.parse import urlparse
 
+from qgis.core import Qgis
+
 from qduckdb.toolbelt.log_handler import PlgLogger
 
 
@@ -17,7 +19,7 @@ def check_file_exists(path: str) -> bool:
     if not Path(path).exists():
         PlgLogger.log(
             "The parquet file {} does not exist.".format(path),
-            log_level=2,
+            log_level=Qgis.MessageLevel.Critical,
             duration=10,
             push=True,
         )
@@ -37,7 +39,7 @@ def is_valid_url(url: str) -> bool:
     if not bool(parsed.scheme) and not bool(parsed.netloc):
         PlgLogger.log(
             "{} is not a valid URL".format(url),
-            log_level=2,
+            log_level=Qgis.MessageLevel.Critical,
             duration=10,
             push=True,
         )

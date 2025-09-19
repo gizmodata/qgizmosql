@@ -3,7 +3,7 @@ from typing import Optional
 from urllib.parse import urlparse
 
 # qgis
-from qgis.core import QgsBlockingNetworkRequest
+from qgis.core import Qgis, QgsBlockingNetworkRequest
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtNetwork import QNetworkRequest
 
@@ -61,7 +61,7 @@ def get_filename_from_url(url: str) -> str:
     except Exception as exc:
         PlgLogger.log(
             message="Error retrieving downloaded file name. Trace: {}".format(exc),
-            log_level=1,
+            log_level=Qgis.MessageLevel.Warning,
             push=True,
         )
 
@@ -74,14 +74,14 @@ def get_filename_from_url(url: str) -> str:
 
         PlgLogger.log(
             message="The file name is: {}".format(filename),
-            log_level=3,
+            log_level=Qgis.MessageLevel.Success,
             push=False,
         )
 
     else:
         PlgLogger.log(
             message="Unable to determine the name of the remote file, a default name will be applied.",
-            log_level=1,
+            log_level=Qgis.MessageLevel.Warning,
             push=True,
         )
         filename = "Remote parquet file"

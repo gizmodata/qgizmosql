@@ -4,6 +4,7 @@ from typing import Optional
 
 # PyQGIS
 from qgis.core import (
+    Qgis,
     QgsApplication,
     QgsCoordinateReferenceSystem,
     QgsProject,
@@ -127,7 +128,7 @@ class LoadDuckDBLayerDialog(QDialog):
         except Exception as exc:
             PlgLogger.log(
                 message="Unable to retrieve list of tables. Trace: {}".format(exc),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             return []
@@ -146,7 +147,7 @@ class LoadDuckDBLayerDialog(QDialog):
         if self.db_path and not self.db_path.exists():
             PlgLogger.log(
                 self.tr("The database {} does not exist.".format(self.db_path)),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 duration=10,
                 push=True,
             )
@@ -154,7 +155,7 @@ class LoadDuckDBLayerDialog(QDialog):
         if not self._table_combobox.currentText() and self._table.isChecked():
             PlgLogger.log(
                 "No table selected.",
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 duration=10,
                 push=True,
             )

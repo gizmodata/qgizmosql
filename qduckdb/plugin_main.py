@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 
 # PyQGIS
-from qgis.core import QgsApplication, QgsProject, QgsProviderRegistry, QgsSettings
+from qgis.core import Qgis, QgsApplication, QgsProject, QgsProviderRegistry, QgsSettings
 from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QLocale, QTranslator, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
@@ -103,7 +103,10 @@ class QduckdbPlugin(QduckdbBasePlugin):
         locale_path: Path = (
             DIR_PLUGIN_ROOT / f"resources/i18n/{__title__.lower()}_{self.locale}.qm"
         )
-        self.log(message=f"Translation: {self.locale}, {locale_path}", log_level=4)
+        self.log(
+            message=f"Translation: {self.locale}, {locale_path}",
+            log_level=Qgis.MessageLevel.NoLevel,
+        )
         if locale_path.exists():
             self.translator = QTranslator()
             self.translator.load(str(locale_path.resolve()))
@@ -252,7 +255,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
         if not EXTERNAL_DEPENDENCIES_AVAILABLE:
             self.log(
                 message=self.tr("Error importing dependencies. Plugin disabled."),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
                 duration=60,
                 button=True,
@@ -274,7 +277,10 @@ class QduckdbPlugin(QduckdbBasePlugin):
             self.action_main.setToolTip(msg_disable)
             return False
         else:
-            self.log(message=self.tr("Dependencies satisfied"), log_level=3)
+            self.log(
+                message=self.tr("Dependencies satisfied"),
+                log_level=Qgis.MessageLevel.Success,
+            )
             return True
 
 
@@ -292,11 +298,14 @@ class QduckdbServerPlugin(QduckdbBasePlugin):
         if not EXTERNAL_DEPENDENCIES_AVAILABLE:
             self.log(
                 message=self.tr("Error importing dependencies. Plugin disabled."),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
             )
             return
 
         # QGIS Server only needs to load the provider
         self.register_duckdb_provider()
-        self.log(message=self.tr("Dependencies satisfied"), log_level=4)
+        self.log(
+            message=self.tr("Dependencies satisfied"),
+            log_level=Qgis.MessageLevel.NoLevel,
+        )
         return

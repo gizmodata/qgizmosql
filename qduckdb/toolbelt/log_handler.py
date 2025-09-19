@@ -27,7 +27,7 @@ class PlgLogger(logging.Handler):
     def log(
         message: str,
         application: str = __title__,
-        log_level: int = 0,
+        log_level: Qgis.MessageLevel = Qgis.MessageLevel.Info,
         push: bool = False,
         duration: int = None,
         # widget
@@ -46,9 +46,8 @@ class PlgLogger(logging.Handler):
         :param application: name of the application sending the message. \
         Defaults to __about__.__title__
         :type application: str, optional
-        :param log_level: message level. Possible values: 0 (info), 1 (warning), \
-        2 (critical), 3 (success), 4 (none - grey). Defaults to 0 (info)
-        :type log_level: int, optional
+        :param log_level: message level. Defaults to Qgis.MessageLevel.Info
+        :type log_level: Qgis.MessageLevel, optional
         :param push: also display the message in the QGIS message bar in addition to \
         the log, defaults to False
         :type push: bool, optional
@@ -75,21 +74,39 @@ class PlgLogger(logging.Handler):
 
         .. code-block:: python
 
-            log(message="Plugin loaded - INFO", log_level=0, push=False)
-            log(message="Plugin loaded - WARNING", log_level=1, push=1, duration=5)
-            log(message="Plugin loaded - ERROR", log_level=2, push=1, duration=0)
+            log(
+                message="Plugin loaded - INFO",
+                log_level=Qgis.MessageLevel.Info,
+                push=False)
+            log(
+                message="Plugin loaded - WARNING",
+                log_level=Qgis.MessageLevel.Warning,
+                push=1,
+                duration=5)
+            log(
+                message="Plugin loaded - ERROR",
+                log_level=Qgis.MessageLevel.Critical,
+                push=1,
+                duration=0)
             log(
                 message="Plugin loaded - SUCCESS",
-                log_level=3,
+                log_level=Qgis.MessageLevel.Success,
                 push=1,
                 duration=10,
                 button=True
             )
-            log(message="Plugin loaded - TEST", log_level=4, push=0)
+            log(message="Plugin loaded - TEST", log_level=Qgis.Message.NoLevel, push=0)
         """
         # if not debug mode and not push, let's ignore INFO, SUCCESS and TEST
         debug_mode = plg_prefs_hdlr.PlgOptionsManager.get_plg_settings().debug_mode
-        if not debug_mode and not push and (log_level < 1 or log_level > 2):
+        if (
+            not debug_mode
+            and not push
+            and (
+                log_level < Qgis.MessageLevel.Warning
+                or log_level > Qgis.MessageLevel.Critical
+            )
+        ):
             return
 
         # ensure message is a string
@@ -108,7 +125,7 @@ class PlgLogger(logging.Handler):
             message=message,
             tag=application,
             notifyUser=push,
-            level=Qgis.MessageLevel(log_level),
+            level=log_level,
         )
 
         # optionally, display message on QGIS Message bar (above the map canvas)
@@ -124,7 +141,7 @@ class PlgLogger(logging.Handler):
 
             # calc duration
             if duration is None:
-                duration = (log_level + 1) * 3
+                duration = (int(log_level) + 1) * 3
 
             # create message with/out a widget
             if button:
@@ -146,7 +163,7 @@ class PlgLogger(logging.Handler):
                 notification.layout().addWidget(widget_button)
                 msg_bar.pushWidget(
                     widget=notification,
-                    level=Qgis.MessageLevel(log_level),
+                    level=log_level,
                     duration=duration,
                 )
 
@@ -155,6 +172,6 @@ class PlgLogger(logging.Handler):
                 msg_bar.pushMessage(
                     title=application,
                     text=message,
-                    level=Qgis.MessageLevel(log_level),
+                    level=log_level,
                     duration=duration,
                 )

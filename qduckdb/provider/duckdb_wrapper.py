@@ -14,7 +14,7 @@ from typing import Optional, Union
 from packaging import version
 
 # PyQGIS
-from qgis.core import QgsProviderRegistry
+from qgis.core import Qgis, QgsProviderRegistry
 
 # plugin
 from qduckdb.provider.models import DdbExtension
@@ -29,7 +29,7 @@ except Exception:
     PlgLogger.log(
         message="Import from Python installation failed. Trying to load from "
         "embedded external libs.",
-        log_level=0,
+        log_level=Qgis.MessageLevel.Info,
         push=False,
     )
     import site
@@ -115,7 +115,7 @@ class DuckDbTools:
         if self.database_path is None:
             PlgLogger.log(
                 message="No database file provided. Using in-memory database.",
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
 
@@ -135,7 +135,7 @@ class DuckDbTools:
                 message="Using the database path defined at object level: {}".format(
                     self.database_path
                 ),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
 
@@ -144,7 +144,7 @@ class DuckDbTools:
             PlgLogger.log(
                 message="An open connection to {} already exists. Use it or close it "
                 "before.".format(self.database_path.resolve()),
-                log_level=0,
+                log_level=Qgis.MessageLevel.Info,
                 push=False,
             )
             return self.ddb_conn
@@ -164,7 +164,7 @@ class DuckDbTools:
             )
             PlgLogger.log(
                 message="Connection to database {} succeeded.".format(db_path_message),
-                log_level=0,
+                log_level=Qgis.MessageLevel.Info,
                 push=False,
             )
 
@@ -174,7 +174,7 @@ class DuckDbTools:
                     message="Spatial extension loaded on database {}.".format(
                         db_path_message
                     ),
-                    log_level=0,
+                    log_level=Qgis.MessageLevel.Info,
                     push=False,
                 )
 
@@ -188,7 +188,7 @@ class DuckDbTools:
                 "{} is not a valid database DuckDB. Trace: {}".format(
                     self.database_path.resolve(), exc
                 ),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             raise exc
@@ -197,7 +197,7 @@ class DuckDbTools:
                 "Connection to {} failed. Trace: {}".format(
                     self.database_path.resolve(), exc
                 ),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             raise exc
@@ -207,7 +207,7 @@ class DuckDbTools:
             )
             PlgLogger.log(
                 f"Connection to {db_path} failed for a generic reason. Trace: {exc}",
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             raise exc
@@ -224,7 +224,7 @@ class DuckDbTools:
                 "Connection to {} has been closed.".format(
                     self.database_path.resolve()
                 ),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             return self.ddb_conn
@@ -273,7 +273,7 @@ class DuckDbTools:
 
             PlgLogger.log(
                 message="Using the passed database path: {}".format(database_path),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
 
@@ -286,7 +286,7 @@ class DuckDbTools:
                     message="Defining the passed database path as wrapper's level: {}".format(
                         database_path
                     ),
-                    log_level=4,
+                    log_level=Qgis.MessageLevel.NoLevel,
                     push=False,
                 )
 
@@ -305,7 +305,7 @@ class DuckDbTools:
                 message="Using the database path defined at object level: {}".format(
                     database_path
                 ),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
         else:
@@ -317,7 +317,7 @@ class DuckDbTools:
             )
             PlgLogger.log(
                 message=err_message,
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             raise FileNotFoundError(err_message)
@@ -349,7 +349,7 @@ class DuckDbTools:
                 message="SUCCESS - Query '{}' on '{}' database.".format(
                     query_sql, self.database_path
                 ),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             return query_results
@@ -359,7 +359,7 @@ class DuckDbTools:
                 message="Querying '{}' in the {} database failed. Trace: {}".format(
                     query_sql, self.database_path, exc
                 ),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             raise exc
@@ -369,7 +369,7 @@ class DuckDbTools:
         if self.is_spatial_extension_installed():
             PlgLogger.log(
                 message="Spatial extension is already installed in DuckDB engine.",
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             return
@@ -377,7 +377,7 @@ class DuckDbTools:
             duckdb.sql(self.SQL_QUERIES.get("spatial_install"))
             PlgLogger.log(
                 message="Spatial extension has been installed in DuckDB engine.",
-                log_level=0,
+                log_level=Qgis.MessageLevel.Info,
                 push=False,
             )
         except Exception as exc:
@@ -385,7 +385,7 @@ class DuckDbTools:
                 message="Unable to install spatial extension in DuckDB. Trace: {}".format(
                     exc
                 ),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             raise exc
@@ -402,13 +402,13 @@ class DuckDbTools:
             self.ddb_conn.sql(self.SQL_QUERIES.get("force_download"))
             PlgLogger.log(
                 message="Force download has been activated.",
-                log_level=0,
+                log_level=Qgis.MessageLevel.Info,
                 push=False,
             )
         except Exception as exc:
             PlgLogger.log(
                 message="Force download cannot be activated. Trace: {}".format(exc),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             raise exc
@@ -424,7 +424,7 @@ class DuckDbTools:
             PlgLogger.log(
                 message="Connection attribute is not a valid DuckDbPyConnection object, "
                 "but {}".format(type(self.ddb_conn)),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             return False
@@ -433,7 +433,7 @@ class DuckDbTools:
             PlgLogger.log(
                 message="Connection object does not exist. to {} is not alive or not "
                 "working.".format(self.database_path),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             return False
@@ -442,7 +442,7 @@ class DuckDbTools:
             self.ddb_conn.sql(self.SQL_QUERIES.get("connection_alive"))
             PlgLogger.log(
                 message="Connection to {} is still alive".format(self.database_path),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             return True
@@ -450,7 +450,7 @@ class DuckDbTools:
             PlgLogger.log(
                 message="Connection to {} is not alive or not working. "
                 "Trace: {}".format(self.database_path, exc),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             return False
@@ -458,7 +458,7 @@ class DuckDbTools:
             PlgLogger.log(
                 message="Connection to {} is not working. "
                 "Trace: {}".format(self.database_path, exc),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             return False
@@ -502,7 +502,7 @@ class DuckDbTools:
                 message="Retrieving DuckDB client's extensions succeeded: {}".format(
                     "; ".join([extension.name for extension in self.DDB_EXTENSIONS])
                 ),
-                log_level=0,
+                log_level=Qgis.MessageLevel.Info,
                 push=False,
             )
             return self.DDB_EXTENSIONS
@@ -511,7 +511,7 @@ class DuckDbTools:
                 message="Unable to retrieve DuckDB client's extensions. Trace: {}".format(
                     exc
                 ),
-                log_level=2,
+                log_level=Qgis.MessageLevel.Critical,
                 push=True,
             )
             return []
@@ -535,7 +535,7 @@ class DuckDbTools:
             message="List of DuckDB installed extensions succeeded: {}".format(
                 "; ".join(ddb_installed_extensions)
             ),
-            log_level=0,
+            log_level=Qgis.MessageLevel.Info,
             push=False,
         )
 
@@ -560,7 +560,7 @@ class DuckDbTools:
             message="List of DuckDB loaded extensions succeeded: {}".format(
                 "; ".join(ddb_loaded_extensions)
             ),
-            log_level=0,
+            log_level=Qgis.MessageLevel.Info,
             push=False,
         )
 
@@ -582,7 +582,7 @@ class DuckDbTools:
                 message="Loading spatial extension on the specified database {}".format(
                     database_path
                 ),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             self.run_sql(query_sql="spatial_load", database_path=database_path)
@@ -591,7 +591,7 @@ class DuckDbTools:
                 message="Loading spatial extension on the database defined at wrapper {}".format(
                     database_path
                 ),
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             self.run_sql(
@@ -603,19 +603,19 @@ class DuckDbTools:
         elif self.is_spatial_extension_loaded():
             PlgLogger.log(
                 message="Spatial extension is already loaded on DuckDB client",
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
         else:
             PlgLogger.log(
                 message="Loading spatial extension on DuckDB client",
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
             duckdb.sql(query=self.SQL_QUERIES.get("spatial_load"))
             PlgLogger.log(
                 message="Spatial extension has been loaded into DuckDB client",
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
         self.retrieve_duckdb_extensions()
@@ -666,7 +666,7 @@ class DuckDbTools:
             message="URI parsed successfully: path={} | table={} | epsg={} | sql={} | extension={} | schema ={}".format(
                 path, table, epsg, sql, extension, schema
             ),
-            log_level=4,
+            log_level=Qgis.MessageLevel.NoLevel,
             push=False,
         )
 
@@ -694,7 +694,7 @@ class DuckDbTools:
 
         PlgLogger.log(
             message="Results from URI parsing are now used as wrapper attributes.",
-            log_level=4,
+            log_level=Qgis.MessageLevel.NoLevel,
             push=False,
         )
 

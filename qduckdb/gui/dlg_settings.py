@@ -107,7 +107,7 @@ class ConfigOptionsPage(FORM_CLASS, QgsOptionsPageWidget):
         if __debug__:
             self.log(
                 message="DEBUG - Settings successfully saved.",
-                log_level=4,
+                log_level=Qgis.MessageLevel.NoLevel,
             )
 
     def load_settings(self):

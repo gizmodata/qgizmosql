@@ -41,7 +41,7 @@ except Exception:
     PlgLogger.log(
         message="Import from Python installation failed. Trying to load from "
         "embedded external libs.",
-        log_level=0,
+        log_level=Qgis.MessageLevel.Info,
         push=False,
     )
     import site
@@ -180,7 +180,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                                 extension
                             )
                         ),
-                        log_level=2,
+                        log_level=Qgis.MessageLevel.Critical,
                         duration=15,
                         push=True,
                     )
@@ -197,7 +197,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             except duckdb.CatalogException as e:
                 PlgLogger.log(
                     self.tr("The sql query is invalid: {}".format(e)),
-                    log_level=2,
+                    log_level=Qgis.MessageLevel.Critical,
                     duration=15,
                     push=True,
                 )
@@ -205,7 +205,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             except duckdb.ParserException as e:
                 PlgLogger.log(
                     self.tr("The sql query is invalid: {}".format(e)),
-                    log_level=2,
+                    log_level=Qgis.MessageLevel.Critical,
                     duration=15,
                     push=True,
                 )
@@ -281,7 +281,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                         self.tr(
                             "Geometry type {} not supported".format(str_geom_duckdb)
                         ),
-                        log_level=2,
+                        log_level=Qgis.MessageLevel.Critical,
                         duration=15,
                         push=True,
                     )
@@ -301,7 +301,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                 self._extent = QgsRectangle()
                 PlgLogger.log(
                     message="Table without geometry, can not compute an extent",
-                    log_level=4,
+                    log_level=Qgis.MessageLevel.Success,
                     push=False,
                 )
             else:
@@ -320,7 +320,7 @@ class DuckdbProvider(QgsVectorDataProvider):
                     "xmin={}, xmax={}, ymin={}, ymax={}".format(
                         self._table, *extent_bounds
                     ),
-                    log_level=4,
+                    log_level=Qgis.MessageLevel.Success,
                 )
 
         return self._extent
@@ -502,7 +502,7 @@ class DuckdbProvider(QgsVectorDataProvider):
             except Exception as e:
                 PlgLogger.log(
                     self.tr("SQL error in filter : {}".format(e)),
-                    log_level=2,
+                    log_level=Qgis.MessageLevel.Critical,
                     duration=5,
                     push=False,
                 )

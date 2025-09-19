@@ -7,6 +7,7 @@ from typing import Any, Callable
 
 # PyQGIS
 from qgis.core import (
+    Qgis,
     QgsAbstractFeatureIterator,
     QgsCoordinateTransform,
     QgsCsException,
@@ -152,7 +153,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 except Exception:
                     PlgLogger.log(
                         f"Duckdb provider does not handle expression: {expression}",
-                        log_level=2,
+                        log_level=Qgis.MessageLevel.Critical,
                         duration=5,
                         push=False,
                     )
@@ -207,7 +208,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         if self._settings.debug_mode:
             self.log(
                 message="feature iterator execute query: {}".format(final_query),
-                log_level=4,  # 4 = info
+                log_level=Qgis.MessageLevel.NoLevel,
                 push=False,
             )
 
