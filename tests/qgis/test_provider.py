@@ -2,6 +2,7 @@ import tempfile
 from pathlib import Path
 
 import duckdb
+from packaging import version
 from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
@@ -20,6 +21,7 @@ from qgis.testing import unittest
 
 from qduckdb.provider.duckdb_provider import DuckdbProvider
 from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
+from qduckdb.provider.duckdb_wrapper import DUCKDB_CURRENT_VERSION
 
 from .utilities import compare_rectangles, register_provider_if_necessary
 
@@ -261,8 +263,13 @@ class TestQDuckDBProvider(unittest.TestCase):
         v1 = QgsVectorLayer(
             f'path="{self.db_path_test}"|table="cities"|epsg="4326"', "test", "duckdb"
         )
+        if DUCKDB_CURRENT_VERSION >= version.parse("1.4.0"):
+            excepted_type = "float"
+        else:
+            excepted_type = "int"
+
         v2 = QgsVectorLayer(
-            f'path="{self.db_path_test}"|sql="select id::int as id, name, geom from cities limit 3"|epsg="4326"',
+            f'path="{self.db_path_test}"|sql="select id::{excepted_type} as id, name, geom from cities limit 3"|epsg="4326"',
             "test",
             "duckdb",
         )
