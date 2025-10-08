@@ -11,6 +11,8 @@ References:
 from pathlib import Path
 from typing import Optional, Union
 
+from packaging import version
+
 # PyQGIS
 from qgis.core import QgsProviderRegistry
 
@@ -40,6 +42,8 @@ except Exception:
     PlgLogger.log(
         message=f"Dependencies loaded from embedded external libs: {duckdb.__version__=}"
     )
+
+DUCKDB_CURRENT_VERSION = version.parse(duckdb.__version__)
 
 
 # -- CLASSES --

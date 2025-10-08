@@ -3,6 +3,7 @@ from __future__ import annotations
 import weakref
 from typing import Optional
 
+from packaging import version
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
@@ -19,6 +20,7 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QMetaType
 
 from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
+from qduckdb.provider.duckdb_wrapper import DUCKDB_CURRENT_VERSION
 from qduckdb.provider.extension import community_extensions, core_extensions
 from qduckdb.provider.mappings import (
     deprecate_mapping_duckdb_qgis_type,
@@ -341,7 +343,11 @@ class DuckdbProvider(QgsVectorDataProvider):
                 description = self._con.sql(self._sql).description
                 # Exemple : description = [('id', 'NUMBER'),('name', 'STRING'),('geom', 'BINARY')]
                 for data in description:
-                    if data[1] == "BINARY":
+                    if DUCKDB_CURRENT_VERSION >= version.parse("1.4.0"):
+                        column = "GEOMETRY"
+                    else:
+                        column = "BINARY"
+                    if data[1] == column:
                         self._column_geom = data[0]
                         break
 
