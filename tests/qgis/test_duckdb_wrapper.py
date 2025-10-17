@@ -17,7 +17,7 @@ from qgis.testing import start_app, unittest
 from qduckdb.provider.duckdb_wrapper import DuckDbTools
 from qduckdb.provider.models import DdbExtension
 
-from .utilities import register_provider_if_necessary
+from .utilities import cleanup_qgis_modules, register_provider_if_necessary
 
 
 class TestDdbWrapper(unittest.TestCase):
@@ -42,6 +42,10 @@ class TestDdbWrapper(unittest.TestCase):
                     FROM temp_table;
                 """
         return super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_qgis_modules()
 
     def test_extensions_listing(self) -> None:
         """Test DuckDB extensions listing."""

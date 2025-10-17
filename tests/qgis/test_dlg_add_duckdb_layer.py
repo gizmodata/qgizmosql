@@ -5,7 +5,7 @@ from qgis.testing import start_app, unittest
 
 from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
 
-from .utilities import register_provider_if_necessary
+from .utilities import cleanup_qgis_modules, register_provider_if_necessary
 
 
 class TestDlgAddDuckdbLayer(unittest.TestCase):
@@ -24,6 +24,10 @@ class TestDlgAddDuckdbLayer(unittest.TestCase):
 
     def setUp(self):
         self.assertTrue(self.db_path_test.exists())
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_qgis_modules()
 
     def test_get_path(self) -> None:
         """Check that the database path is correctly returned"""

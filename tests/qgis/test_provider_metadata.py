@@ -9,7 +9,7 @@ from qgis.core import (
 )
 from qgis.testing import start_app, unittest
 
-from .utilities import register_provider_if_necessary
+from .utilities import cleanup_qgis_modules, register_provider_if_necessary
 
 
 class TestQDuckDBProviderMetadata(unittest.TestCase):
@@ -44,6 +44,10 @@ class TestQDuckDBProviderMetadata(unittest.TestCase):
         cls.expected_abs_table_uri = f'path="{cls.full_path}"|table="{cls.table}"|schema="main"|epsg="{cls.epsg}"'
         cls.expected_rel_table_uri = f'path="{cls.db_filename}"|table="{cls.table}"|schema="main"|epsg="{cls.epsg}"'
         cls.expected_uri_with_schema = f'path="{cls.db_filename}"|table="{cls.table}"|schema="{cls.schema}"|epsg="{cls.epsg}"'
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_qgis_modules()
 
     def test_encode_uri(self):
         # encoding does not have any effect on the path

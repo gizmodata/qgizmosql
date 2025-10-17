@@ -6,7 +6,7 @@ from qgis.testing import start_app, unittest
 from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
 from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
 
-from .utilities import register_provider_if_necessary
+from .utilities import cleanup_qgis_modules, register_provider_if_necessary
 
 
 class TestDlgOpenParquet(unittest.TestCase):
@@ -21,6 +21,10 @@ class TestDlgOpenParquet(unittest.TestCase):
         cls.parquet_test = Path(__file__).parent.parent.joinpath(
             "fixtures/points.parquet"
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_qgis_modules()
 
     def setUp(self):
         self.assertTrue(self.parquet_test.exists())

@@ -1,7 +1,19 @@
+import sys
+
 from qgis.core import QgsProviderRegistry, QgsRectangle
 
 from qduckdb.provider.duckdb_provider import DuckdbProvider
 from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
+
+
+def cleanup_qgis_modules():
+    """Unload qgis modules once a unit test module finished
+    This allows to isolate unit test processes and avoid test which do not
+    work well with start_app (the ones using 'setFilterRect')
+    """
+    qgis_modules = [mod for mod in list(sys.modules.keys()) if "qgis" in mod]
+    for mod in qgis_modules:
+        del sys.modules[mod]
 
 
 def register_provider_if_necessary():
