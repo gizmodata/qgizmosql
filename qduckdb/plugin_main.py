@@ -39,6 +39,10 @@ try:
     from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
     from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
     from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
+    from qduckdb.provider.duckdb_wrapper import (
+        DUCKDB_CURRENT_VERSION,
+        DUCKDB_SUPPORTED_VERSION,
+    )
 
     EXTERNAL_DEPENDENCIES_AVAILABLE = True
 except ImportError:
@@ -191,8 +195,17 @@ class QduckdbPlugin(QduckdbBasePlugin):
 
         # register custom provider
         self.register_duckdb_provider()
-
         QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
+
+        # A warning is displayed if the user is using the plugin with a version of DuckDB
+        # that is different from the one with which the plugin was developed.
+
+        if DUCKDB_CURRENT_VERSION < DUCKDB_SUPPORTED_VERSION:
+            msg = self.tr(
+                "Please note that you are using the plugin with version {} of DuckDB, or the plugin was developed to work optimally with version {}. You may experience bugs or unexpected behavior."
+            ).format(DUCKDB_CURRENT_VERSION, DUCKDB_SUPPORTED_VERSION)
+
+            self.log(message=msg, log_level=1, push=True, duration=60)
 
     def unload(self):
         """Cleans up when plugin is disabled/uninstalled."""

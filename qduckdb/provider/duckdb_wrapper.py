@@ -44,6 +44,7 @@ except Exception:
     )
 
 DUCKDB_CURRENT_VERSION = version.parse(duckdb.__version__)
+DUCKDB_SUPPORTED_VERSION = version.parse("1.4")
 
 
 # -- CLASSES --
@@ -620,9 +621,7 @@ class DuckDbTools:
             )
         self.retrieve_duckdb_extensions()
 
-    def parse_uri(
-        self, uri: str
-    ) -> tuple[
+    def parse_uri(self, uri: str) -> tuple[
         Optional[str],
         Optional[str],
         Optional[str],
