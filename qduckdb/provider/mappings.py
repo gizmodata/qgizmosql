@@ -20,6 +20,7 @@ mapping_duckdb_qgis_type = {
     "FLOAT": QMetaType.Type.Double,
     "INTEGER": QMetaType.Type.Int,
     "TIMESTAMP": QMetaType.Type.QDateTime,
+    "TIMESTAMP WITH TIME ZONE": QMetaType.Type.QDateTime,
     "VARCHAR": QMetaType.Type.QString,
     # Type used for custom sql when table is not created
     # No difference between float and integer so all numeric fields are NUMBER
@@ -41,6 +42,7 @@ deprecate_mapping_duckdb_qgis_type = {
     "FLOAT": QVariant.Double,
     "INTEGER": QVariant.Int,
     "TIMESTAMP": QVariant.DateTime,
+    "TIMESTAMP WITH TIME ZONE": QVariant.DateTime,
     "VARCHAR": QVariant.String,
     # Type used for custom sql when table is not created
     # Not difference betwenn float and integer so all the numeric field are NUMBER
