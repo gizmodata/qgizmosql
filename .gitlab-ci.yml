@@ -9,7 +9,7 @@ variables:
   PROJECT_FOLDER: "qduckdb"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PROJECT_FOLDER}"
   PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
-  PYTHON_MINIMAL_VERSION: "3.9"
+  PYTHON_MINIMAL_VERSION: "3.10"
   REPO_PLUGIN_URL: "https://oslandia.gitlab.io/qgis/qduckdb/"
 
 cache:
@@ -151,7 +151,7 @@ tests:qgis:
         - ".gitlab-ci.yml"
   parallel:
     matrix:
-      - QGIS_VERSION: ['release-3_34', 'ltr-noble', '3.42-noble']
+      - QGIS_VERSION: ["release-3_34", "ltr-noble", "3.42-noble"]
   before_script:
     # use system-site-packages to have QGIS python dependency
     - apt update && apt install -y python3-venv
