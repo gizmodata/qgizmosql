@@ -1,5 +1,4 @@
 # standard
-import shlex
 from pathlib import Path
 
 # PyQGIS
@@ -48,7 +47,10 @@ class OpenParquetDialog(QDialog):
         :return: A list of parsed file path components.
         :rtype: list[str]
         """
-        return shlex.split(self.qfw_local_file.filePath())
+        raw = self.qfw_local_file.filePath()
+        # split on spaces and remove quotation marks
+        paths = [p.strip('"') for p in raw.split(" ")]
+        return paths
 
     def load_parquet(self) -> None:
         """
