@@ -50,3 +50,31 @@ class TestDlgOpenParquet(unittest.TestCase):
         self.dialog.load_parquet()
         project = QgsProject.instance()
         self.assertTrue(project.mapLayersByName("qualite-de-lair-france.parquet"))
+
+    def test_paths(self) -> None:
+        # Windows path
+        path = r"\\Server\data\parquet\2025\sample.parquet"
+        excepted = [r"\\Server\data\parquet\2025\sample.parquet"]
+        self.dialog.qfw_local_file.setFilePath(path)
+        self.assertEqual(self.dialog.get_file_path, excepted)
+
+        # Multiple Windows path
+        path = r'"\\Server\data\parquet\2025\sample.parquet" "C:\Users\data\sample.parquet"'
+        excepted = [
+            r"\\Server\data\parquet\2025\sample.parquet",
+            r"C:\Users\data\sample.parquet",
+        ]
+        self.dialog.qfw_local_file.setFilePath(path)
+        self.assertEqual(self.dialog.get_file_path, excepted)
+
+        # Unix paths
+        path = '"/home/gignac/data/sample.parquet"'
+        excepted = ["/home/gignac/data/sample.parquet"]
+        self.dialog.qfw_local_file.setFilePath(path)
+        self.assertEqual(self.dialog.get_file_path, excepted)
+
+        # Multiple unix paths
+        path = '"/home/gignac/data/sample.parquet" "/etc/data/drogba.parquet"'
+        excepted = ["/home/gignac/data/sample.parquet", "/etc/data/drogba.parquet"]
+        self.dialog.qfw_local_file.setFilePath(path)
+        self.assertEqual(self.dialog.get_file_path, excepted)
