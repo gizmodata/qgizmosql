@@ -251,7 +251,6 @@ build:windows:
 
     # cleaning up code and build files to alleviate artifact
     - gci -Recurse -Filter "__pycache__" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
-    - gci -Recurse -Filter "*.dist-info" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
     - gci -Recurse -Filter "*.ipynb" -File -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
     - gci -Recurse -Filter "examples" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
     - gci -Recurse -Filter "tests" -Directory -ErrorAction SilentlyContinue -Path $env:PROJECT_FOLDER | Remove-Item -Force -Recurse
