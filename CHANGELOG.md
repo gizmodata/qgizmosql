@@ -16,7 +16,15 @@ Unreleased
 
 -->
 
-## 2.2.5 - 2025-09-16
+## 2.2.6 - 2025-11-16
+
+- ci(embedded): Keep dist-info to fix DuckDB metadata loading on some Python versions !208
+- Alert when user use plugin with old DuckDB version !203
+- Bump to DuckDB 1.4.2 !207
+- ci: Bump python version from 3.9 (is EOL) to 3.10 !205
+- fix: Error with Windows paths when loading a parquet !206
+
+## 2.2.5 - 2025-10-27
 
 - Upgrade to DuckDB version 1.4.1 !195 !197
 - Support "TIMESTAMP WITH TIME ZONE" field type !197
