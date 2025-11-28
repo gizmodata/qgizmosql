@@ -25,6 +25,13 @@ Open a terminal and install dependencies from the Python Package Index (PyPi):
 python3 -m pip install "duckdb==1.4.2"
 ```
 
+If QGIS was installed via [Flatpak](https://qgis.org/resources/installation-guide/#flatpak), the Python instance shipped alongside QGIS must be used.
+
+```sh
+flatpak run --command=python3 org.qgis.qgis -m ensurepip --upgrade
+flatpak run --command=python3 org.qgis.qgis -m pip install duckdb==1.4.2
+```
+
 ### Windows: embedded package
 
 It's quite a challenge to install it on QGIS for Windows, because QGIS uses its own Python interpreter and doesn't make it easy to use packages manager (`pip`).
