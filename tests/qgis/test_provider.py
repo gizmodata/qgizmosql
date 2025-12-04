@@ -819,7 +819,7 @@ class TestQDuckDBProvider(unittest.TestCase):
 
     def test_query_with_s3(self):
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}"|sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/2025-09-24.0/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1"|epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/2025-11-19.0/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1"|epsg="4326"'
         )
         self._test_all_provider_method(provider)
 
