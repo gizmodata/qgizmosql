@@ -205,7 +205,9 @@ class QduckdbPlugin(QduckdbBasePlugin):
                 "Please note that you are using the plugin with version {} of DuckDB, or the plugin was developed to work optimally with version {}. You may experience bugs or unexpected behavior."
             ).format(DUCKDB_CURRENT_VERSION, DUCKDB_SUPPORTED_VERSION)
 
-            self.log(message=msg, log_level=1, push=True, duration=60)
+            self.log(
+                message=msg, log_level=Qgis.MessageLevel.Warning, push=True, duration=60
+            )
 
     def unload(self):
         """Cleans up when plugin is disabled/uninstalled."""
