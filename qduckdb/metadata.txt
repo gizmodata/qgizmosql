@@ -32,7 +32,7 @@ tracker=https://gitlab.com/Oslandia/qgis/qduckdb/-/issues
 deprecated=False
 experimental=False
 qgisMinimumVersion=3.34.6
-qgisMaximumVersion=3.99
+qgisMaximumVersion=4.99
 
 # versioning
 version=2.3.0-DEV
