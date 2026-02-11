@@ -22,14 +22,14 @@ As a result :
 Open a terminal and install dependencies from the Python Package Index (PyPi):
 
 ```sh
-python3 -m pip install "duckdb==1.4.2"
+python3 -m pip install "duckdb==1.4.4"
 ```
 
 If QGIS was installed via [Flatpak](https://qgis.org/resources/installation-guide/#flatpak), the Python instance shipped alongside QGIS must be used.
 
 ```sh
 flatpak run --command=python3 org.qgis.qgis -m ensurepip --upgrade
-flatpak run --command=python3 org.qgis.qgis -m pip install duckdb==1.4.2
+flatpak run --command=python3 org.qgis.qgis -m pip install duckdb==1.4.4
 ```
 
 ### Windows: embedded package
@@ -55,7 +55,7 @@ Note that on MacOS QGIS uses its own python, not the system's.
 Open a terminal and install dependencies from the Python Package Index (PyPi) on QGIS python :
 
 ```sh
-/Applications/QGIS.app/Contents/MacOS/bin/python3.9 -m pip install "duckdb==1.4.2"
+/Applications/QGIS.app/Contents/MacOS/bin/python3.9 -m pip install "duckdb==1.4.4"
 ```
 
 ### Manual installation
@@ -72,7 +72,7 @@ Then, if the plugin fails to import a package, you can try to install it manuall
   ```batch
   python-qgis-ltr -m pip install -U pip
   python-qgis-ltr -m pip install -U setuptools wheel
-  python-qgis-ltr -m pip install -U "duckdb==1.4.2"
+  python-qgis-ltr -m pip install -U "duckdb==1.4.4"
   ```
 
 :::{important}
