@@ -23,7 +23,11 @@ from qduckdb.provider.duckdb_provider import DuckdbProvider
 from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
 from qduckdb.provider.duckdb_wrapper import DUCKDB_CURRENT_VERSION
 
-from .utilities import compare_rectangles, register_provider_if_necessary
+from .utilities import (
+    compare_rectangles,
+    get_overtures_maps_latest_release,
+    register_provider_if_necessary,
+)
 
 
 class TestQDuckDBProvider(unittest.TestCase):
@@ -818,8 +822,9 @@ class TestQDuckDBProvider(unittest.TestCase):
         self.assertEqual(len(features), 1)
 
     def test_query_with_s3(self):
+        release_date = get_overtures_maps_latest_release()
         provider = DuckdbProvider(
-            uri=f'path="{self.db_path_test}"|sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/2026-01-21.0/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1"|epsg="4326"'
+            uri=f'path="{self.db_path_test}"|sql="select id, geometry from read_parquet(\'s3://overturemaps-us-west-2/release/{release_date}/theme=places/type=place/*\', filename=true, hive_partitioning=1) LIMIT 1"|epsg="4326"'
         )
         self._test_all_provider_method(provider)
 

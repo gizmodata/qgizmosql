@@ -1,9 +1,29 @@
+import re
 import sys
+import urllib.request
+from typing import Optional
 
 from qgis.core import QgsProviderRegistry, QgsRectangle
 
 from qduckdb.provider.duckdb_provider import DuckdbProvider
 from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
+
+
+def get_overtures_maps_latest_release() -> Optional[str]:
+    """
+    Return the latest release date of overtures maps data
+    """
+    URL = "https://overturemaps-us-west-2.s3.amazonaws.com/?list-type=2&delimiter=/&prefix=release/"
+
+    with urllib.request.urlopen(URL) as response:
+        xml_text = response.read().decode("utf-8")
+
+    releases = re.findall(r"release/(\d{4}-\d{2}-\d{2}\.\d+)/", xml_text)
+
+    if not releases:
+        return None
+
+    return max(releases)
 
 
 def cleanup_qgis_modules():
