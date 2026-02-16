@@ -16,6 +16,11 @@ Unreleased
 
 -->
 
+## 2.2.7 - 2026-02-16
+
+- Bump to DuckDB 1.4.4 !214
+- Expose plugin as QGIS 4 compatible !213
+
 ## 2.2.6 - 2025-11-16
 
 - ci(embedded): Keep dist-info to fix DuckDB metadata loading on some Python versions !208
