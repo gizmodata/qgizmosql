@@ -60,7 +60,7 @@ flake8:
 
 lint:qt6:
   stage: 🐍 lint
-  image: registry.gitlab.com/oslandia/qgis/pyqgis-4-checker/pyqgis-qt-checker:latest
+  image: ghcr.io/qgis/pyqgis4-checker:main-ubuntu
   tags:
     - docker
   rules:
@@ -70,6 +70,11 @@ lint:qt6:
         - ".gitlab-ci.yml"
       when: on_success
     - when: never
+  variables:
+    # required since the image use a custom user with UID 1000, to avoid permission issues
+    # with generated log file and edited files in the repository, we need to disable umask
+    # reset in GitLab Runner for this job
+    FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: "true"
   script:
     # just print the script help
     # - pyqt5_to_pyqt6.py --help
