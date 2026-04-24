@@ -7,7 +7,7 @@ category=Database
 description=Adds a QGIS data provider that reads geographic layers from a GizmoSQL server over Arrow Flight SQL.
 
 hasProcessingProvider=False
-icon=resources/images/logo_duckdb.png
+icon=resources/images/logo_gizmosql.png
 supportsQt6=True
 server=True
 tags=gizmosql,database,spatial,sql,arrow,flight,duckdb,adbc

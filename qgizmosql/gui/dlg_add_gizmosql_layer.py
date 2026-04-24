@@ -49,7 +49,7 @@ class LoadGizmoSqlLayerDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Add GizmoSQL layer")
         self.setWindowIcon(
-            QIcon(str(DIR_PLUGIN_ROOT.joinpath("resources/images/logo_duckdb.png")))
+            QIcon(str(DIR_PLUGIN_ROOT.joinpath("resources/images/logo_gizmosql.png")))
         )
         self.resize(560, 560)
 
