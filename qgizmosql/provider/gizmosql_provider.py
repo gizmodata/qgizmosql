@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import weakref
-from typing import Optional
+from typing import Any, Optional
 
-from packaging import version
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
@@ -19,101 +18,88 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QMetaType
 
-from qgizmosql.provider import duckdb_feature_iterator, duckdb_feature_source
-from qgizmosql.provider.gizmosql_wrapper import DUCKDB_CURRENT_VERSION
-from qgizmosql.provider.extension import community_extensions, core_extensions
+from qgizmosql.provider import gizmosql_feature_iterator, gizmosql_feature_source
+from qgizmosql.provider.gizmosql_wrapper import GizmoSqlTools
 from qgizmosql.provider.mappings import (
     deprecate_mapping_duckdb_qgis_type,
     mapping_duckdb_qgis_geometry,
     mapping_duckdb_qgis_type,
 )
-from qgizmosql.provider.protocols import PROTOCOLS
 from qgizmosql.toolbelt.log_handler import PlgLogger
 
-# conditional imports
-try:
-    import duckdb
 
-    from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
+class GizmoSqlProvider(QgsVectorDataProvider):
+    """QGIS vector data provider backed by a GizmoSQL server.
 
-    PlgLogger.log(message="Dependencies loaded from Python installation.")
-except Exception:
-    PlgLogger.log(
-        message="Import from Python installation failed. Trying to load from "
-        "embedded external libs.",
-        log_level=Qgis.MessageLevel.Info,
-        push=False,
-    )
-    import site
+    The wire protocol is Arrow Flight SQL, accessed through the
+    ``adbc-driver-gizmosql`` Python client. Server executes DuckDB SQL —
+    including the ``spatial`` extension — so spatial-type introspection
+    still uses ``information_schema`` and ``ST_*`` functions.
+    """
 
-    from qgizmosql.__about__ import DIR_PLUGIN_ROOT
-
-    site.addsitedir(DIR_PLUGIN_ROOT / "embedded_external_libs")
-    import duckdb
-
-    from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
-
-    PlgLogger.log(
-        message=f"Dependencies loaded from embedded external libs: {duckdb.__version__=}"
-    )
-
-
-class DuckdbProvider(QgsVectorDataProvider):
     def __init__(
         self,
-        uri="",
-        # uri_model = path=/home/path/my_db.db table=the_table
-        providerOptions=QgsDataProvider.ProviderOptions(),
-        flags=QgsDataProvider.ReadFlags(),
+        uri: str = "",
+        providerOptions: QgsDataProvider.ProviderOptions = None,
+        flags: QgsDataProvider.ReadFlags = None,
     ):
         super().__init__(uri)
+        providerOptions = providerOptions or QgsDataProvider.ProviderOptions()
+        flags = flags if flags is not None else QgsDataProvider.ReadFlags()
 
-        self.ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
+        self.wrapper = GizmoSqlTools()
         self._is_valid = False
         self._uri = uri
-        self._wkb_type = None
-        self._extent = None
-        self._column_geom = None
-        self._fields = None
-        self._feature_count = None
-        self._primary_key = None
-        self.filter_where_clause = None
+        self._wkb_type: Optional[QgsWkbTypes.Type] = None
+        self._extent: Optional[QgsRectangle] = None
+        self._column_geom: Optional[str] = None
+        self._fields: Optional[QgsFields] = None
+        self._feature_count: Optional[int] = None
+        self._primary_key: Optional[int] = None
+        self.filter_where_clause: Optional[str] = None
+        self._con: Any = None
+
         try:
             (
-                self._path,
+                self._conn_config,
                 self._table,
                 self._epsg,
                 self._sql,
-                self._extension,
                 self._schema,
-            ) = self.ddb_wrapper.parse_uri(uri)
-
-        except (FileNotFoundError, ValueError) as exc:
+            ) = self.wrapper.parse_uri(uri)
+        except ValueError as exc:
             self._is_valid = False
-            PlgLogger.log(message=exc)
+            PlgLogger.log(message=str(exc), log_level=Qgis.MessageLevel.Critical, push=True)
             return
 
-        # Escapes are necessary at the encodeUri stage, but once this has been done,
-        # they must be suppressed, otherwise they will be misinterpreted when sql is run.
         if self._sql:
+            # encodeUri may have escaped double-quotes; undo that for execution.
             self._sql = self._sql.replace('\\"', '"')
 
-        if self._epsg:
-            self._crs = QgsCoordinateReferenceSystem.fromEpsgId(int(self._epsg))
-        else:
-            self._crs = QgsCoordinateReferenceSystem()
+        self._crs = (
+            QgsCoordinateReferenceSystem.fromEpsgId(int(self._epsg))
+            if self._epsg
+            else QgsCoordinateReferenceSystem()
+        )
 
-        self.connect_database()
-
-        if self._extension:
-            self.install_extension()
+        try:
+            self.connect_database()
+        except Exception as exc:
+            self._is_valid = False
+            PlgLogger.log(
+                message=f"Could not connect to GizmoSQL: {exc}",
+                log_level=Qgis.MessageLevel.Critical,
+                push=True,
+            )
+            return
 
         if self._sql and not self._table:
             if not self.test_sql_query():
                 return
             self._from_clause = f"({self._sql})"
         else:
-            self._from_clause = f'"{self._schema}"."{self._table}"'
+            schema = self._schema or "main"
+            self._from_clause = f'"{schema}"."{self._table}"'
 
         self.get_geometry_column()
 
@@ -127,19 +113,28 @@ class DuckdbProvider(QgsVectorDataProvider):
         else:
             self.mapping_field_type = mapping_duckdb_qgis_type
 
+    # -- provider identity -----------------------------------------------------
+
     @classmethod
     def providerKey(cls) -> str:
-        """Returns the memory provider key"""
-        return "duckdb"
+        return "gizmosql"
 
     @classmethod
     def description(cls) -> str:
-        """Returns the memory provider description"""
-        return "DuckDB"
+        return "GizmoSQL"
 
     @classmethod
     def createProvider(cls, uri, providerOptions, flags=QgsDataProvider.ReadFlags()):
-        return DuckdbProvider(uri, providerOptions, flags)
+        return GizmoSqlProvider(uri, providerOptions, flags)
+
+    def name(self) -> str:
+        return self.providerKey()
+
+    def storageType(self) -> str:
+        return "GizmoSQL Arrow Flight SQL server"
+
+    def isValid(self) -> bool:
+        return self._is_valid
 
     def capabilities(self) -> QgsVectorDataProvider.Capabilities:
         return (
@@ -147,156 +142,86 @@ class DuckdbProvider(QgsVectorDataProvider):
             | QgsVectorDataProvider.Capability.SelectAtId
         )
 
-    @property
-    def extensions(self) -> list:
-        """This property returns a list of extensions separated by commas.
+    # -- connection ------------------------------------------------------------
 
-        :return: A list containing the separated extensions from the `_extension` string.
-        :rtype: list
-        """
-        return self._extension.split(",")
+    def connect_database(self) -> None:
+        self.wrapper.conn_config = self._conn_config
+        self._con = self.wrapper.connect()
 
-    def install_extension(self):
-        """This method installs and loads SQL extensions from the community and only load for core extensions.
+    def disconnect_database(self) -> None:
+        if self._con is not None and self.isValid():
+            try:
+                self._con.close()
+            except Exception:
+                pass
+            self._con = None
 
-        For each extension obtained via `extensions`, it executes the necessary SQL commands
-        to install and load the extension.
-
-        :return: None
-        :rtype: None
-        """
-        if self._extension:
-            for extension in self.extensions:
-                if extension in community_extensions:
-                    self._con.sql(
-                        f"INSTALL {extension} FROM community; LOAD {extension};"
-                    )
-                elif extension in core_extensions:
-                    self._con.sql(f"INSTALL {extension}; LOAD {extension};")
-                else:
-                    PlgLogger.log(
-                        self.tr(
-                            "{} unknown extension, open an issue if it exists to add its support.".format(
-                                extension
-                            )
-                        ),
-                        log_level=Qgis.MessageLevel.Critical,
-                        duration=15,
-                        push=True,
-                    )
+    def con(self) -> Optional[Any]:
+        """Return a raw ADBC cursor for callers (e.g. the feature iterator)."""
+        if not self._is_valid or self._con is None:
+            return None
+        return self._con.cursor()
 
     def test_sql_query(self) -> bool:
-        """This method tests that the SQL query is correct.
+        if not self._sql:
+            return True
+        try:
+            # Probe with LIMIT 0 — cheapest possible parse/plan check.
+            with self._con.cursor() as cur:
+                cur.execute(f"SELECT * FROM ({self._sql}) LIMIT 0")
+            return True
+        except Exception as exc:
+            PlgLogger.log(
+                self.tr(f"The SQL query is invalid: {exc}"),
+                log_level=Qgis.MessageLevel.Critical,
+                duration=15,
+                push=True,
+            )
+            return False
 
-        :return: True if all is ok, false if SQL is not valid.
-        :rtype: bool
-        """
-        if self._sql:
-            try:
-                self._con.sql(self._sql)
-            except duckdb.CatalogException as e:
-                PlgLogger.log(
-                    self.tr("The sql query is invalid: {}".format(e)),
-                    log_level=Qgis.MessageLevel.Critical,
-                    duration=15,
-                    push=True,
-                )
-                return False
-            except duckdb.ParserException as e:
-                PlgLogger.log(
-                    self.tr("The sql query is invalid: {}".format(e)),
-                    log_level=Qgis.MessageLevel.Critical,
-                    duration=15,
-                    push=True,
-                )
-                return False
-
-        return True
+    # -- feature metadata ------------------------------------------------------
 
     def featureCount(self) -> int:
-        """returns the number of entities in the table"""
-        if not self._feature_count:
+        if self._feature_count is None:
             if not self._is_valid:
                 self._feature_count = 0
             else:
                 if self.subsetString():
-                    self._feature_count = self._con.sql(
+                    row = self._con.sql(
                         f"select count(*) from {self._from_clause} WHERE {self.subsetString()}"
-                    ).fetchone()[0]
+                    ).fetchone()
                 else:
-                    self._feature_count = self._con.sql(
+                    row = self._con.sql(
                         f"select count(*) from {self._from_clause}"
-                    ).fetchone()[0]
-
+                    ).fetchone()
+                self._feature_count = row[0] if row else 0
         return self._feature_count
 
-    def disconnect_database(self):
-        """Disconnects the database"""
-        if self._con and self.isValid():
-            self._con.close()
-            self._con = None
-
-    def name(self) -> str:
-        """Return the name of provider
-
-        :return: Name of provider
-        :rtype: str
-        """
-        return self.providerKey()
-
-    def isValid(self) -> bool:
-        return self._is_valid
-
-    def connect_database(self):
-        """Connects the database and loads the spatial extension"""
-
-        # To read remote files, especially parquets, you need to activate this on the connection.
-        force_download = False
-        if self._sql and any(proto in self._sql for proto in PROTOCOLS):
-            force_download = True
-
-        self._con = self.ddb_wrapper.connect(
-            read_only=True, requires_spatial=True, force_download=force_download
-        )
-
     def wkbType(self) -> QgsWkbTypes:
-        """Detects the geometry type of the table, converts and return it to
-        QgsWkbTypes.
-        """
-
         if not self._column_geom:
             return QgsWkbTypes.Type.NoGeometry
-        if not self._wkb_type:
+        if self._wkb_type is None:
             if not self._is_valid:
                 self._wkb_type = QgsWkbTypes.Type.Unknown
             else:
-                str_geom_duckdb = self._con.sql(
-                    f"select st_geometrytype({self._column_geom}) from {self._from_clause}"
-                ).fetchone()[0]
-
-                if str_geom_duckdb in mapping_duckdb_qgis_geometry:
-                    geometry_type = mapping_duckdb_qgis_geometry[str_geom_duckdb]
+                row = self._con.sql(
+                    f"select st_geometrytype({self._column_geom}) from {self._from_clause} limit 1"
+                ).fetchone()
+                str_geom = row[0] if row else None
+                if str_geom in mapping_duckdb_qgis_geometry:
+                    self._wkb_type = mapping_duckdb_qgis_geometry[str_geom]
                 else:
                     PlgLogger.log(
-                        self.tr(
-                            "Geometry type {} not supported".format(str_geom_duckdb)
-                        ),
+                        self.tr(f"Geometry type {str_geom} not supported"),
                         log_level=Qgis.MessageLevel.Critical,
                         duration=15,
                         push=True,
                     )
                     self._wkb_type = QgsWkbTypes.Type.Unknown
-                    return self._wkb_type
-
-                self._wkb_type = geometry_type
-
         return self._wkb_type
 
     def extent(self) -> QgsRectangle:
-        """Calculates the extent of the bend and returns a QgsRectangle"""
-        # TODO : Replace by ST_Extent when the function is implemented
-
-        if not self._extent:
+        if self._extent is None:
             if not self._is_valid or not self._column_geom:
                 self._extent = QgsRectangle()
                 PlgLogger.log(
@@ -312,228 +237,174 @@ class DuckdbProvider(QgsVectorDataProvider):
                     f"max(st_ymax({self._column_geom})) "
                     f"from {self._from_clause}"
                 ).fetchone()
-
                 self._extent = QgsRectangle(*extent_bounds)
-
                 PlgLogger.log(
-                    message="Extent calculated for {}: "
-                    "xmin={}, xmax={}, ymin={}, ymax={}".format(
+                    message="Extent calculated for {}: xmin={}, xmax={}, ymin={}, ymax={}".format(
                         self._table, *extent_bounds
                     ),
                     log_level=Qgis.MessageLevel.Success,
                 )
-
         return self._extent
 
     def updateExtents(self) -> None:
-        """Update extent"""
-        return self._extent.setMinimal()
+        if self._extent is not None:
+            self._extent.setMinimal()
 
-    def get_geometry_column(self) -> str:
-        """Returns the name of the geometry column"""
-        if not self._column_geom:
-            if not self._sql:
-                cols = self._con.sql(
-                    "SELECT column_name FROM information_schema.columns "
-                    f"WHERE table_name = '{self._table}' AND table_schema = '{self._schema}' AND data_type = 'GEOMETRY'"
-                ).fetchone()
-                if cols:
-                    self._column_geom = cols[0]
-            else:
-                description = self._con.sql(self._sql).description
-                # Exemple : description = [('id', 'NUMBER'),('name', 'STRING'),('geom', 'BINARY')]
-                for data in description:
-                    if DUCKDB_CURRENT_VERSION >= version.parse("1.4.0"):
-                        column = "GEOMETRY"
-                    else:
-                        column = "BINARY"
-                    if data[1] == column:
-                        self._column_geom = data[0]
-                        break
-
-            if not self._column_geom:
-                return None
-
+    def get_geometry_column(self) -> Optional[str]:
+        if self._column_geom is not None:
+            return self._column_geom
+        if not self._sql:
+            schema = self._schema or "main"
+            row = self._con.sql(
+                "SELECT column_name FROM information_schema.columns "
+                f"WHERE table_name = '{self._table}' AND table_schema = '{schema}' "
+                "AND data_type = 'GEOMETRY'"
+            ).fetchone()
+            if row:
+                self._column_geom = row[0]
+        else:
+            # Use DuckDB's DESCRIBE to introspect an ad-hoc query's output types.
+            rows = self._con.sql(f"DESCRIBE {self._sql}").fetchall()
+            for r in rows:
+                col_name, col_type = r[0], r[1]
+                if col_type == "GEOMETRY":
+                    self._column_geom = col_name
+                    break
         return self._column_geom
 
     def primary_key(self) -> int:
-        if not self._primary_key:
-            if not self._sql:
-                res = self._con.sql(
-                    "SELECT constraint_column_indexes FROM duckdb_constraints() "
-                    f"WHERE table_name='{self.get_table()}' AND schema_name = '{self._schema}' "
-                    "AND constraint_type = 'PRIMARY KEY';"
-                ).fetchone()
-
-                if res:
-                    self._primary_key = res[0][0]
-                else:
-                    self._primary_key = -1
-            else:
-                self._primary_key = -1
-
+        if self._primary_key is not None:
+            return self._primary_key
+        if self._sql:
+            self._primary_key = -1
+            return self._primary_key
+        schema = self._schema or "main"
+        # information_schema-only query — portable across DuckDB versions and
+        # avoids relying on the ``duckdb_constraints()`` table function, which
+        # is server-internal.
+        row = self._con.sql(
+            "SELECT kcu.ordinal_position - 1 "
+            "FROM information_schema.table_constraints tc "
+            "JOIN information_schema.key_column_usage kcu "
+            "  ON tc.constraint_name = kcu.constraint_name "
+            "  AND tc.table_schema = kcu.table_schema "
+            "  AND tc.table_name = kcu.table_name "
+            f"WHERE tc.constraint_type = 'PRIMARY KEY' "
+            f"  AND tc.table_name = '{self._table}' "
+            f"  AND tc.table_schema = '{schema}' "
+            "ORDER BY kcu.ordinal_position"
+        ).fetchone()
+        self._primary_key = int(row[0]) if row else -1
         return self._primary_key
 
     def fields(self) -> QgsFields:
-        """Detects field name and type. Converts the type into a QVariant, and returns a
-        QgsFields containing QgsFields.
-        If there is no sql subquery, all the fields are returned
-        If there is a sql subquery, only the fields contained in the subquery are returned
-        """
-        if not self._fields:
-            self._fields = QgsFields()
-            if self._is_valid:
-                if not self._sql:
-                    field_info = self._con.sql(
-                        "select column_name, data_type from "
-                        f"information_schema.columns WHERE table_name = '{self._table}' AND table_schema = '{self._schema}' AND "
-                        " data_type not in ('GEOMETRY', 'WKB_BLOB')"
-                    ).fetchall()
-                else:
-                    field_info = []
-                    description = self._con.sql(self._sql).description
-                    for data in description:
-                        # rowid is a pseudocolumn which returns the row identifiers
-                        # it is already used to set the feature id
-                        if (
-                            data[1] not in ["GEOMETRY", "BINARY", "WKB_BLOB"]
-                            and data[0] != "rowid"
-                        ):
-                            field_info.append((data[0], data[1]))
+        if self._fields is not None:
+            return self._fields
+        self._fields = QgsFields()
+        if not self._is_valid:
+            return self._fields
 
-                for field_name, field_type in field_info:
-                    qgs_field = QgsField(
-                        field_name, self.mapping_field_type[field_type]
-                    )
-                    self._fields.append(qgs_field)
+        if not self._sql:
+            schema = self._schema or "main"
+            field_info = self._con.sql(
+                "select column_name, data_type from "
+                f"information_schema.columns WHERE table_name = '{self._table}' "
+                f"AND table_schema = '{schema}' AND "
+                "data_type not in ('GEOMETRY', 'WKB_BLOB')"
+            ).fetchall()
+        else:
+            rows = self._con.sql(f"DESCRIBE {self._sql}").fetchall()
+            field_info = [
+                (r[0], r[1])
+                for r in rows
+                if r[1] not in ("GEOMETRY", "WKB_BLOB") and r[0] != "rowid"
+            ]
 
+        for field_name, field_type in field_info:
+            qgs_type = self.mapping_field_type.get(field_type)
+            if qgs_type is None:
+                # Fall back to string for unknown types rather than dropping the column.
+                qgs_type = self.mapping_field_type.get("VARCHAR")
+            self._fields.append(QgsField(field_name, qgs_type))
         return self._fields
 
-    def dataSourceUri(self, expandAuthConfig=False):
-        """Returns the data source specification: database path and
-        table name.
+    # -- QGIS provider API -----------------------------------------------------
 
-        :param bool expandAuthConfig: expand credentials (unused)
-        :returns: the data source uri
-        """
+    def dataSourceUri(self, expandAuthConfig: bool = False) -> str:
         return self._uri
 
-    def crs(self):
+    def crs(self) -> QgsCoordinateReferenceSystem:
         return self._crs
 
     def featureSource(self):
-        return gizmosql_feature_source.DuckdbFeatureSource(self)
-
-    def storageType(self):
-        return "DuckDB local database"
+        return gizmosql_feature_source.GizmoSqlFeatureSource(self)
 
     def get_table(self) -> str:
-        """Get the table name
-
-        :return: table name
-        :rtype: str
-        """
-        if self._sql:
-            return ""
-        else:
-            return self._table
+        return "" if self._sql else (self._table or "")
 
     def is_view(self) -> bool:
-        """
-        Checks if the given table name corresponds to a view in the database.
-
-        :return: True if the object is a view, False otherwise.
-        :rtype: bool
-        """
         if self._sql:
             return False
-
-        query = "SELECT concat(table_schema,'.',table_name) as table_name FROM information_schema.tables WHERE table_type = 'VIEW'"
-        view_list = [elem[0] for elem in self._con.sql(query).fetchall()]
-
-        return f"{self._schema}.{self._table}" in view_list
+        query = (
+            "SELECT concat(table_schema,'.',table_name) as table_name "
+            "FROM information_schema.tables WHERE table_type = 'VIEW'"
+        )
+        view_list = [row[0] for row in self._con.sql(query).fetchall()]
+        return f"{self._schema or 'main'}.{self._table}" in view_list
 
     def uniqueValues(self, fieldIndex: int, limit: int = -1) -> set:
-        """Returns the unique values of a field
-
-        :param fieldIndex: Index of field
-        :type fieldIndex: int
-        :param limit: limit of returned values
-        :type limit: int
-        """
         column_name = self.fields().field(fieldIndex).name()
-        results = set()
-        query = f"select distinct {column_name} from {self._from_clause} order by {column_name}"
+        query = (
+            f"select distinct {column_name} from {self._from_clause} "
+            f"order by {column_name}"
+        )
         if limit >= 0:
             query += f" limit {limit}"
-
-        for elem in self._con.sql(query).fetchall():
-            results.add(elem[0])
-
-        return results
+        return {row[0] for row in self._con.sql(query).fetchall()}
 
     def getFeatures(self, request=QgsFeatureRequest()) -> QgsFeature:
-        """Return next feature"""
         return QgsFeatureIterator(
-            gizmosql_feature_iterator.DuckdbFeatureIterator(
-                gizmosql_feature_source.DuckdbFeatureSource(self), request
+            gizmosql_feature_iterator.GizmoSqlFeatureIterator(
+                gizmosql_feature_source.GizmoSqlFeatureSource(self), request
             )
         )
 
-    def con(self) -> Optional[duckdb.DuckDBPyConnection]:
-        """Start DuckDB cursor"""
-        if not self._is_valid:
-            return None
-
-        return self._con.cursor()
-
-    def subsetString(self) -> str:
+    def subsetString(self) -> Optional[str]:
         return self.filter_where_clause
 
     def setSubsetString(
         self, subsetstring: str, updateFeatureCount: bool = True
     ) -> bool:
         if subsetstring:
-            # Check if the filter is valid
             try:
-                self._con.sql(
-                    f"select count(*) from {self._from_clause} WHERE {subsetstring} LIMIT 0"
-                )
+                with self._con.cursor() as cur:
+                    cur.execute(
+                        f"select count(*) from {self._from_clause} "
+                        f"WHERE {subsetstring} LIMIT 0"
+                    )
             except Exception as e:
                 PlgLogger.log(
-                    self.tr("SQL error in filter : {}".format(e)),
+                    self.tr(f"SQL error in filter: {e}"),
                     log_level=Qgis.MessageLevel.Critical,
                     duration=5,
                     push=False,
                 )
                 return False
             self.filter_where_clause = subsetstring
-
-        if not subsetstring:
+        else:
             self.filter_where_clause = None
 
         if updateFeatureCount:
-            # We set this variable to None to trigger featuresCount()
-            # reloadData() is a private method, so we have to use it to force the featureCount() refresh.
             self._feature_count = None
             self.reloadData()
-
         return True
 
     def supportsSubsetString(self) -> bool:
         return True
 
     def get_field_index_by_type(self, field_type: QMetaType) -> list:
-        """This method identifies the field index for the type passed as an argument.
-
-        :return: List of column indexes for type requested
-        :rtype: list
-        """
         fields_index = []
-
         for i in range(self._fields.count()):
-            field = self._fields[i]
-            if field.type() == field_type:
+            if self._fields[i].type() == field_type:
                 fields_index.append(i)
-
         return fields_index

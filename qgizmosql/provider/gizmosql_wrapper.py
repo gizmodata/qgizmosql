@@ -13,7 +13,7 @@ from typing import Any, Optional, Union
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 # PyQGIS
-from qgis.core import Qgis
+from qgis.core import Qgis, QgsApplication, QgsAuthMethodConfig
 
 # plugin
 from qgizmosql.toolbelt.log_handler import PlgLogger
@@ -67,6 +67,7 @@ class GizmoSqlConnConfig:
         password: Optional[str] = None,
         auth_type: str = "password",
         tls_skip_verify: bool = False,
+        authcfg: Optional[str] = None,
     ):
         self.host = host
         self.port = int(port)
@@ -75,6 +76,32 @@ class GizmoSqlConnConfig:
         self.password = password
         self.auth_type = auth_type  # "password" | "external" (OAuth/SSO)
         self.tls_skip_verify = bool(tls_skip_verify)
+        # QGIS Auth Manager config ID — if set, username/password are looked up
+        # from the encrypted credential store at connect time, and the in-memory
+        # copies on this object are ignored.
+        self.authcfg = authcfg or None
+
+    def _resolve_from_auth_manager(self) -> tuple[Optional[str], Optional[str]]:
+        """Fetch username/password from the QGIS Auth Manager if authcfg is set.
+
+        Returns (None, None) if no authcfg, or on lookup failure.
+        """
+        if not self.authcfg:
+            return (None, None)
+        mgr = QgsApplication.authManager()
+        cfg = QgsAuthMethodConfig()
+        ok, cfg = mgr.loadAuthenticationConfig(self.authcfg, cfg, True)
+        if not ok:
+            PlgLogger.log(
+                message=(
+                    f"Could not load QGIS auth config {self.authcfg!r}. "
+                    "Falling back to in-memory credentials if any."
+                ),
+                log_level=Qgis.MessageLevel.Warning,
+                push=True,
+            )
+            return (None, None)
+        return (cfg.config("username") or None, cfg.config("password") or None)
 
     @property
     def flight_uri(self) -> str:
@@ -89,11 +116,22 @@ class GizmoSqlConnConfig:
         }
         if self.auth_type == "external":
             kwargs["auth_type"] = "external"
-        else:
-            if self.username is not None:
-                kwargs["username"] = self.username
-            if self.password is not None:
-                kwargs["password"] = self.password
+            return kwargs
+
+        # Password mode — prefer QGIS Auth Manager if authcfg is set.
+        username: Optional[str] = self.username
+        password: Optional[str] = self.password
+        if self.authcfg:
+            mgr_user, mgr_pass = self._resolve_from_auth_manager()
+            if mgr_user is not None:
+                username = mgr_user
+            if mgr_pass is not None:
+                password = mgr_pass
+
+        if username is not None:
+            kwargs["username"] = username
+        if password is not None:
+            kwargs["password"] = password
         return kwargs
 
     def display_name(self) -> str:
@@ -104,8 +142,86 @@ class GizmoSqlConnConfig:
         return (
             f"GizmoSqlConnConfig(host={self.host!r}, port={self.port}, "
             f"use_tls={self.use_tls}, auth_type={self.auth_type!r}, "
-            f"username={self.username!r}, password={'***' if self.password else None})"
+            f"authcfg={self.authcfg!r}, username={self.username!r}, "
+            f"password={'***' if self.password else None})"
         )
+
+
+# -- CONNECTION ADAPTER --------------------------------------------------------
+
+
+class _ConnectionAdapter:
+    """Thin wrapper around an ADBC dbapi Connection that exposes a DuckDB-like
+    ``.sql(query)`` interface returning an object with ``fetchone()``,
+    ``fetchall()``, and ``description``.
+
+    Purpose: lets the rest of the plugin code (provider, feature iterator) keep
+    the call shape it had under DuckDB without a mass rewrite. Prefer going
+    through this adapter over the raw ADBC connection for QGIS-side code.
+    """
+
+    def __init__(self, adbc_conn: Any):
+        self._conn = adbc_conn
+
+    def sql(self, query: str) -> "_QueryResult":
+        return _QueryResult(self._conn, query)
+
+    def execute(self, query: str) -> "_QueryResult":
+        # DuckDB's ``execute`` returns a result with ``fetchone``; we return
+        # the same shape.
+        return _QueryResult(self._conn, query)
+
+    def cursor(self):
+        return self._conn.cursor()
+
+    def close(self) -> None:
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+
+    def __getattr__(self, item):
+        # Fall through to the underlying ADBC connection for anything else.
+        return getattr(self._conn, item)
+
+
+class _QueryResult:
+    """Lazy ADBC cursor wrapper mimicking DuckDB's query-result shape.
+
+    The cursor is created and the query executed on first call to
+    ``fetchone``, ``fetchall``, or ``description`` — this matches DuckDB's
+    lazy ``con.sql()`` behaviour.
+    """
+
+    def __init__(self, adbc_conn: Any, sql: str):
+        self._conn = adbc_conn
+        self._sql = sql
+        self._cur = None
+        self._executed = False
+
+    def _ensure(self) -> None:
+        if self._executed:
+            return
+        self._cur = self._conn.cursor()
+        self._cur.execute(self._sql)
+        self._executed = True
+
+    def fetchone(self):
+        self._ensure()
+        return self._cur.fetchone()
+
+    def fetchall(self):
+        self._ensure()
+        return self._cur.fetchall()
+
+    def fetch_arrow_table(self):
+        self._ensure()
+        return self._cur.fetch_arrow_table()
+
+    @property
+    def description(self):
+        self._ensure()
+        return self._cur.description
 
 
 # -- MAIN WRAPPER --------------------------------------------------------------
@@ -159,10 +275,11 @@ class GizmoSqlTools:
             return self.conn
 
         try:
-            self.conn = gizmosql_dbapi.connect(
+            raw_conn = gizmosql_dbapi.connect(
                 self.conn_config.flight_uri,
                 **self.conn_config.connect_kwargs(),
             )
+            self.conn = _ConnectionAdapter(raw_conn)
             PlgLogger.log(
                 message=f"Connected to GizmoSQL at {self.conn_config.display_name()}.",
                 log_level=Qgis.MessageLevel.Info,
@@ -310,6 +427,7 @@ class GizmoSqlTools:
             password=q.get("password"),
             auth_type=q.get("auth_type", "password"),
             tls_skip_verify=_bool(q.get("tls_skip_verify"), False),
+            authcfg=q.get("authcfg"),
         )
 
         table = q.get("table") or None
@@ -354,10 +472,15 @@ class GizmoSqlTools:
             "tls_skip_verify": "1" if conn_config.tls_skip_verify else "0",
             "auth_type": conn_config.auth_type,
         }
-        if conn_config.username:
-            params["username"] = conn_config.username
-        if conn_config.password:
-            params["password"] = conn_config.password
+        # Prefer authcfg over raw credentials — never write a plaintext password
+        # into a URI that will be saved inside a QGIS project file.
+        if conn_config.authcfg:
+            params["authcfg"] = conn_config.authcfg
+        else:
+            if conn_config.username:
+                params["username"] = conn_config.username
+            if conn_config.password:
+                params["password"] = conn_config.password
         if table:
             params["table"] = table
         if schema:

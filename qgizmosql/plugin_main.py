@@ -36,13 +36,8 @@ from qgizmosql.toolbelt.log_handler import PlgLogger
 
 # conditional imports
 try:
-    from qgizmosql.gui.dlg_add_gizmosql_layer import LoadDuckDBLayerDialog
-    from qgizmosql.gui.dlg_open_parquet import OpenParquetDialog
-    from qgizmosql.provider.gizmosql_provider_metadata import DuckdbProviderMetadata
-    from qgizmosql.provider.gizmosql_wrapper import (
-        DUCKDB_CURRENT_VERSION,
-        DUCKDB_SUPPORTED_VERSION,
-    )
+    from qgizmosql.gui.dlg_add_gizmosql_layer import LoadGizmoSqlLayerDialog
+    from qgizmosql.provider.gizmosql_provider_metadata import GizmoSqlProviderMetadata
 
     EXTERNAL_DEPENDENCIES_AVAILABLE = True
 except ImportError:
@@ -53,7 +48,7 @@ except ImportError:
 # ##################################
 
 
-class QduckdbBasePlugin:
+class QgizmosqlBasePlugin:
     def __init__(self):
         """Constructor.
 
@@ -73,21 +68,16 @@ class QduckdbBasePlugin:
         return QCoreApplication.translate(self.__class__.__name__, message)
 
     @staticmethod
-    def register_duckdb_provider() -> None:
-        """Register duckdb provider.
-        This only needs to be called once.
+    def register_gizmosql_provider() -> None:
+        """Register the qgizmosql provider.
 
-        :returns: None
+        Only needs to be called once per QGIS session.
         """
         registry = QgsProviderRegistry.instance()
-        duckdb_metadata = DuckdbProviderMetadata()
-        # FIXME: It is not possible to remove unregister a provider
-        # Is it the correct approach?
-        # assert registry.registerProvider(metadata)
-        registry.registerProvider(duckdb_metadata)
+        registry.registerProvider(GizmoSqlProviderMetadata())
 
 
-class QduckdbPlugin(QduckdbBasePlugin):
+class QgizmosqlPlugin(QgizmosqlBasePlugin):
     def __init__(self, iface: QgisInterface):
         """Constructor.
 
@@ -117,7 +107,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
             QCoreApplication.installTranslator(self.translator)
 
         # dialogs placeholders
-        self._dlg_add_layer: Optional[LoadDuckDBLayerDialog] = None
+        self._dlg_add_layer: Optional[LoadGizmoSqlLayerDialog] = None
 
     def initGui(self):
         """Set up plugin UI elements."""
@@ -149,23 +139,14 @@ class QduckdbPlugin(QduckdbBasePlugin):
 
         self.action_main = QAction(
             QIcon(str(__icon_path__.resolve())),
-            self.tr("DuckDB"),
+            self.tr("Add GizmoSQL layer"),
             self.iface.mainWindow(),
         )
         self.iface.addToolBarIcon(self.action_main)
-        self.action_main.triggered.connect(self.display_duckdb_dialog)
-
-        self.action_open_parquet = QAction(
-            QIcon(str(DIR_PLUGIN_ROOT / "resources/images/parquet.png")),
-            self.tr("Open (geo)Parquet with DuckDB"),
-            self.iface.mainWindow(),
-        )
-        self.iface.addToolBarIcon(self.action_open_parquet)
-        self.action_open_parquet.triggered.connect(self.display_open_parquet)
+        self.action_main.triggered.connect(self.display_gizmosql_dialog)
 
         # -- Menu
         self.iface.addPluginToMenu(__title__, self.action_main)
-        self.iface.addPluginToMenu(__title__, self.action_open_parquet)
         self.iface.addPluginToMenu(__title__, self.action_settings)
         self.iface.addPluginToMenu(__title__, self.action_help)
 
@@ -190,24 +171,11 @@ class QduckdbPlugin(QduckdbBasePlugin):
             return
 
         # below come everything which depends on external dependencies
-        self._dlg_add_layer = LoadDuckDBLayerDialog(self.iface.mainWindow())
-        self._dlg_open_parquet = OpenParquetDialog(self.iface.mainWindow())
+        self._dlg_add_layer = LoadGizmoSqlLayerDialog(self.iface.mainWindow())
 
         # register custom provider
-        self.register_duckdb_provider()
+        self.register_gizmosql_provider()
         QgsProject.instance().layersWillBeRemoved.connect(self._on_layers_removal)
-
-        # A warning is displayed if the user is using the plugin with a version of DuckDB
-        # that is different from the one with which the plugin was developed.
-
-        if DUCKDB_CURRENT_VERSION < DUCKDB_SUPPORTED_VERSION:
-            msg = self.tr(
-                "Please note that you are using the plugin with version {} of DuckDB, or the plugin was developed to work optimally with version {}. You may experience bugs or unexpected behavior."
-            ).format(DUCKDB_CURRENT_VERSION, DUCKDB_SUPPORTED_VERSION)
-
-            self.log(
-                message=msg, log_level=Qgis.MessageLevel.Warning, push=True, duration=60
-            )
 
     def unload(self):
         """Cleans up when plugin is disabled/uninstalled."""
@@ -218,7 +186,6 @@ class QduckdbPlugin(QduckdbBasePlugin):
 
         # -- Clean up toolbar
         self.iface.removeToolBarIcon(self.action_main)
-        self.iface.removeToolBarIcon(self.action_open_parquet)
 
         # -- Clean up preferences panel in QGIS settings
         self.iface.unregisterOptionsWidgetFactory(self.options_factory)
@@ -234,31 +201,20 @@ class QduckdbPlugin(QduckdbBasePlugin):
         del self.action_help
 
     def _on_layers_removal(self, layer_ids: list[str]) -> None:
-        """Disconnect duckdb database on duckdb provider removal
-
-        :param list[str] layer_ids: list of removed layer ids
-        """
-        # This ensures to disconnect from a duckdb database when a
-        # layer with a duckdb provider is removed.
+        """Disconnect the ADBC connection when a qgizmosql-backed layer is removed."""
         for layer_id in layer_ids:
             layer = QgsProject.instance().mapLayer(layer_id)
+            if layer is None:
+                continue
             provider = layer.dataProvider()
-            if provider.name() == "duckdb":
+            if provider and provider.name() == "gizmosql":
                 provider.disconnect_database()
 
-    def display_duckdb_dialog(self) -> None:
-        """Display instance duckdb add layer dialog"""
+    def display_gizmosql_dialog(self) -> None:
+        """Display the GizmoSQL add-layer dialog."""
         if self._dlg_add_layer is None:
-            self._dlg_add_layer = LoadDuckDBLayerDialog()
-
+            self._dlg_add_layer = LoadGizmoSqlLayerDialog()
         self._dlg_add_layer.show()
-
-    def display_open_parquet(self) -> None:
-        """Display instance parquet add layer dialog"""
-        if self._dlg_open_parquet is None:
-            self._dlg_open_parquet = OpenParquetDialog()
-
-        self._dlg_open_parquet.show()
 
     def check_dependencies(self) -> bool:
         """Check if all dependencies are satisfied. If not, warn the user and disable plugin.
@@ -282,7 +238,6 @@ class QduckdbPlugin(QduckdbBasePlugin):
             )
             # disable plugin widgets
             self.action_main.setEnabled(False)
-            self.action_open_parquet.setEnabled(False)
 
             # add tooltip over menu
             msg_disable = self.tr(
@@ -299,7 +254,7 @@ class QduckdbPlugin(QduckdbBasePlugin):
             return True
 
 
-class QduckdbServerPlugin(QduckdbBasePlugin):
+class QgizmosqlServerPlugin(QgizmosqlBasePlugin):
     def __init__(self, serverIface: QgsServerInterface):
         """Constructor.
 
@@ -318,7 +273,7 @@ class QduckdbServerPlugin(QduckdbBasePlugin):
             return
 
         # QGIS Server only needs to load the provider
-        self.register_duckdb_provider()
+        self.register_gizmosql_provider()
         self.log(
             message=self.tr("Dependencies satisfied"),
             log_level=Qgis.MessageLevel.NoLevel,

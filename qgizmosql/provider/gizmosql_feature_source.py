@@ -7,14 +7,13 @@ from qgis.core import (
     QgsProject,
 )
 
-from qgizmosql.provider import duckdb_feature_iterator, duckdb_provider
+from qgizmosql.provider import gizmosql_feature_iterator
 
 
-class DuckdbFeatureSource(QgsAbstractFeatureSource):
+class GizmoSqlFeatureSource(QgsAbstractFeatureSource):
     def __init__(self, provider):
-        """Constructor"""
         super().__init__()
-        self._provider: gizmosql_provider.DuckdbProvider = provider
+        self._provider = provider
 
         self._expression_context = QgsExpressionContext()
         self._expression_context.appendScope(QgsExpressionContextUtils.globalScope())
@@ -30,7 +29,7 @@ class DuckdbFeatureSource(QgsAbstractFeatureSource):
 
     def getFeatures(self, request) -> QgsFeatureIterator:
         return QgsFeatureIterator(
-            gizmosql_feature_iterator.DuckdbFeatureIterator(self, request)
+            gizmosql_feature_iterator.GizmoSqlFeatureIterator(self, request)
         )
 
     def get_provider(self):

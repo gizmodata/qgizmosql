@@ -18,20 +18,19 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QDate, QDateTime, QMetaType, QTime
 
 # plugin
-from qgizmosql.provider import duckdb_feature_source, duckdb_provider
 from qgizmosql.toolbelt.log_handler import PlgLogger
 from qgizmosql.toolbelt.preferences import PlgOptionsManager
 
 
-class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
+class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
     def __init__(
         self,
-        source: gizmosql_feature_source.DuckdbFeatureSource,
+        source,
         request: QgsFeatureRequest,
     ):
         """Constructor"""
         super().__init__(request)
-        self._provider: gizmosql_provider.DuckdbProvider = source.get_provider()
+        self._provider = source.get_provider()
         self._settings = PlgOptionsManager.get_plg_settings()
         self.log = PlgLogger().log
 
@@ -142,17 +141,19 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
             expression = self._request.filterExpression().expression()
             if expression:
                 try:
-                    self._provider.con().sql(
+                    cur = self._provider.con()
+                    cur.execute(
                         f"SELECT count(*)"
                         f" FROM {self._provider._from_clause}"
                         f" WHERE {expression}"
                         " LIMIT 0"
                     )
+                    cur.close()
                     self._expression = expression
                     where_clause_list.append(expression)
                 except Exception:
                     PlgLogger.log(
-                        f"Duckdb provider does not handle expression: {expression}",
+                        f"GizmoSQL provider does not handle expression: {expression}",
                         log_level=Qgis.MessageLevel.Critical,
                         duration=5,
                         push=False,
@@ -212,7 +213,8 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
                 push=False,
             )
 
-        self._result = self._provider.con().execute(final_query)
+        self._result = self._provider.con()
+        self._result.execute(final_query)
         self._index = 0
 
     def fetchFeature(self, f: QgsFeature) -> bool:
@@ -268,7 +270,7 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
         else:
             return self.fetchFeature(f)
 
-    def __iter__(self) -> DuckdbFeatureIterator:
+    def __iter__(self) -> "GizmoSqlFeatureIterator":
         """Returns self as an iterator object"""
         self._index = 0
         return self
@@ -291,6 +293,11 @@ class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
 
     def close(self) -> bool:
         """end of iterating: free the resources / lock"""
-        # virtual bool close() = 0;
         self._index = -1
+        if getattr(self, "_result", None) is not None:
+            try:
+                self._result.close()
+            except Exception:
+                pass
+            self._result = None
         return True

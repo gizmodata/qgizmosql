@@ -1,8 +1,11 @@
-# standard
-from pathlib import Path
+"""Dialog for connecting to a GizmoSQL server and adding a spatial layer.
+
+Built programmatically (no .ui file) because the connection fields are
+fundamentally different from the upstream QDuckDB file-picker dialog.
+"""
+
 from typing import Optional
 
-# PyQGIS
 from qgis.core import (
     Qgis,
     QgsApplication,
@@ -11,206 +14,273 @@ from qgis.core import (
     QgsProviderRegistry,
     QgsVectorLayer,
 )
-from qgis.PyQt import uic
+from qgis.gui import QgsAuthConfigSelect, QgsProjectionSelectionWidget
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QDialog
+from qgis.PyQt.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QPushButton,
+    QRadioButton,
+    QSpinBox,
+    QVBoxLayout,
+)
 
-# plugin
 from qgizmosql.__about__ import DIR_PLUGIN_ROOT
-from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
-from qgizmosql.provider.extension import community_extensions, core_extensions
+from qgizmosql.provider.gizmosql_wrapper import (
+    DEFAULT_GIZMOSQL_PORT,
+    GizmoSqlConnConfig,
+    GizmoSqlTools,
+)
 from qgizmosql.toolbelt.log_handler import PlgLogger
 
 
-class LoadDuckDBLayerDialog(QDialog):
+class LoadGizmoSqlLayerDialog(QDialog):
+    """Connect to a GizmoSQL server and add one of its tables as a QGIS layer."""
+
     def __init__(self, parent=None):
-        """Dialog to choice duckdb file and layer to load in canevas with the
-        duckdb provider"""
-        # init module and ui
         super().__init__(parent)
-
-        self.list_table = None
-
-        uic.loadUi(Path(__file__).parent / f"{Path(__file__).stem}.ui", self)
-
-        # attributes
-        self.ddb_wrapper = DuckDbTools(auto_setup_spatial=True)
-
-        # icon
+        self.setWindowTitle("Add GizmoSQL layer")
         self.setWindowIcon(
             QIcon(str(DIR_PLUGIN_ROOT.joinpath("resources/images/logo_duckdb.png")))
         )
-        self._add_layer_btn.setIcon(QgsApplication.getThemeIcon("mActionAddLayer.svg"))
+        self.resize(560, 560)
 
-        # extensions
-        list_extension = community_extensions + core_extensions
-        list_extension.sort()
-        self._cbb_extension.addItems(list_extension)
+        self._wrapper: Optional[GizmoSqlTools] = None
+        self._build_ui()
+        self._wire_up()
 
-        # widgets and signals connection
-        self._db_path_input.fileChanged.connect(self._add_list_table_name_to_combobox)
-        self._db_path_input.fileChanged.connect(self.change_mode)
-        self._table_combobox.currentTextChanged.connect(self._unlock_add_layer)
-        self._sql_query.textChanged.connect(self._unlock_add_layer)
-        self._add_layer_btn.clicked.connect(self._push_add_layer_button)
-        self._add_layer_btn.setEnabled(False)
+    # -- UI construction -------------------------------------------------------
 
-        self._table.setChecked(True)
-        self._sql.clicked.connect(self.change_mode)
-        self._sql.clicked.connect(self._unlock_add_layer)
-        self._table.clicked.connect(self.change_mode)
-        self._table.clicked.connect(self._add_list_table_name_to_combobox)
-        self._table.clicked.connect(self._unlock_add_layer)
+    def _build_ui(self) -> None:
+        root = QVBoxLayout(self)
 
-        self.label_sql.setEnabled(False)
-        self._sql_query.setEnabled(False)
-        self.label_extension.setEnabled(False)
-        self._cbb_extension.setEnabled(False)
+        # -- Connection group --------------------------------------------------
+        conn_box = QGroupBox("Connection")
+        conn_form = QFormLayout(conn_box)
 
-    def change_mode(self):
-        """Interface behavior when radio buttons are used to switch between full table
-        mode and custom sql query mode"""
+        self._host_edit = QLineEdit("localhost")
+        self._port_spin = QSpinBox()
+        self._port_spin.setRange(1, 65535)
+        self._port_spin.setValue(DEFAULT_GIZMOSQL_PORT)
 
-        if self._table.isChecked():
-            self._table_combobox.setEnabled(True)
-            self._sql_query.setEnabled(False)
-            self.label_sql.setEnabled(False)
-            self.label_table.setEnabled(True)
-            self._cbb_extension.setEnabled(False)
-            self.label_extension.setEnabled(False)
+        self._use_tls_cb = QCheckBox("Use TLS (grpc+tls)")
+        self._use_tls_cb.setChecked(True)
+        self._tls_skip_cb = QCheckBox("Skip TLS cert verification (self-signed)")
+        self._tls_skip_cb.setChecked(False)
 
-        if self._sql.isChecked():
-            self._table_combobox.setEnabled(False)
-            self._sql_query.setEnabled(True)
-            self.label_sql.setEnabled(True)
-            self.label_table.setEnabled(False)
-            self._cbb_extension.setEnabled(True)
-            self.label_extension.setEnabled(True)
-
-    @property
-    def db_path(self) -> Optional[Path]:
-        """Return the db path specified entered in the appropriate field as pathlib.Path
-            object.
-
-        :return: path to the file picked by the user through the UI. This may return None if no database is provided in the ihm.
-        :rtype: Path
-        """
-
-        if not self._db_path_input.filePath():
-            return None
-        else:
-            return Path(self._db_path_input.filePath())
-
-    def crs(self) -> QgsCoordinateReferenceSystem:
-        """Return the crs will"""
-        return self.projection.crs()
-
-    def list_table_in_db(self) -> list[str]:
-        """return list of table
-
-        :return: List of table
-        :rtype: list
-        """
-        if not self._db_path_input.filePath():
-            return []
-
-        try:
-            if not self.list_table:
-                self.list_table = self.ddb_wrapper.run_sql(
-                    database_path=self.db_path,
-                    query_sql="list_tables",
-                    requires_spatial=False,
-                    results_fetcher="fetchall",
-                )
-
-            return [result[0] for result in self.list_table]
-
-        except Exception as exc:
-            PlgLogger.log(
-                message="Unable to retrieve list of tables. Trace: {}".format(exc),
-                log_level=Qgis.MessageLevel.Critical,
-                push=True,
-            )
-            return []
-
-    def _add_list_table_name_to_combobox(self) -> None:
-        """Add list of table to combobox"""
-        # set selected path as wrapper's default database path
-        self.ddb_wrapper.database_path = self.db_path
-
-        # update table list
-        self._table_combobox.clear()
-        self.list_table = None
-        self._table_combobox.addItems(self.list_table_in_db())
-
-    def _push_add_layer_button(self) -> None:
-        if self.db_path and not self.db_path.exists():
-            PlgLogger.log(
-                self.tr("The database {} does not exist.".format(self.db_path)),
-                log_level=Qgis.MessageLevel.Critical,
-                duration=10,
-                push=True,
-            )
-            return
-        if not self._table_combobox.currentText() and self._table.isChecked():
-            PlgLogger.log(
-                "No table selected.",
-                log_level=Qgis.MessageLevel.Critical,
-                duration=10,
-                push=True,
-            )
-            return
-
-        epsg = self.crs().authid()
-        epsg = epsg.replace("EPSG:", "")
-        duckdbProviderMetadata = QgsProviderRegistry.instance().providerMetadata(
-            "duckdb"
+        self._auth_type_combo = QComboBox()
+        self._auth_type_combo.addItem("Password", userData="password")
+        self._auth_type_combo.addItem(
+            "OAuth / SSO (Enterprise Edition)", userData="external"
         )
 
-        table_name = ""
-        sql_query = ""
-        if self._sql.isChecked() and self._sql_query.text():
-            sql_query = self._sql_query.text()
-            table_name = "query"
-            table = ""
-            schema = ""
+        self._authcfg_select = QgsAuthConfigSelect(self, "basic")
+        self._authcfg_hint = QLabel(
+            "Pick or create a stored credential. The password will be saved "
+            "encrypted by the QGIS Auth Manager, not in the project file."
+        )
+        self._authcfg_hint.setWordWrap(True)
+        self._authcfg_hint.setStyleSheet("color: #555; font-size: 11px;")
+
+        conn_form.addRow("Host:", self._host_edit)
+        conn_form.addRow("Port:", self._port_spin)
+        conn_form.addRow("", self._use_tls_cb)
+        conn_form.addRow("", self._tls_skip_cb)
+        conn_form.addRow("Auth type:", self._auth_type_combo)
+        conn_form.addRow("Credentials:", self._authcfg_select)
+        conn_form.addRow("", self._authcfg_hint)
+
+        self._connect_btn = QPushButton("Connect && list tables")
+        conn_form.addRow("", self._connect_btn)
+
+        root.addWidget(conn_box)
+
+        # -- Layer group -------------------------------------------------------
+        layer_box = QGroupBox("Layer")
+        layer_v = QVBoxLayout(layer_box)
+
+        # Table vs SQL mode selector
+        mode_row = QHBoxLayout()
+        self._table_radio = QRadioButton("Table")
+        self._table_radio.setChecked(True)
+        self._sql_radio = QRadioButton("Custom SQL")
+        mode_row.addWidget(self._table_radio)
+        mode_row.addWidget(self._sql_radio)
+        mode_row.addStretch(1)
+        layer_v.addLayout(mode_row)
+
+        self._table_combo = QComboBox()
+        self._table_combo.setEnabled(False)
+        layer_v.addWidget(QLabel("Schema.table:"))
+        layer_v.addWidget(self._table_combo)
+
+        self._sql_edit = QPlainTextEdit()
+        self._sql_edit.setPlaceholderText(
+            "SELECT id, name, geom FROM schema.my_spatial_table WHERE ..."
+        )
+        self._sql_edit.setEnabled(False)
+        layer_v.addWidget(QLabel("SQL:"))
+        layer_v.addWidget(self._sql_edit)
+
+        self._crs_select = QgsProjectionSelectionWidget()
+        self._crs_select.setCrs(QgsCoordinateReferenceSystem.fromEpsgId(4326))
+        layer_v.addWidget(QLabel("Geometry CRS:"))
+        layer_v.addWidget(self._crs_select)
+
+        root.addWidget(layer_box)
+
+        # -- Status + buttons --------------------------------------------------
+        self._status_label = QLabel("")
+        self._status_label.setWordWrap(True)
+        self._status_label.setStyleSheet("color: #a00;")
+        root.addWidget(self._status_label)
+
+        self._buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        self._add_layer_btn = self._buttons.addButton(
+            "Add Layer", QDialogButtonBox.AcceptRole
+        )
+        self._add_layer_btn.setIcon(QgsApplication.getThemeIcon("mActionAddLayer.svg"))
+        self._add_layer_btn.setEnabled(False)
+        root.addWidget(self._buttons)
+
+    def _wire_up(self) -> None:
+        self._auth_type_combo.currentIndexChanged.connect(self._on_auth_type_changed)
+        self._connect_btn.clicked.connect(self._on_connect_clicked)
+        self._table_radio.toggled.connect(self._on_mode_changed)
+        self._table_combo.currentTextChanged.connect(self._refresh_add_enabled)
+        self._sql_edit.textChanged.connect(self._refresh_add_enabled)
+        self._add_layer_btn.clicked.connect(self._on_add_layer_clicked)
+        self._buttons.rejected.connect(self.reject)
+
+    # -- signal handlers -------------------------------------------------------
+
+    def _on_auth_type_changed(self) -> None:
+        is_oauth = self._auth_type_combo.currentData() == "external"
+        self._authcfg_select.setEnabled(not is_oauth)
+        self._authcfg_hint.setText(
+            "OAuth/SSO opens a browser window at connect time — no stored credentials needed."
+            if is_oauth
+            else "Pick or create a stored credential. The password is saved encrypted "
+            "by the QGIS Auth Manager, not in the project file."
+        )
+
+    def _on_mode_changed(self) -> None:
+        table_mode = self._table_radio.isChecked()
+        self._table_combo.setEnabled(table_mode)
+        self._sql_edit.setEnabled(not table_mode)
+        self._refresh_add_enabled()
+
+    def _current_conn_config(self) -> GizmoSqlConnConfig:
+        auth_type = self._auth_type_combo.currentData() or "password"
+        authcfg = (
+            self._authcfg_select.configId() if auth_type == "password" else None
+        )
+        return GizmoSqlConnConfig(
+            host=self._host_edit.text().strip(),
+            port=self._port_spin.value(),
+            use_tls=self._use_tls_cb.isChecked(),
+            tls_skip_verify=self._tls_skip_cb.isChecked(),
+            auth_type=auth_type,
+            authcfg=authcfg,
+        )
+
+    def _on_connect_clicked(self) -> None:
+        self._status_label.setText("")
+        conn_config = self._current_conn_config()
+        if not conn_config.host:
+            self._status_label.setText("Host is required.")
+            return
+        if conn_config.auth_type == "password" and not conn_config.authcfg:
+            self._status_label.setText(
+                "Pick a QGIS auth config (or create one) with your GizmoSQL username and password."
+            )
+            return
+
+        try:
+            self._wrapper = GizmoSqlTools(conn_config=conn_config)
+            rows = self._wrapper.run_sql("list_tables")
+        except Exception as exc:
+            self._status_label.setText(f"Connection failed: {exc}")
+            PlgLogger.log(
+                message=f"GizmoSQL connection failed: {exc}",
+                log_level=Qgis.MessageLevel.Critical,
+                push=True,
+            )
+            return
+
+        self._table_combo.clear()
+        self._table_combo.addItems([r[0] for r in rows])
+        self._status_label.setStyleSheet("color: #060;")
+        self._status_label.setText(
+            f"Connected — found {len(rows)} table(s) on {conn_config.display_name()}."
+        )
+        self._refresh_add_enabled()
+
+    def _refresh_add_enabled(self) -> None:
+        if self._table_radio.isChecked():
+            self._add_layer_btn.setEnabled(bool(self._table_combo.currentText()))
         else:
-            table_name = self._table_combobox.currentText()
-            schema, table = table_name.split(".")
+            text = self._sql_edit.toPlainText().strip()
+            self._add_layer_btn.setEnabled("select" in text.lower())
 
-        extension = ",".join(self._cbb_extension.checkedItems())
+    def _on_add_layer_clicked(self) -> None:
+        conn_config = self._current_conn_config()
+        epsg = (self._crs_select.crs().authid() or "").replace("EPSG:", "") or None
 
-        uri_parts = {
-            "path": str(self.db_path) if self.db_path else "",
-            "sql": sql_query,
-            "table": table,
-            "epsg": epsg,
-            "extension": extension,
-            "schema": schema,
+        schema: Optional[str] = None
+        table: Optional[str] = None
+        sql: Optional[str] = None
+        layer_name = ""
+
+        if self._table_radio.isChecked():
+            full = self._table_combo.currentText()
+            if not full:
+                return
+            if "." in full:
+                schema, table = full.split(".", 1)
+            else:
+                schema, table = "main", full
+            layer_name = full
+        else:
+            sql = self._sql_edit.toPlainText().strip()
+            if not sql:
+                return
+            layer_name = "gizmosql_query"
+
+        metadata = QgsProviderRegistry.instance().providerMetadata("gizmosql")
+        parts = {
+            "host": conn_config.host,
+            "port": str(conn_config.port),
+            "use_tls": "1" if conn_config.use_tls else "0",
+            "tls_skip_verify": "1" if conn_config.tls_skip_verify else "0",
+            "auth_type": conn_config.auth_type,
         }
-        uri = duckdbProviderMetadata.encodeUri(uri_parts)
-        layer = QgsVectorLayer(uri, table_name, "duckdb")
+        if conn_config.authcfg:
+            parts["authcfg"] = conn_config.authcfg
+        if table:
+            parts["table"] = table
+        if schema:
+            parts["schema"] = schema
+        if sql:
+            parts["sql"] = sql
+        if epsg:
+            parts["epsg"] = epsg
+
+        uri = metadata.encodeUri(parts)
+        layer = QgsVectorLayer(uri, layer_name, "gizmosql")
+        if not layer.isValid():
+            self._status_label.setStyleSheet("color: #a00;")
+            self._status_label.setText(
+                "Layer could not be loaded. Check the QGIS Log Messages panel."
+            )
+            return
         QgsProject.instance().addMapLayer(layer)
-
-    def _unlock_add_layer(self) -> None:
-        """Unlock the add layer button if a database is valid and a table is selected
-        or valid sql query is input"""
-
-        if self._table.isChecked():
-            if self._table_combobox.currentText() and self.db_path.exists():
-                self._add_layer_btn.setEnabled(True)
-            else:
-                self._add_layer_btn.setEnabled(False)
-
-        if self._sql.isChecked():
-            if not self.db_path and "select" in self._sql_query.text().lower():
-                self._add_layer_btn.setEnabled(True)
-            elif (
-                self.db_path
-                and self.db_path.exists()
-                and "select" in self._sql_query.text().lower()
-            ):
-                self._add_layer_btn.setEnabled(True)
-
-            else:
-                self._add_layer_btn.setEnabled(False)
+        self.accept()

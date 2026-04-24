@@ -18,9 +18,9 @@ def classFactory(iface):
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    from .plugin_main import QduckdbPlugin
+    from .plugin_main import QgizmosqlPlugin
 
-    return QduckdbPlugin(iface)
+    return QgizmosqlPlugin(iface)
 
 
 def serverClassFactory(serverIface):
@@ -29,6 +29,6 @@ def serverClassFactory(serverIface):
     :param serverIface: A QGIS server interface instance.
     :type serverIface: QgsServerInterface
     """
-    from .plugin_main import QduckdbServerPlugin
+    from .plugin_main import QgizmosqlServerPlugin
 
-    return QduckdbServerPlugin(serverIface)
+    return QgizmosqlServerPlugin(serverIface)
