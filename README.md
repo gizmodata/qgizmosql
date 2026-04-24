@@ -4,7 +4,11 @@ Browse and visualize spatial data from a **[GizmoSQL](https://gizmodata.com/gizm
 
 > **Status: 🚧 Early development.** This plugin is being forked from [QDuckDB](https://gitlab.com/Oslandia/qgis/qduckdb) (Oslandia, GPLv2+) and is having its DuckDB embedded-file connection layer swapped for the **[`adbc-driver-gizmosql`](https://pypi.org/project/adbc-driver-gizmosql/)** client, which speaks Arrow Flight SQL to a GizmoSQL server. Track progress in [Issues](https://github.com/gizmodata/qgizmosql/issues).
 
+[![Download latest](https://img.shields.io/github/v/release/gizmodata/qgizmosql?label=download%20latest%20ZIP&color=2ea44f)](https://github.com/gizmodata/qgizmosql/releases/latest/download/qgizmosql.zip)
+[![CI](https://github.com/gizmodata/qgizmosql/actions/workflows/ci.yml/badge.svg)](https://github.com/gizmodata/qgizmosql/actions/workflows/ci.yml)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](LICENSE)
+
+> **Install in QGIS:** click the green badge above to grab `qgizmosql.zip`, then in QGIS go to **Plugins → Manage and Install Plugins → Install from ZIP** and pick the file.
 
 ---
 

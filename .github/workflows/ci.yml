@@ -66,18 +66,24 @@ jobs:
           pip install --target qgizmosql/embedded_external_libs \
             adbc-driver-gizmosql pyarrow
 
-      - name: Build plugin ZIP
+      - name: Build plugin ZIP (versioned + unversioned)
+        # Two zips — same bytes, two filenames:
+        #   qgizmosql-X.Y.Z.zip — nice per-release asset
+        #   qgizmosql.zip        — stable "always latest" filename so the
+        #                          github.com/.../releases/latest/download/
+        #                          URL resolves without knowing the version
         run: |
           zip -r "qgizmosql-${{ steps.meta.outputs.version }}.zip" qgizmosql \
             -x "qgizmosql/__pycache__/*" \
             -x "qgizmosql/**/__pycache__/*" \
             -x "qgizmosql/**/*.pyc"
-          ls -lh qgizmosql-*.zip
+          cp "qgizmosql-${{ steps.meta.outputs.version }}.zip" "qgizmosql.zip"
+          ls -lh qgizmosql*.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: qgizmosql-plugin-zip
-          path: qgizmosql-*.zip
+          path: qgizmosql*.zip
           if-no-files-found: error
 
   release:
@@ -97,7 +103,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: qgizmosql-*.zip
+          files: qgizmosql*.zip
           name: qgizmosql ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
