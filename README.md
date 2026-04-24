@@ -1,84 +1,152 @@
-# QDuckDB - QGIS Plugin
+# qgizmosql — QGIS plugin for GizmoSQL
 
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![flake8](https://img.shields.io/badge/linter-flake8-green)](https://flake8.pycqa.org/)
+Browse and visualize spatial data from a **[GizmoSQL](https://gizmodata.com/gizmosql)** server directly in QGIS — no raw DuckDB file required. Connect to a remote (or local) GizmoSQL Arrow Flight SQL service, pick a table, and add it as a QGIS layer.
 
-## Description
+> **Status: 🚧 Early development.** This plugin is being forked from [QDuckDB](https://gitlab.com/Oslandia/qgis/qduckdb) (Oslandia, GPLv2+) and is having its DuckDB embedded-file connection layer swapped for the **[`adbc-driver-gizmosql`](https://pypi.org/project/adbc-driver-gizmosql/)** client, which speaks Arrow Flight SQL to a GizmoSQL server. Track progress in [Issues](https://github.com/gizmodata/qgizmosql/issues).
 
-This plugin allows you to read spatial data layers from [DuckDB](https://duckdb.org/) databases in QGIS.
+[![License: GPL v2+](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](LICENSE)
 
-DuckDB is an in-process SQL OLAP database management system, designed to be simple and portable, feature-rich, fast, free and extensible ( MIT licence ).
+---
 
-[QGIS](https://qgis.org) is the most dynamic OpenSource Geographical Information System platform, including the QGIS Desktop software application.
+## Why qgizmosql?
 
-## ⚠️ Version information
+A user of GizmoSQL asked for this in [gizmosql#160](https://github.com/gizmodata/gizmosql/issues/160):
 
-Between QGIS versions `3.34.5` and `3.34.6`, the packaging for the Windows version of QGIS changed from Python `3.9` to Python `3.12`.
+> We use GizmoSQL for storing geospatial data. When it comes to visualizing the data on a map, DataGrips' geo viewer does not scale well and lacks GIS tools. QDuckDB exists, but it requires access to the raw DuckDB file. A QGIS plugin that connects to GizmoSQL directly would help GizmoSQL gain foothold in the GIS community.
 
-To keep pace with this evolution, we had to upgrade the plugin package as well.
+`qgizmosql` is exactly that.
 
-As a result :
+| | QDuckDB | **qgizmosql** |
+|---|---|---|
+| Data access | Local DuckDB file | Remote (or local) GizmoSQL server |
+| Transport | In-process DuckDB | Arrow Flight SQL (gRPC + TLS) |
+| Auth | n/a (file) | Password **or** OAuth/SSO (browser flow) |
+| Multi-user | ❌ | ✅ |
+| Spatial engine | DuckDB `spatial` ext. | Same — runs server-side on GizmoSQL |
 
-- For QGIS versions `3.34.5` and below, the plugin is frozen in version `0.6.3`
-- To get the latest version, you need at least qgis `3.34.6`, this starts with version `0.7.0` of the plugin
+---
 
-## Features
+## Quickstart
 
-- A new QGIS DuckDB provider is implement with this plugin
-- Read geographic layers from a DuckDB database
-- Use the provider with pyqgis command line or through a graphical interface
+### 1. Prerequisites
 
-![IHM](docs/static/ihm.png)
+- **QGIS ≥ 3.34.6** (with Python 3.12 bundled — `3.34.5` and earlier are not supported)
+- A running **GizmoSQL server** — see the 30-second Docker recipe below
+- Network access from your QGIS machine to the GizmoSQL server (default port `31337`)
 
-## Limitations
+### 2. Start a GizmoSQL server (skip if you already have one)
 
-- Read-only : with this provider it's only possible  for now to **read** a geographic layer from a DuckDB database
-- It is not possible to edit or create features in the layer yet
-- Duckdb allows you to connect to database files as well as CSV, JSON and Parquet files. For the moment, the provider only allows you to connect to a file database.
+The fastest way to get a server running locally — with a TPC-H sample database pre-loaded:
 
-## Documentation
+```bash
+docker run --name gizmosql \
+           --detach \
+           --rm \
+           --tty \
+           --init \
+           --publish 31337:31337 \
+           --env TLS_ENABLED="1" \
+           --env GIZMOSQL_USERNAME="gizmosql_user" \
+           --env GIZMOSQL_PASSWORD="gizmosql_password" \
+           --env PRINT_QUERIES="1" \
+           --pull missing \
+           gizmodata/gizmosql:latest
+```
 
-The documentation is generated using Sphinx and is automatically generated through the CI and published on Pages.
+To load the DuckDB `spatial` extension on startup, add `--env INIT_SQL="INSTALL spatial; LOAD spatial;"` (or run those statements from your first query).
 
-🇬🇧 [Check-out the documentation](https://oslandia.gitlab.io/qgis/qduckdb/)
+### 3. Install the QGIS plugin
+
+**From the QGIS Plugin Repository** (once published):
+
+1. In QGIS: **Plugins → Manage and Install Plugins…**
+2. Search for `qgizmosql` and click **Install**
+
+**From a ZIP (pre-release / development)**:
+
+1. Download the latest `qgizmosql-*.zip` from [Releases](https://github.com/gizmodata/qgizmosql/releases)
+2. In QGIS: **Plugins → Manage and Install Plugins… → Install from ZIP**
+3. Select the ZIP and click **Install Plugin**
+
+The plugin bundles `adbc-driver-gizmosql` and its dependencies on Windows, so no manual `pip install` is needed. On macOS/Linux, if QGIS's Python doesn't already have the driver, the plugin will install it to its own subdirectory on first activation.
+
+### 4. Connect and add a layer
+
+1. **Plugins → qgizmosql → Add GizmoSQL Layer**
+2. Fill in the connection dialog:
+   - **URI:** `grpc+tls://localhost:31337`
+   - **Auth type:** `Password` or `OAuth / SSO`
+   - **Username / Password** (for password auth) — e.g. `gizmosql_user` / `gizmosql_password`
+   - **☑ Skip TLS verification** (only for self-signed local certs)
+3. Click **Connect** — the plugin lists schemas and tables from the server
+4. Pick a table with a geometry column, choose the geometry column, and click **Add Layer**
+
+The table is streamed to QGIS as Arrow record batches and rendered as a vector layer. Feature requests (filters, bbox, attribute selection) are pushed down to GizmoSQL as SQL.
+
+---
+
+## PyQGIS usage (scripting)
+
+You can also add layers programmatically from the QGIS Python console:
+
+```python
+from qgis.core import QgsVectorLayer, QgsProject
+
+uri = (
+    "grpc+tls://localhost:31337"
+    "?username=gizmosql_user"
+    "&password=gizmosql_password"
+    "&tls_skip_verify=true"
+    "&table=public.my_spatial_table"
+    "&geom_column=geom"
+)
+layer = QgsVectorLayer(uri, "my_spatial_table", "gizmosql")
+QgsProject.instance().addMapLayer(layer)
+```
+
+For OAuth/SSO, replace the username/password with `auth_type=external` — a browser window will open for login.
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `ModuleNotFoundError: adbc_driver_gizmosql` in QGIS | Restart QGIS after installing the plugin. On macOS/Linux, check the plugin log for the install path. |
+| `TLS handshake failed` | For local self-signed certs, enable **Skip TLS verification**. For production, provide a CA bundle path. |
+| `Connection refused` | Confirm the server is up. With the Docker command above, `docker ps` should show `gizmosql` running on `0.0.0.0:31337`. |
+| No tables listed | Confirm the user has `SELECT` on `information_schema`. Try `SELECT * FROM information_schema.tables` via the [GizmoSQL CLI](https://github.com/gizmodata/gizmosql-public). |
+| Geometry column not detected | qgizmosql looks for columns of type `GEOMETRY` (DuckDB spatial) or WKB `BLOB` columns. Cast with `ST_AsWKB(geom)` if needed. |
+
+---
+
+## Development
+
+```bash
+git clone https://github.com/gizmodata/qgizmosql
+cd qgizmosql
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements/development.txt
+pip install --no-deps -U -r requirements/embedded.txt -t qgizmosql/embedded_external_libs
+```
+
+Symlink the `qgizmosql/` directory into your QGIS profile's `python/plugins/` folder to test your changes live.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for coding conventions (forked from QDuckDB: black, isort, flake8, pre-commit).
+
+---
 
 ## Credits
 
-This plugin has been developed by Oslandia ( <https://oslandia.com> ).
-
-Oslandia provides support and assistance for QGIS and associated tools, including this plugin.
-
-**This initial work has been funded by IFREMER** ( <https://www.ifremer.fr/fr> ) ![Ifremer logo](https://upload.wikimedia.org/wikipedia/fr/thumb/9/91/Ifremer.svg/136px-Ifremer.svg.png).
+- Forked from **[QDuckDB](https://gitlab.com/Oslandia/qgis/qduckdb)** by [Oslandia](https://oslandia.com) — originally funded by [IFREMER](https://www.ifremer.fr/). All original authors and copyright notices are preserved.
+- **GizmoSQL** by [GizmoData](https://gizmodata.com) — an Arrow Flight SQL server built on DuckDB.
+- **[ADBC](https://arrow.apache.org/adbc/)** — Apache Arrow Database Connectivity.
 
 ## License
 
-Distributed under the terms of the [`GPL` license version 2 or later](LICENSE).
-
-## Further development
-
-List of foreseen features, according to available funding :
-
-- [Write mode](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/11) : allowing edition of tables (update and delete entities, create column, drop column… )
-- [Import layer from QGIS to DuckDB database](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/12)
-- [Enable the provider to connect to a remote CSV, JSON or parquet file](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/14)
-- [Homegeneization of widgets, better integration in QGIS](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues/13) ( e.g. provider list, config window…)
-- Port this plugin to QGIS Core in C++
-- Convert DuckDB database to GeoPackage
-- … your own needs, [create a `feature request` issue](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues) !
-
-## Contributing
-
-Contributions are welcome ! You can contribute through :
-
-- Testing and [giving feedback in issues](https://gitlab.com/Oslandia/qgis/qduckdb/-/issues)
-- Bug reports & bug fixes
-- Code for new features ( please open an issue for discussion before coding )
-- Documentation
-
-You can also contribute with **funding** if you want to support the project and see new features !
+GPLv2+ (inherited from QDuckDB). See [LICENSE](LICENSE).
 
 ## Get in touch
 
-Do not hesitate to contact us by [mail](mailto:infos+qduckdb@oslandia.com) or open an issue, should you have any question or want to support QDuckDB.
+- Report bugs / request features: [GitHub Issues](https://github.com/gizmodata/qgizmosql/issues)
+- Email: [philip@gizmodata.com](mailto:philip@gizmodata.com)
