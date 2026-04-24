@@ -44,7 +44,7 @@ def build_request(
 
 
 def get_filename_from_url(url: str) -> str:
-    """Method that returns the name of the downloaded file. This method finds the file name in the header.
+    """Return the name of the downloaded file by reading the HTTP headers.
 
     :param url: File url
     :type url: str
@@ -80,7 +80,7 @@ def get_filename_from_url(url: str) -> str:
 
     else:
         PlgLogger.log(
-            message="Unable to determine the name of the remote file, a default name will be applied.",
+            message="Unable to determine remote file name; using a default.",
             log_level=Qgis.MessageLevel.Warning,
             push=True,
         )

@@ -1,210 +1,22 @@
-# CHANGELOG
+# Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-<!--
-
-Unreleased
-
-## version_tag - YYYY-DD-mm
+## [Unreleased]
 
 ### Added
 
-### Changed
+- Initial fork from [QDuckDB](https://gitlab.com/Oslandia/qgis/qduckdb) with the DuckDB embedded-file connection layer swapped for an Arrow Flight SQL client via [`adbc-driver-gizmosql`](https://pypi.org/project/adbc-driver-gizmosql/).
+- QGIS provider key `gizmosql` — open a remote (or local) GizmoSQL server as a read-only QGIS vector data source.
+- Add-layer dialog: host / port / TLS options, Password or OAuth/SSO (Enterprise) auth type, `QgsAuthConfigSelect` for encrypted credential storage, table picker or custom-SQL mode, CRS picker.
+- Credentials are resolved via the QGIS Auth Manager at connect time — raw passwords never land in saved project URIs.
+- GitHub Actions CI: flake8 lint, unit tests for the URI parser + connection config, and a buildable plugin ZIP artifact. Tagged releases (`v*`) attach the ZIP to a GitHub Release.
 
-### Removed
+### Removed (from upstream QDuckDB)
 
--->
+- Embedded-DuckDB-file mode, open-Parquet-file dialog, DuckDB extension manager, force-download/httpfs handling — all irrelevant for a remote Flight SQL server.
+- GitLab CI config, now replaced by GitHub Actions.
 
-## 2.2.7 - 2026-02-16
+### Credits
 
-- Bump to DuckDB 1.4.4 !214
-- Expose plugin as QGIS 4 compatible !213
-
-## 2.2.6 - 2025-11-16
-
-- ci(embedded): Keep dist-info to fix DuckDB metadata loading on some Python versions !208
-- Alert when user use plugin with old DuckDB version !203
-- Bump to DuckDB 1.4.2 !207
-- ci: Bump python version from 3.9 (is EOL) to 3.10 !205
-- fix: Error with Windows paths when loading a parquet !206
-
-## 2.2.5 - 2025-10-27
-
-- Upgrade to DuckDB version 1.4.1 !195 !197
-- Support "TIMESTAMP WITH TIME ZONE" field type !197
-
-## 2.2.4 - 2025-09-12
-
-- Correct geometry mapping for MULTIPOINT !193
-- Add bigquery extension from comunity extension !194
-
-## 2.2.3 - 2025-07-25
-
-- Upgrade to DuckDB version 1.3.2 !191
-
-## 2.2.2 - 2025-05-23
-
-- Upgrade to DuckDB version 1.3.1 !192
-
-## 2.2.1 - 2025-05-23
-
-- Upgrade to DuckDB version 1.3.0 !188
-- Fixed a bug when executing a custom sql query from the GUI !189
-
-## 2.2.0 - 2025-05-15
-
-- Add support for specifying schemas in the QDuckDB provider URI, enabling access to tables beyond the default main schema while maintaining backward compatibility. !186
-
-## 2.1.3 - 2025-04-28
-
-- Fix of a regression bug on QGIS versions lower than 3.38 introduced when fixing the deprecated QgsField constructor. !185
-
-## 2.1.2 - 2025-04-10
-
-- Upgrade to DuckDB version 1.2.2 !177
-
-## 2.1.1 - 2025-04-01
-
-- Fix Python syntax to maintain compatibility with QGIS versions still using Python 3.9 !172
-
-## 2.1.0 - 2025-02-25
-
-- Ability to read a remote parquet with a URL !165
-
-## 2.0.1 - 2025-02-24
-
-- Bug fix: disable open parquet icon when duckdb dependency is missing !157
-- Set the size of the open parquet dialog window !158
-- French translation update !162
-- Minors UI enhancement !163 !164
-
-## 2.0.0 - 2025-02-21
-
-- Improved execution of SQL queries in the provider (bug with irgules, multiline query, trailing space) !155 !147
-- WARNING: These bug fixes involve changing the separator in the URI. We've switched from the semicolon (;) to the pipe (|).
-This change is breaking. As a result, your DuckDB layers built with an older version of the plugin will no longer work with version 2.0.0 and higher.
-- It is now possible to use the provider without supplying a database, in which case DuckDB will use an in-memory database. !148
-- A new GUI for loading a parquet file via the DuckDB provider !149
-
-## 1.3.1 - 2025-02-06
-
-- Upgrade to DuckDB version 1.2.0 !146
-
-## 1.3.0 - 2025-01-31
-
-- The plugin now supports QGIS with Qt6 !144
-
-## 1.2.1 - 2025-01-20
-
-- Support DATETIME field type !145
-
-## 1.2.0 - 2024-12-23
-
-- Fixed a bug when a table name contained a special character !138
-- Proivder now supports DuckDB extensions !142
-
-## 1.1.0 - 2024-12-02
-
-- It's now possible to execute any sql query with the provider (instead of simple select from where) !133
-
-## 1.0.1 - 2024-11-04
-
-- Upgrade to DuckDB version 1.1.3 !132
-
-## 1.0.0 - 2024-09-26
-
-- First stable version
-- Enhanced custom sql query function, crash cases are managed in exceptions !124
-- Fixed the bug that prevented loading a view !123
-- Upgrade to DuckDB version 1.1.1 !129
-- Correctly support DATE, TIME and DATETIME fields types !131
-- The provider now supports tables without geometries !127
-- Fix bug on tables containing a primary key !130
-
-## 0.8.1 - 2024-06-12
-
-- Fix bug with tables containing a primary key !118
-
-## 0.8.0 - 2024-06-10
-
-- Update DuckDB version to 1.0.0 !117
-- Handle columns name with space in provider !116
-
-## 0.7.3 - 2024-05-24
-
-- Update DuckDB version to 0.10.3 !114
-- Some micro optimizations on UI !113
-
-## 0.7.2 - 2024-05-16
-
-- Some micro optimizations on duckdb_feature_iterator !111
-
-## 0.7.1 - 2024-05-03
-
-- Use QgsFeatureRequest class syntax for enums !109
-
-## 0.7.0 - 2024-05-03
-
-- Plugin package with Python 3.12, now the minimum version of QGIS to use the plugin is 3.34.6 !106
-- Implement subsetstring : is now possible to create a filter on a DuckDB layer !103
-- Improve performance of the sql query by using rowid pseudocolumn instead of row_number !86
-
-## 0.6.3 - 2024-05-02
-
-- Add support for NoGeometry Flag on QgsFeatureRequest !98
-- Log sql request when debug mode is on !98
-- Following the packaging of qgis windows in python 3.12 the maximum version required to use the plugin is currently QGIS 3.34.5.
-
-## 0.6.2 - 2024-04-18
-
-- Update DuckDB version to 0.10.2 !100
-
-## 0.6.1 - 2024-04-08
-
-- Retrieve geometry as wkb instead of wkt. !97
-- Support for json-type fields !94
-- Provider : Add support for SubsetOfAttributes flag. !87
-
-## 0.6.0 - 2024-03-26
-
-- Misc typo fixes !83
-- Update test to QGIS 3.34 !84
-- Fix unique values in metadata provider !88
-- Update DuckDB version to 0.10.1 !89
-- Add a disclaimer about binary dependency and explicitly disable qt6 support !91
-
-## 0.5.0 - 2024-03-08
-
-- Loading a layer with an sql query !78
-- Correctly read paths from a network share !76
-
-## 0.4.1 - 2024-02-14
-
-- Upgrade DuckDB version 0.9.2 to 0.10
-
-## 0.4.0 - 2023-12-19
-
-- Enable relative database path for QGIS projects !70
-
-## 0.3.1 - 2023-12-06
-
-- Fix the bug related to importing QGIS Server with the windows version which does not contain
-QGIS server.
-
-## 0.3.0 - 2023-12-06
-
-- Adding support for the plugin by QGIS Server !68
-
-## 0.2.0-beta1 - 2023-11-17
-
-- First version to be published on the official QGIS plugins repository
-- Add a QGIS provider to read a DuckDB database !2 !3 !4 !9 !11 !12 !14 !21 !22 !24 !34
-- Creating a user interface to use the provider !15
-- Centralizing DuckDB calls in a wrapper !48 !49 !50 !51 !52
-- Windows packaging that includes the duckdb dependency !53
-
-## 0.1.0 - 2023-09-08
-
-- First release
-- Generated with the [QGIS Plugins templater](https://oslandia.gitlab.io/qgis/template-qgis-plugin/)
+Forked from QDuckDB by Oslandia (Florent Fougeres, Jean Felder, Julien Moura), originally funded by IFREMER. Licensed GPLv2+ (inherited).
