@@ -6,4 +6,5 @@
 # python -m pip install --no-deps -U -r requirements/embedded.txt -t qgizmosql/embedded_external_libs
 # -----------------------
 
-duckdb==1.4.4
+adbc-driver-gizmosql>=0.2.0
+pyarrow>=17
