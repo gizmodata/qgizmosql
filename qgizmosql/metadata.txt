@@ -1,0 +1,34 @@
+[general]
+name=qgizmosql
+about=QGIS plugin for browsing spatial data from a GizmoSQL (Arrow Flight SQL) server.<br/>
+    Connect to a remote or local GizmoSQL service, pick a table, and add it as a QGIS layer — no raw DuckDB file required.
+    Supports password and OAuth/SSO authentication via the adbc-driver-gizmosql Python client.
+category=Database
+description=Adds a QGIS data provider that reads geographic layers from a GizmoSQL server over Arrow Flight SQL.
+
+hasProcessingProvider=False
+icon=resources/images/logo_duckdb.png
+supportsQt6=True
+server=True
+tags=gizmosql,database,spatial,sql,arrow,flight,duckdb,adbc
+
+# credits and contact
+author=GizmoData (Philip Moore). Forked from QDuckDB by Oslandia (Florent Fougeres, Jean Felder, Julien Moura).
+email=philip@gizmodata.com
+homepage=https://github.com/gizmodata/qgizmosql
+repository=https://github.com/gizmodata/qgizmosql
+tracker=https://github.com/gizmodata/qgizmosql/issues
+
+# experimental flag
+deprecated=False
+experimental=True
+qgisMinimumVersion=3.34.6
+qgisMaximumVersion=4.99
+
+# versioning
+version=0.1.0-DEV
+changelog=
+
+[upstream]
+forked_from=https://gitlab.com/Oslandia/qgis/qduckdb
+original_funders=IFREMER

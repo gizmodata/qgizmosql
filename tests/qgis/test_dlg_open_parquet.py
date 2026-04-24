@@ -3,8 +3,8 @@ from pathlib import Path
 from qgis.core import QgsProject
 from qgis.testing import start_app, unittest
 
-from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
-from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
+from qgizmosql.gui.dlg_open_parquet import OpenParquetDialog
+from qgizmosql.toolbelt.utils import check_file_exists, is_valid_url
 
 from .utilities import cleanup_qgis_modules, register_provider_if_necessary
 

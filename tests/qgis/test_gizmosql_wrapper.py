@@ -5,17 +5,17 @@
 
     .. code-block:: bash
         # for whole tests
-        python -m unittest tests.unit.test_duckdb_wrapper
+        python -m unittest tests.unit.test_gizmosql_wrapper
         # for specific test
-        python -m unittest tests.unit.test_duckdb_wrapper.TestDdbWrapper.test_parse_uri
+        python -m unittest tests.unit.test_gizmosql_wrapper.TestDdbWrapper.test_parse_uri
 """
 from pathlib import Path
 
 import duckdb
 from qgis.testing import start_app, unittest
 
-from qduckdb.provider.duckdb_wrapper import DuckDbTools
-from qduckdb.provider.models import DdbExtension
+from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
+from qgizmosql.provider.models import DdbExtension
 
 from .utilities import cleanup_qgis_modules, register_provider_if_necessary
 

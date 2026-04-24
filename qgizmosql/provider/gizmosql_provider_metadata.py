@@ -2,7 +2,7 @@ from typing import Dict
 
 from qgis.core import QgsProviderMetadata, QgsReadWriteContext
 
-from qduckdb.provider.duckdb_provider import DuckdbProvider
+from qgizmosql.provider.gizmosql_provider import DuckdbProvider
 
 
 class DuckdbProviderMetadata(QgsProviderMetadata):

@@ -18,15 +18,15 @@ from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
 
 # project
-from qduckdb.__about__ import (
+from qgizmosql.__about__ import (
     __icon_path__,
     __title__,
     __uri_homepage__,
     __uri_tracker__,
     __version__,
 )
-from qduckdb.toolbelt.log_handler import PlgLogger
-from qduckdb.toolbelt.preferences import PlgOptionsManager, PlgSettingsStructure
+from qgizmosql.toolbelt.log_handler import PlgLogger
+from qgizmosql.toolbelt.preferences import PlgOptionsManager, PlgSettingsStructure
 
 # ############################################################################
 # ########## Globals ###############

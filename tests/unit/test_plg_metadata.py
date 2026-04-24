@@ -18,7 +18,7 @@ from pathlib import Path
 from packaging.version import parse
 
 # project
-from qduckdb import __about__
+from qgizmosql import __about__
 
 # ############################################################################
 # ########## Classes #############

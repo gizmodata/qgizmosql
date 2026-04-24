@@ -11,8 +11,8 @@ from dataclasses import asdict, dataclass, fields
 from qgis.core import Qgis, QgsSettings
 
 # package
-import qduckdb.toolbelt.log_handler as log_hdlr
-from qduckdb.__about__ import __title__, __version__
+import qgizmosql.toolbelt.log_handler as log_hdlr
+from qgizmosql.__about__ import __title__, __version__
 
 # ############################################################################
 # ########## Classes ###############

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 # variables
-src_path = Path("qduckdb")
+src_path = Path("qgizmosql")
 i18n_path = src_path.joinpath("resources/i18n")
 output_file = i18n_path.joinpath("plugin_translation.pro")
 

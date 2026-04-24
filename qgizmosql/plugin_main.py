@@ -23,7 +23,7 @@ if typing.TYPE_CHECKING:
     from qgis.server import QgsServerInterface
 
 # project
-from qduckdb.__about__ import (
+from qgizmosql.__about__ import (
     DIR_PLUGIN_ROOT,
     __icon_path__,
     __title__,
@@ -31,15 +31,15 @@ from qduckdb.__about__ import (
 )
 
 # plugin
-from qduckdb.gui.dlg_settings import PlgOptionsFactory
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qgizmosql.gui.dlg_settings import PlgOptionsFactory
+from qgizmosql.toolbelt.log_handler import PlgLogger
 
 # conditional imports
 try:
-    from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
-    from qduckdb.gui.dlg_open_parquet import OpenParquetDialog
-    from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
-    from qduckdb.provider.duckdb_wrapper import (
+    from qgizmosql.gui.dlg_add_gizmosql_layer import LoadDuckDBLayerDialog
+    from qgizmosql.gui.dlg_open_parquet import OpenParquetDialog
+    from qgizmosql.provider.gizmosql_provider_metadata import DuckdbProviderMetadata
+    from qgizmosql.provider.gizmosql_wrapper import (
         DUCKDB_CURRENT_VERSION,
         DUCKDB_SUPPORTED_VERSION,
     )

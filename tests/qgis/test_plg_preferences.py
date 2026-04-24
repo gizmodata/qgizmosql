@@ -15,8 +15,8 @@
 from qgis.testing import unittest
 
 # project
-from qduckdb.__about__ import __version__
-from qduckdb.toolbelt.preferences import PlgSettingsStructure
+from qgizmosql.__about__ import __version__
+from qgizmosql.toolbelt.preferences import PlgSettingsStructure
 
 # ############################################################################
 # ########## Classes #############

@@ -18,20 +18,20 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QDate, QDateTime, QMetaType, QTime
 
 # plugin
-from qduckdb.provider import duckdb_feature_source, duckdb_provider
-from qduckdb.toolbelt.log_handler import PlgLogger
-from qduckdb.toolbelt.preferences import PlgOptionsManager
+from qgizmosql.provider import duckdb_feature_source, duckdb_provider
+from qgizmosql.toolbelt.log_handler import PlgLogger
+from qgizmosql.toolbelt.preferences import PlgOptionsManager
 
 
 class DuckdbFeatureIterator(QgsAbstractFeatureIterator):
     def __init__(
         self,
-        source: duckdb_feature_source.DuckdbFeatureSource,
+        source: gizmosql_feature_source.DuckdbFeatureSource,
         request: QgsFeatureRequest,
     ):
         """Constructor"""
         super().__init__(request)
-        self._provider: duckdb_provider.DuckdbProvider = source.get_provider()
+        self._provider: gizmosql_provider.DuckdbProvider = source.get_provider()
         self._settings = PlgOptionsManager.get_plg_settings()
         self.log = PlgLogger().log
 

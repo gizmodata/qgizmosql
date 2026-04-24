@@ -17,8 +17,8 @@ from packaging import version
 from qgis.core import Qgis, QgsProviderRegistry
 
 # plugin
-from qduckdb.provider.models import DdbExtension
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qgizmosql.provider.models import DdbExtension
+from qgizmosql.toolbelt.log_handler import PlgLogger
 
 # conditional imports
 try:
@@ -34,7 +34,7 @@ except Exception:
     )
     import site
 
-    from qduckdb.__about__ import DIR_PLUGIN_ROOT
+    from qgizmosql.__about__ import DIR_PLUGIN_ROOT
 
     site.addsitedir(DIR_PLUGIN_ROOT / "embedded_external_libs")
     import duckdb

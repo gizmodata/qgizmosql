@@ -5,8 +5,8 @@ from typing import Optional
 
 from qgis.core import QgsProviderRegistry, QgsRectangle
 
-from qduckdb.provider.duckdb_provider import DuckdbProvider
-from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
+from qgizmosql.provider.gizmosql_provider import DuckdbProvider
+from qgizmosql.provider.gizmosql_provider_metadata import DuckdbProviderMetadata
 
 
 def get_overtures_maps_latest_release() -> Optional[str]:

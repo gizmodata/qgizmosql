@@ -15,10 +15,10 @@ from qgis.PyQt.QtWidgets import QDialog
 from qgis.utils import OverrideCursor
 
 # plugin
-from qduckdb.__about__ import DIR_PLUGIN_ROOT
-from qduckdb.provider.protocols import PROTOCOLS
-from qduckdb.toolbelt.network import get_filename_from_url
-from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
+from qgizmosql.__about__ import DIR_PLUGIN_ROOT
+from qgizmosql.provider.protocols import PROTOCOLS
+from qgizmosql.toolbelt.network import get_filename_from_url
+from qgizmosql.toolbelt.utils import check_file_exists, is_valid_url
 
 
 class OpenParquetDialog(QDialog):

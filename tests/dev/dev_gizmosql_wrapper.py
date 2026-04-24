@@ -2,7 +2,7 @@
 
 Usage:
 
-    python tests/dev/dev_duckdb_wrapper.py 
+    python tests/dev/dev_gizmosql_wrapper.py 
 """
 
 import sys
@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, f"{Path('.').resolve()}")  # move into project package
 
-from qduckdb.provider.duckdb_wrapper import DuckDbTools
+from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
 
 csv_path = Path(__file__).parent.parent.joinpath("fixtures/capitals.csv")
 output_db = csv_path.with_suffix(".db")

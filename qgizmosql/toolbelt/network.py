@@ -8,8 +8,8 @@ from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtNetwork import QNetworkRequest
 
 # Plugin
-from qduckdb.__about__ import __title__, __version__
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qgizmosql.__about__ import __title__, __version__
+from qgizmosql.toolbelt.log_handler import PlgLogger
 
 
 def build_request(

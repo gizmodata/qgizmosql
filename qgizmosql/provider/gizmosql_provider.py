@@ -19,22 +19,22 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QMetaType
 
-from qduckdb.provider import duckdb_feature_iterator, duckdb_feature_source
-from qduckdb.provider.duckdb_wrapper import DUCKDB_CURRENT_VERSION
-from qduckdb.provider.extension import community_extensions, core_extensions
-from qduckdb.provider.mappings import (
+from qgizmosql.provider import duckdb_feature_iterator, duckdb_feature_source
+from qgizmosql.provider.gizmosql_wrapper import DUCKDB_CURRENT_VERSION
+from qgizmosql.provider.extension import community_extensions, core_extensions
+from qgizmosql.provider.mappings import (
     deprecate_mapping_duckdb_qgis_type,
     mapping_duckdb_qgis_geometry,
     mapping_duckdb_qgis_type,
 )
-from qduckdb.provider.protocols import PROTOCOLS
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qgizmosql.provider.protocols import PROTOCOLS
+from qgizmosql.toolbelt.log_handler import PlgLogger
 
 # conditional imports
 try:
     import duckdb
 
-    from qduckdb.provider.duckdb_wrapper import DuckDbTools
+    from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
 
     PlgLogger.log(message="Dependencies loaded from Python installation.")
 except Exception:
@@ -46,12 +46,12 @@ except Exception:
     )
     import site
 
-    from qduckdb.__about__ import DIR_PLUGIN_ROOT
+    from qgizmosql.__about__ import DIR_PLUGIN_ROOT
 
     site.addsitedir(DIR_PLUGIN_ROOT / "embedded_external_libs")
     import duckdb
 
-    from qduckdb.provider.duckdb_wrapper import DuckDbTools
+    from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
 
     PlgLogger.log(
         message=f"Dependencies loaded from embedded external libs: {duckdb.__version__=}"
@@ -422,7 +422,7 @@ class DuckdbProvider(QgsVectorDataProvider):
         return self._crs
 
     def featureSource(self):
-        return duckdb_feature_source.DuckdbFeatureSource(self)
+        return gizmosql_feature_source.DuckdbFeatureSource(self)
 
     def storageType(self):
         return "DuckDB local database"
@@ -475,8 +475,8 @@ class DuckdbProvider(QgsVectorDataProvider):
     def getFeatures(self, request=QgsFeatureRequest()) -> QgsFeature:
         """Return next feature"""
         return QgsFeatureIterator(
-            duckdb_feature_iterator.DuckdbFeatureIterator(
-                duckdb_feature_source.DuckdbFeatureSource(self), request
+            gizmosql_feature_iterator.DuckdbFeatureIterator(
+                gizmosql_feature_source.DuckdbFeatureSource(self), request
             )
         )
 

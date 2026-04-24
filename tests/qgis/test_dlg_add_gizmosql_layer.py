@@ -3,7 +3,7 @@ from pathlib import Path
 from qgis.core import QgsProject, QgsWkbTypes
 from qgis.testing import start_app, unittest
 
-from qduckdb.gui.dlg_add_duckdb_layer import LoadDuckDBLayerDialog
+from qgizmosql.gui.dlg_add_gizmosql_layer import LoadDuckDBLayerDialog
 
 from .utilities import cleanup_qgis_modules, register_provider_if_necessary
 

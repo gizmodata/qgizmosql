@@ -12,47 +12,47 @@
 <context>
     <name>Dialog</name>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="32"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="32"/>
         <source>DuckDB</source>
         <translation>DuckDB</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="66"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="66"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Database&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Base de données&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="45"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="45"/>
         <source>Add Layer</source>
         <translation>Ajouter une couche</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="59"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="59"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Projection&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Projection&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="144"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="144"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Table&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Table&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="38"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="38"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Custom SQL query&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Requête SQL personnalisée&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="52"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="52"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Extension&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Extension&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="112"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="112"/>
         <source>Entire table</source>
         <translation>Table entière</translation>
     </message>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.ui" line="122"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.ui" line="122"/>
         <source>Custom SQL query</source>
         <translation>Requête SQL personnalisée</translation>
     </message>
@@ -80,22 +80,22 @@
 <context>
     <name>DuckdbProvider</name>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="165"/>
+        <location filename="../../provider/gizmosql_provider.py" line="165"/>
         <source>{} unknown extension, open an issue if it exists to add its support.</source>
         <translation>{} extension inconnue, ouvrez une question si elle existe pour ajouter son support.</translation>
     </message>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="194"/>
+        <location filename="../../provider/gizmosql_provider.py" line="194"/>
         <source>The sql query is invalid: {}</source>
         <translation>La requête SQL n&apos;est pas valide : {}</translation>
     </message>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="268"/>
+        <location filename="../../provider/gizmosql_provider.py" line="268"/>
         <source>Geometry type {} not supported</source>
         <translation>Le type de géométrie {} n&apos;est pas pris en charge</translation>
     </message>
     <message>
-        <location filename="../../provider/duckdb_provider.py" line="489"/>
+        <location filename="../../provider/gizmosql_provider.py" line="489"/>
         <source>SQL error in filter : {}</source>
         <translation>Erreur SQL dans le filtre : {}</translation>
     </message>
@@ -103,7 +103,7 @@
 <context>
     <name>LoadDuckDBLayerDialog</name>
     <message>
-        <location filename="../../gui/dlg_add_duckdb_layer.py" line="146"/>
+        <location filename="../../gui/dlg_add_gizmosql_layer.py" line="146"/>
         <source>The database {} does not exist.</source>
         <translation>La base de données {} n&apos;existe pas.</translation>
     </message>
@@ -183,7 +183,7 @@
     </message>
 </context>
 <context>
-    <name>wdg_qduckdb_settings</name>
+    <name>wdg_qgizmosql_settings</name>
     <message>
         <location filename="../../gui/dlg_settings.ui" line="14"/>
         <source>QDuckDB - Settings</source>

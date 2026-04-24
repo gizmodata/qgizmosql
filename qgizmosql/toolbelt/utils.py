@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 from qgis.core import Qgis
 
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qgizmosql.toolbelt.log_handler import PlgLogger
 
 
 def check_file_exists(path: str) -> bool:

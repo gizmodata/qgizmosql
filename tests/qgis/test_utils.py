@@ -2,7 +2,7 @@ from pathlib import Path
 
 from qgis.testing import unittest
 
-from qduckdb.toolbelt.utils import check_file_exists, is_valid_url
+from qgizmosql.toolbelt.utils import check_file_exists, is_valid_url
 
 
 class TestUtils(unittest.TestCase):

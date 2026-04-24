@@ -16,10 +16,10 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QDialog
 
 # plugin
-from qduckdb.__about__ import DIR_PLUGIN_ROOT
-from qduckdb.provider.duckdb_wrapper import DuckDbTools
-from qduckdb.provider.extension import community_extensions, core_extensions
-from qduckdb.toolbelt.log_handler import PlgLogger
+from qgizmosql.__about__ import DIR_PLUGIN_ROOT
+from qgizmosql.provider.gizmosql_wrapper import DuckDbTools
+from qgizmosql.provider.extension import community_extensions, core_extensions
+from qgizmosql.toolbelt.log_handler import PlgLogger
 
 
 class LoadDuckDBLayerDialog(QDialog):

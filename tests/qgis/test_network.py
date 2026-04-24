@@ -1,6 +1,6 @@
 from qgis.testing import unittest
 
-from qduckdb.toolbelt.network import get_filename_from_url
+from qgizmosql.toolbelt.network import get_filename_from_url
 
 
 class TestNetwork(unittest.TestCase):

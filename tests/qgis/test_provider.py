@@ -19,9 +19,9 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QDate, QDateTime, QTime, QVariant
 from qgis.testing import unittest
 
-from qduckdb.provider.duckdb_provider import DuckdbProvider
-from qduckdb.provider.duckdb_provider_metadata import DuckdbProviderMetadata
-from qduckdb.provider.duckdb_wrapper import DUCKDB_CURRENT_VERSION
+from qgizmosql.provider.gizmosql_provider import DuckdbProvider
+from qgizmosql.provider.gizmosql_provider_metadata import DuckdbProviderMetadata
+from qgizmosql.provider.gizmosql_wrapper import DUCKDB_CURRENT_VERSION
 
 from .utilities import (
     compare_rectangles,
