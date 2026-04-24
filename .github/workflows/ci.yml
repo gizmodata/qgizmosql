@@ -40,11 +40,25 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Read plugin version
+      - name: Resolve plugin version
         id: meta
+        # On a v* tag push, use the tag (without the leading v) as the plugin
+        # version and rewrite metadata.txt so the installed plugin reports it
+        # correctly in the QGIS plugin manager. Off-tag builds keep whatever
+        # metadata.txt already says (e.g. 0.1.0-DEV) — useful for testing
+        # the packaging itself on PRs without bumping the source-of-truth.
         run: |
-          ver=$(awk -F= '/^version=/{print $2}' qgizmosql/metadata.txt)
-          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            ver="${GITHUB_REF#refs/tags/v}"
+            echo "Tagged release — syncing metadata.txt to version=${ver}"
+            sed -i.bak -E "s/^version=.*/version=${ver}/" qgizmosql/metadata.txt
+            rm -f qgizmosql/metadata.txt.bak
+          else
+            ver=$(awk -F= '/^version=/{print $2}' qgizmosql/metadata.txt)
+          fi
+          echo "version=${ver}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${ver}"
 
       - name: Install runtime deps into embedded_external_libs
         run: |
@@ -66,9 +80,24 @@ jobs:
           path: qgizmosql-*.zip
           if-no-files-found: error
 
-      - name: Attach ZIP to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+  release:
+    # Publishes a GitHub Release with the ZIP attached on every v* tag.
+    # Separate job (rather than a conditional step inside `package`) so the
+    # release workflow is independently retryable from the Actions UI.
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: qgizmosql-plugin-zip
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: qgizmosql-*.zip
+          name: qgizmosql ${{ github.ref_name }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
