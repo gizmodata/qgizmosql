@@ -143,9 +143,9 @@ class LoadGizmoSqlLayerDialog(QDialog):
         self._status_label.setStyleSheet("color: #a00;")
         root.addWidget(self._status_label)
 
-        self._buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        self._buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         self._add_layer_btn = self._buttons.addButton(
-            "Add Layer", QDialogButtonBox.AcceptRole
+            "Add Layer", QDialogButtonBox.ButtonRole.AcceptRole
         )
         self._add_layer_btn.setIcon(QgsApplication.getThemeIcon("mActionAddLayer.svg"))
         self._add_layer_btn.setEnabled(False)

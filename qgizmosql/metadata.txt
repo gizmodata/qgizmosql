@@ -22,8 +22,8 @@ tracker=https://github.com/gizmodata/qgizmosql/issues
 # experimental flag
 deprecated=False
 experimental=True
-qgisMinimumVersion=3.34.6
-qgisMaximumVersion=4.99
+qgisMinimumVersion=4.0.0
+qgisMaximumVersion=5.99
 
 # versioning
 version=0.1.0-DEV
