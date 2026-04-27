@@ -4,30 +4,6 @@ import re
 import weakref
 from typing import Any, Optional
 
-# Identifiers (table, schema, column names) cannot be passed as bind
-# parameters in any SQL dialect, so we constrain them to a strict ASCII
-# regex at construction time. After this check passes, downstream f-string
-# interpolation of these names is safe — there is no character that could
-# alter SQL structure. Literal *values* in WHERE clauses are still bound
-# via cursor.execute(sql, params) below.
-_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-
-
-def _safe_identifier(name: Optional[str], kind: str) -> Optional[str]:
-    """Validate an SQL identifier. Returns the name unchanged or raises.
-
-    :param name: candidate identifier (may be None — passes through)
-    :param kind: human-readable label for error messages (e.g. "table")
-    :raises ValueError: if name is non-empty and fails the regex check
-    """
-    if not name:
-        return name
-    if not _IDENTIFIER_RE.match(name):
-        raise ValueError(
-            f"Invalid {kind} identifier {name!r}: only [A-Za-z_][A-Za-z0-9_]* allowed"
-        )
-    return name
-
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
@@ -51,6 +27,31 @@ from qgizmosql.provider.mappings import (
     mapping_duckdb_qgis_type,
 )
 from qgizmosql.toolbelt.log_handler import PlgLogger
+
+
+# Identifiers (table, schema, column names) cannot be passed as bind
+# parameters in any SQL dialect, so we constrain them to a strict ASCII
+# regex at construction time. After this check passes, downstream f-string
+# interpolation of these names is safe — there is no character that could
+# alter SQL structure. Literal *values* in WHERE clauses are still bound
+# via cursor.execute(operation=..., parameters=[...]) below.
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _safe_identifier(name: Optional[str], kind: str) -> Optional[str]:
+    """Validate an SQL identifier. Returns the name unchanged or raises.
+
+    :param name: candidate identifier (may be None — passes through)
+    :param kind: human-readable label for error messages (e.g. "table")
+    :raises ValueError: if name is non-empty and fails the regex check
+    """
+    if not name:
+        return name
+    if not _IDENTIFIER_RE.match(name):
+        raise ValueError(
+            f"Invalid {kind} identifier {name!r}: only [A-Za-z_][A-Za-z0-9_]* allowed"
+        )
+    return name
 
 
 class GizmoSqlProvider(QgsVectorDataProvider):
