@@ -87,20 +87,59 @@ qgizmosql/
 
 ## Release process
 
-`git tag -a vX.Y.Z -m "..."` + `git push origin vX.Y.Z`. CI `release` job:
-- Rewrites `metadata.txt` `version=` to match the tag
-- Installs runtime deps into `embedded_external_libs/`
-- Zips the plugin
-- Creates a GitHub Release with auto-generated notes and the ZIP attached
+### Pre-tag checklist
 
-**Submission to [plugins.qgis.org](https://plugins.qgis.org/plugins/add/)** is a manual
-web upload requiring osgeo.org SSO — can't be automated from CI. Not yet done.
+Run through this every time. Most steps are mechanical; the changelog
+ones are the only ones that bite if skipped (the QGIS plugin manager
+surfaces an empty changelog field to users — looks abandoned).
 
-**Before every tag**, update both:
-1. `CHANGELOG.md` — add a new `## [X.Y.Z] — YYYY-MM-DD` section with Added / Changed / Fixed / Security buckets (Keep-a-Changelog format).
-2. `qgizmosql/metadata.txt` — prepend a one-line summary to the `changelog=` field (this is what shows up in the QGIS plugin manager).
+- [ ] **CHANGELOG.md** — add a new `## [X.Y.Z] - YYYY-MM-DD` section with
+      Added / Changed / Fixed / Security buckets (Keep-a-Changelog format).
+      The release CI awk-extracts this section verbatim into the GitHub
+      Release notes, so write it for end-users.
+- [ ] **`qgizmosql/metadata.txt` `changelog=` field** — prepend a one-line
+      summary indented under the field. This is what surfaces in the QGIS
+      plugin manager UI; keep it terse and user-facing.
+- [ ] `git status` clean — no stray `.pyc`, `__pycache__`, or
+      `embedded_external_libs/` content sneaking in.
+- [ ] `python3.12 -m flake8 qgizmosql` clean — local CI mirrors
+      plugins.qgis.org's checks, including W503/W504 enforcement.
+- [ ] `python3.12 -m unittest discover -s tests/unit` green.
+- [ ] If the runtime deps changed, bump pins in `qgizmosql/requirements.txt`.
+- [ ] If you altered `metadata.txt` other than `changelog=`, sanity-check
+      `name=`, `version=` (CI rewrites this from the tag, but PRs use the
+      file value), `qgisMinimumVersion=`, `qgisMaximumVersion=`.
 
-Skipping either is a real footgun — the QGIS reviewer surfaces the metadata.txt changelog to users, and an empty changelog field looks abandoned.
+### Tagging
+
+```bash
+git tag -a vX.Y.Z -m "vX.Y.Z - one-line summary"
+git push origin vX.Y.Z
+```
+
+CI then:
+- Rewrites `metadata.txt` `version=` to match the tag.
+- Builds the slim ZIP for plugins.qgis.org submission.
+- Builds per-platform offline ZIPs (linux-x86_64, macos-arm64, windows-x86_64).
+- **Extracts the matching `## [X.Y.Z]` section from `CHANGELOG.md`** and
+  uses it as the GitHub Release body. If no matching section is found,
+  it falls back to GitHub's auto-generated notes — which is fine but
+  loses the curated bullets, so it's worth getting right.
+- Attaches all four ZIPs to the GitHub Release.
+
+### Submitting to plugins.qgis.org
+
+Manual web upload requiring osgeo.org SSO — can't be automated from CI.
+Download the slim ZIP from the GitHub Release directly with `curl` (do
+not double-click in Finder — macOS Archive Utility round-trips inject
+`__MACOSX/._foo` AppleDouble entries that the plugin store rejects):
+
+```bash
+curl -L -o ~/Downloads/qgizmosql.zip \
+  https://github.com/gizmodata/qgizmosql/releases/latest/download/qgizmosql.zip
+```
+
+Upload at https://plugins.qgis.org/plugins/add/.
 
 ## TODO
 

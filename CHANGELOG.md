@@ -2,20 +2,20 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.2.5] — 2026-04-27
+## [0.2.5] - 2026-04-27
 
 ### Changed
 
 - Refactor 7 multi-line binary expressions (introduce intermediate variables) so neither W503 nor W504 fires — plugins.qgis.org enforces both, which are mutually exclusive at any operator/line boundary.
 - Local CI now also gates on both W503 and W504.
 
-## [0.2.4] — 2026-04-27
+## [0.2.4] - 2026-04-27
 
 ### Changed
 
 - Adopt modern PEP 8 line-break-before-binary-operator style (W503 ignored, W504 enforced) to match plugins.qgis.org's flake8 config.
 
-## [0.2.3] — 2026-04-27
+## [0.2.3] - 2026-04-27
 
 ### Added
 
@@ -31,13 +31,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Strip executable bits from `__init__.py`, `plugin_main.py`, `gui/dlg_settings.py`, `toolbelt/log_handler.py`, `toolbelt/preferences.py`.
 
-## [0.2.2] — 2026-04-27
+## [0.2.2] - 2026-04-27
 
 ### Security
 
 - Annotate remaining trust-boundary SQL sites in `uniqueValues` and `setSubsetString` with `# nosec B608` and rationale.
 
-## [0.2.1] — 2026-04-27
+## [0.2.1] - 2026-04-27
 
 ### Security
 
@@ -46,7 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - Three `information_schema` queries (geometry column, primary key, fields) now use bind parameters via `cursor.execute(operation=…, parameters=[…])`.
   - Identifier-only and explicit-trust-boundary sites annotated with `# nosec B608` plus a comment naming the trust boundary.
 
-## [0.2.0] — 2026-04-27
+## [0.2.0] - 2026-04-27
 
 ### Changed
 
@@ -60,13 +60,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Include `LICENSE` (GPLv2+) inside the plugin ZIP — required by plugins.qgis.org.
 
-## [0.1.1] — 2026-04-24
+## [0.1.1] - 2026-04-24
 
 ### Added
 
 - CI: ship an unversioned `qgizmosql.zip` alongside the versioned asset so `releases/latest/download/qgizmosql.zip` resolves without knowing the version.
 
-## [0.1.0] — 2026-04-24
+## [0.1.0] - 2026-04-24
 
 ### Added
 
