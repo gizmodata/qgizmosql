@@ -27,6 +27,7 @@ qgisMaximumVersion=5.99
 # versioning
 version=0.1.0-DEV
 changelog=
+    0.2.9 - Use the bundled python interpreter (not sys.executable) to drive pip on macOS — sys.executable in QGIS is QGIS itself, so the previous code was launching a 2nd QGIS instance with pip args.
     0.2.8 - First-launch dependency installer now uses QProcess so the progress dialog stays responsive instead of looking frozen during pip's ~60 MB download.
     0.2.7 - Probe importlib_resources in the first-launch dep check so a partial system install no longer skips the prompt.
     0.2.6 - Fix first-launch dep install: pin importlib_resources; always prepend embedded_external_libs to sys.path.

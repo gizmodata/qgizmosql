@@ -12,6 +12,7 @@ Subsequent launches find the deps on sys.path (the wrapper adds
 # standard
 from __future__ import annotations
 
+import shutil
 import site
 import sys
 from pathlib import Path
@@ -34,6 +35,31 @@ EMBEDDED_LIBS_DIR: Path = DIR_PLUGIN_ROOT / "embedded_external_libs"
 REQUIREMENTS_FILE: Path = DIR_PLUGIN_ROOT / "requirements.txt"
 
 
+def _find_python_interpreter() -> str:
+    """Locate a real Python interpreter to drive pip with.
+
+    On macOS, ``sys.executable`` inside QGIS points at the **QGIS binary
+    itself**, not at a Python interpreter — so launching it as a subprocess
+    starts another QGIS instance which (mis)interprets every pip CLI arg as
+    a data-source path. Find the bundled python3.X sibling instead.
+    """
+    minor = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    candidates = [
+        Path(sys.executable).with_name(minor),
+        Path(sys.executable).parent / minor,
+        Path(sys.exec_prefix) / "bin" / minor,
+    ]
+    for c in candidates:
+        if c.is_file() and c.name.lower().startswith("python"):
+            return str(c)
+    on_path = shutil.which(minor) or shutil.which("python3")
+    if on_path:
+        return on_path
+    # Last resort: hand back sys.executable. The caller will surface the
+    # subsequent failure to the user with a clear manual-install fallback.
+    return sys.executable
+
+
 def _deps_importable() -> bool:
     # Probe every entry in requirements.txt, not just the headline packages.
     # adbc_driver_gizmosql imports the importlib_resources backport at
@@ -51,6 +77,7 @@ def _deps_importable() -> bool:
 
 def _pip_install(parent: Optional[QWidget]) -> bool:
     EMBEDDED_LIBS_DIR.mkdir(parents=True, exist_ok=True)
+    python_exe = _find_python_interpreter()
     args = [
         "-m",
         "pip",
@@ -82,7 +109,7 @@ def _pip_install(parent: Optional[QWidget]) -> bool:
     # the full ~60 MB download and users assume QGIS hung.
     proc = QProcess(parent)
     proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
-    proc.start(sys.executable, args)
+    proc.start(python_exe, args)
 
     output_chunks: list[str] = []
     while proc.state() != QProcess.ProcessState.NotRunning:
@@ -109,7 +136,7 @@ def _pip_install(parent: Optional[QWidget]) -> bool:
             f"pip exit code: {exit_code}\n\n"
             "See the QGIS Python console / message log for full output. "
             "You can also install manually:\n\n"
-            f"  {sys.executable} -m pip install --target \\\n"
+            f"  {python_exe} -m pip install --target \\\n"
             f"    {EMBEDDED_LIBS_DIR} \\\n"
             f"    -r {REQUIREMENTS_FILE}",
         )

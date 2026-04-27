@@ -2,6 +2,12 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.9] - 2026-04-27
+
+### Fixed
+
+- `dependencies.py` no longer launches a second QGIS instance when invoking pip. On macOS, `sys.executable` inside QGIS's embedded Python points at the **QGIS binary itself**, not at a Python interpreter — so `QProcess.start(sys.executable, ['-m', 'pip', ...])` was launching QGIS again with `-m`, `pip`, `install`, `--target`, … as arguments, which the second QGIS dutifully tried to open as data sources. New `_find_python_interpreter()` helper locates the bundled `python<X.Y>` sibling next to `sys.executable` (or falls back to PATH) and uses that for the subprocess.
+
 ## [0.2.8] - 2026-04-27
 
 ### Fixed
