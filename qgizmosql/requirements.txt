@@ -1,0 +1,2 @@
+adbc-driver-gizmosql==1.1.5
+pyarrow==23.0.1

@@ -10,7 +10,6 @@ from __future__ import annotations
 import typing
 from functools import partial
 from pathlib import Path
-from typing import Optional
 
 # PyQGIS
 from qgis.core import Qgis, QgsApplication, QgsProject, QgsProviderRegistry, QgsSettings
@@ -31,17 +30,32 @@ from qgizmosql.__about__ import (
 )
 
 # plugin
+from qgizmosql.dependencies import ensure_dependencies
 from qgizmosql.gui.dlg_settings import PlgOptionsFactory
 from qgizmosql.toolbelt.log_handler import PlgLogger
 
-# conditional imports
-try:
-    from qgizmosql.gui.dlg_add_gizmosql_layer import LoadGizmoSqlLayerDialog
-    from qgizmosql.provider.gizmosql_provider_metadata import GizmoSqlProviderMetadata
+# Provider/dialog imports happen lazily after `ensure_dependencies()` confirms
+# pyarrow + adbc-driver-gizmosql are importable. Keeping them top-level would
+# import-fail on a fresh install before the user is prompted to download them.
+LoadGizmoSqlLayerDialog = None  # populated lazily
+GizmoSqlProviderMetadata = None  # populated lazily
 
-    EXTERNAL_DEPENDENCIES_AVAILABLE = True
-except ImportError:
-    EXTERNAL_DEPENDENCIES_AVAILABLE = False
+
+def _load_provider_imports() -> bool:
+    """Import the provider + dialog after deps are confirmed. Returns success."""
+    global LoadGizmoSqlLayerDialog, GizmoSqlProviderMetadata
+    try:
+        from qgizmosql.gui.dlg_add_gizmosql_layer import (
+            LoadGizmoSqlLayerDialog as _Dlg,
+        )
+        from qgizmosql.provider.gizmosql_provider_metadata import (
+            GizmoSqlProviderMetadata as _Meta,
+        )
+    except ImportError:
+        return False
+    LoadGizmoSqlLayerDialog = _Dlg
+    GizmoSqlProviderMetadata = _Meta
+    return True
 
 # ############################################################################
 # ########## Classes ###############
@@ -107,7 +121,7 @@ class QgizmosqlPlugin(QgizmosqlBasePlugin):
             QCoreApplication.installTranslator(self.translator)
 
         # dialogs placeholders
-        self._dlg_add_layer: Optional[LoadGizmoSqlLayerDialog] = None
+        self._dlg_add_layer = None
 
     def initGui(self):
         """Set up plugin UI elements."""
@@ -222,8 +236,10 @@ class QgizmosqlPlugin(QgizmosqlBasePlugin):
         :return: dependencies status
         :rtype: bool
         """
-        # if import failed
-        if not EXTERNAL_DEPENDENCIES_AVAILABLE:
+        # Prompt-and-install on first run, then attempt the lazy provider imports.
+        deps_ok = ensure_dependencies(self.iface.mainWindow()) and _load_provider_imports()
+
+        if not deps_ok:
             self.log(
                 message=self.tr("Error importing dependencies. Plugin disabled."),
                 log_level=Qgis.MessageLevel.Critical,
@@ -265,9 +281,16 @@ class QgizmosqlServerPlugin(QgizmosqlBasePlugin):
         """
         super().__init__()
 
-        if not EXTERNAL_DEPENDENCIES_AVAILABLE:
+        # Headless server: no UI to prompt the user. Only register the provider
+        # if the deps are already importable (e.g. user pre-installed them, or
+        # they shipped via the offline-install ZIP).
+        if not _load_provider_imports():
             self.log(
-                message=self.tr("Error importing dependencies. Plugin disabled."),
+                message=self.tr(
+                    "Error importing dependencies. Plugin disabled. "
+                    "Install pyarrow + adbc-driver-gizmosql or use the "
+                    "offline-install ZIP."
+                ),
                 log_level=Qgis.MessageLevel.Critical,
             )
             return

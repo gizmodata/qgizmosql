@@ -29,9 +29,10 @@ jobs:
       - run: python -m unittest discover -s tests/unit -v
 
   package:
-    # Build a releasable plugin ZIP. Runs on every push/PR so we always know
-    # the packaging is healthy; on tagged releases the artifact is attached
-    # to the GitHub release.
+    # Build the SLIM plugin ZIP — pure Python only, no embedded native deps.
+    # This is the artifact submitted to plugins.qgis.org (25 MB upload cap)
+    # and the one most users install. On first launch the plugin pip-installs
+    # pyarrow + adbc-driver-gizmosql into embedded_external_libs/ for them.
     runs-on: ubuntu-latest
     needs: [lint, test]
     steps:
@@ -60,13 +61,7 @@ jobs:
           echo "version=${ver}" >> "$GITHUB_OUTPUT"
           echo "Resolved version: ${ver}"
 
-      - name: Install runtime deps into embedded_external_libs
-        run: |
-          mkdir -p qgizmosql/embedded_external_libs
-          pip install --target qgizmosql/embedded_external_libs \
-            adbc-driver-gizmosql pyarrow
-
-      - name: Build plugin ZIP (versioned + unversioned)
+      - name: Build slim plugin ZIP (versioned + unversioned)
         # Two zips — same bytes, two filenames:
         #   qgizmosql-X.Y.Z.zip — nice per-release asset
         #   qgizmosql.zip        — stable "always latest" filename so the
@@ -74,6 +69,7 @@ jobs:
         #                          URL resolves without knowing the version
         run: |
           zip -r "qgizmosql-${{ steps.meta.outputs.version }}.zip" qgizmosql \
+            -x "qgizmosql/embedded_external_libs/*" \
             -x "qgizmosql/__pycache__/*" \
             -x "qgizmosql/**/__pycache__/*" \
             -x "qgizmosql/**/*.pyc"
@@ -86,11 +82,78 @@ jobs:
           path: qgizmosql*.zip
           if-no-files-found: error
 
-  release:
-    # Publishes a GitHub Release with the ZIP attached on every v* tag.
-    # Separate job (rather than a conditional step inside `package`) so the
-    # release workflow is independently retryable from the Actions UI.
+      - name: Upload metadata.txt with synced version
+        # The offline-package matrix needs the version-synced metadata.txt so
+        # it doesn't have to redo the sed dance per platform.
+        uses: actions/upload-artifact@v4
+        with:
+          name: synced-metadata
+          path: qgizmosql/metadata.txt
+
+  package-offline:
+    # Build OFFLINE-INSTALL plugin ZIPs — one per platform, with all native
+    # wheels (pyarrow + adbc-driver-gizmosql) pre-bundled. Used by users on
+    # air-gapped networks who can't run `pip install` from QGIS.
     needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-x86_64
+          - os: macos-13
+            label: macos-x86_64
+          - os: macos-14
+            label: macos-arm64
+          - os: windows-latest
+            label: windows-x86_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync metadata.txt from package job
+        uses: actions/download-artifact@v4
+        with:
+          name: synced-metadata
+          path: qgizmosql/
+
+      - name: Resolve plugin version
+        id: meta
+        shell: bash
+        run: |
+          ver=$(awk -F= '/^version=/{print $2}' qgizmosql/metadata.txt)
+          echo "version=${ver}" >> "$GITHUB_OUTPUT"
+
+      - name: Install pinned runtime deps into embedded_external_libs
+        shell: bash
+        run: |
+          mkdir -p qgizmosql/embedded_external_libs
+          pip install --target qgizmosql/embedded_external_libs \
+            -r qgizmosql/requirements.txt
+
+      - name: Build offline plugin ZIP
+        shell: bash
+        run: |
+          name="qgizmosql-${{ steps.meta.outputs.version }}-offline-${{ matrix.label }}.zip"
+          # Python's stdlib zip honours a single recursive include; use it
+          # so the step works identically on macOS/Linux/Windows runners.
+          python -m zipfile -c "$name" qgizmosql/
+          ls -lh "$name"
+          echo "ZIP_NAME=$name" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qgizmosql-offline-${{ matrix.label }}
+          path: ${{ env.ZIP_NAME }}
+          if-no-files-found: error
+
+  release:
+    # Publishes a GitHub Release with both the slim ZIP (for plugins.qgis.org
+    # submission) and the per-platform offline ZIPs attached, on every v* tag.
+    needs: [package, package-offline]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -98,12 +161,16 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: qgizmosql-plugin-zip
+          path: dist
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -lh dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: qgizmosql*.zip
+          files: dist/qgizmosql*.zip
           name: qgizmosql ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
