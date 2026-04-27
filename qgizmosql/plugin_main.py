@@ -42,7 +42,11 @@ GizmoSqlProviderMetadata = None  # populated lazily
 
 
 def _load_provider_imports() -> bool:
-    """Import the provider + dialog after deps are confirmed. Returns success."""
+    """Import the provider + dialog after deps are confirmed. Returns success.
+
+    Logs the underlying exception when the import fails so users can tell
+    *why* the plugin disabled itself instead of seeing a generic message.
+    """
     global LoadGizmoSqlLayerDialog, GizmoSqlProviderMetadata
     try:
         from qgizmosql.gui.dlg_add_gizmosql_layer import (
@@ -51,7 +55,18 @@ def _load_provider_imports() -> bool:
         from qgizmosql.provider.gizmosql_provider_metadata import (
             GizmoSqlProviderMetadata as _Meta,
         )
-    except ImportError:
+    except Exception as exc:  # noqa: BLE001
+        import traceback
+
+        PlgLogger.log(
+            message=(
+                "qgizmosql provider imports failed:\n"
+                f"{exc!r}\n\n"
+                f"{traceback.format_exc()}"
+            ),
+            log_level=Qgis.MessageLevel.Critical,
+            push=True,
+        )
         return False
     LoadGizmoSqlLayerDialog = _Dlg
     GizmoSqlProviderMetadata = _Meta
@@ -228,7 +243,12 @@ class QgizmosqlPlugin(QgizmosqlBasePlugin):
         """Display the GizmoSQL add-layer dialog."""
         if self._dlg_add_layer is None:
             self._dlg_add_layer = LoadGizmoSqlLayerDialog()
+        # show() alone is a no-op if the dialog is already visible-but-hidden
+        # behind the main window (macOS in particular). Always raise + give
+        # focus so a second toolbar-click brings it back to the front.
         self._dlg_add_layer.show()
+        self._dlg_add_layer.raise_()
+        self._dlg_add_layer.activateWindow()
 
     def check_dependencies(self) -> bool:
         """Check if all dependencies are satisfied. If not, warn the user and disable plugin.

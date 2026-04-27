@@ -160,6 +160,12 @@ class LoadGizmoSqlLayerDialog(QDialog):
         self._add_layer_btn.clicked.connect(self._on_add_layer_clicked)
         self._buttons.rejected.connect(self.reject)
 
+        # Apply the initial Table-vs-SQL widget enabled state. setChecked()
+        # in the constructor fires before connect(), so the toggled signal
+        # never reaches _on_mode_changed and the table combo would stay
+        # disabled until the user manually toggled the radio.
+        self._on_mode_changed()
+
     # -- signal handlers -------------------------------------------------------
 
     def _on_auth_type_changed(self) -> None:

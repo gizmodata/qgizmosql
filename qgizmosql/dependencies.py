@@ -18,7 +18,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+import importlib
 import os
+import subprocess
 
 # PyQGIS
 from qgis.core import Qgis
@@ -63,19 +65,62 @@ def _find_python_interpreter() -> str:
     return sys.executable
 
 
-def _deps_importable() -> bool:
+def _deps_importable(log_failure: bool = False) -> bool:
     # Probe every entry in requirements.txt, not just the headline packages.
     # adbc_driver_gizmosql imports the importlib_resources backport at
     # connect time; if a partial system install has adbc + pyarrow but is
     # missing the backport, we'd silently skip the prompt and fail later.
     site.addsitedir(str(EMBEDDED_LIBS_DIR))
+    # The first probe (before pip install) populates sys.path_importer_cache
+    # with "no such module here" entries for embedded_external_libs/. After
+    # pip writes the files, those cached negatives still apply unless we
+    # explicitly invalidate the importer caches.
+    importlib.invalidate_caches()
     try:
         import adbc_driver_gizmosql  # noqa: F401
         import importlib_resources  # noqa: F401
         import pyarrow  # noqa: F401
-    except ImportError:
+    except Exception as exc:  # noqa: BLE001  — dlopen errors aren't ImportError
+        if log_failure:
+            import traceback
+
+            PlgLogger.log(
+                message=(
+                    "qgizmosql: dep probe failed after install:\n"
+                    f"{exc!r}\n\n"
+                    f"{traceback.format_exc()}"
+                ),
+                log_level=Qgis.MessageLevel.Critical,
+                push=True,
+            )
         return False
     return True
+
+
+def _adhoc_sign_native_libs(target: Path) -> None:
+    """Re-sign every .so / .dylib under *target* with the ad-hoc identity.
+
+    macOS Library Validation refuses to load dylibs into a hardened-runtime
+    process when their code signature carries a Team ID different from the
+    host process's. Stripping the publisher signature and re-signing ad-hoc
+    (`codesign -s -`) clears the Team ID, leaving the file as a valid
+    unsigned-but-validly-formatted Mach-O — which Library Validation
+    accepts.
+    """
+    targets = list(target.rglob("*.so")) + list(target.rglob("*.dylib"))
+    for f in targets:
+        try:
+            subprocess.run(
+                ["codesign", "--force", "--sign", "-", str(f)],
+                check=False,
+                capture_output=True,
+            )
+        except Exception as exc:  # noqa: BLE001
+            PlgLogger.log(
+                message=f"codesign re-sign failed for {f}: {exc}",
+                log_level=Qgis.MessageLevel.Warning,
+                push=False,
+            )
 
 
 def _pip_install(parent: Optional[QWidget]) -> bool:
@@ -137,6 +182,14 @@ def _pip_install(parent: Optional[QWidget]) -> bool:
 
     output = "".join(output_chunks)
     exit_code = proc.exitCode()
+
+    # On macOS, native wheels (pyarrow, adbc-driver-manager) are signed by
+    # their PyPI publishers. macOS Library Validation refuses to load
+    # third-party-signed dylibs into a notarized QGIS process, so we re-sign
+    # them ad-hoc to clear the publisher Team ID. No-op on Linux/Windows.
+    if exit_code == 0 and sys.platform == "darwin":
+        _adhoc_sign_native_libs(EMBEDDED_LIBS_DIR)
+
     if proc.exitStatus() != QProcess.ExitStatus.NormalExit or exit_code != 0:
         PlgLogger.log(
             message=f"pip install failed (exit {exit_code}):\n{output}",
@@ -169,7 +222,17 @@ def ensure_dependencies(parent: Optional[QWidget] = None) -> bool:
     :return: True if deps are importable after this call, False otherwise
     """
     if _deps_importable():
+        PlgLogger.log(
+            message="qgizmosql: deps already importable; skipping prompt.",
+            log_level=Qgis.MessageLevel.Info,
+            push=False,
+        )
         return True
+    PlgLogger.log(
+        message="qgizmosql: deps not importable; prompting user to install.",
+        log_level=Qgis.MessageLevel.Info,
+        push=False,
+    )
 
     answer = QMessageBox.question(
         parent,
@@ -188,7 +251,7 @@ def ensure_dependencies(parent: Optional[QWidget] = None) -> bool:
     if not _pip_install(parent):
         return False
 
-    if not _deps_importable():
+    if not _deps_importable(log_failure=True):
         QMessageBox.critical(
             parent,
             "qgizmosql: dependencies still missing",

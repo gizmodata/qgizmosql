@@ -2,6 +2,17 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.11] - 2026-04-27
+
+### Fixed
+
+- After pip-install completes, `_deps_importable()` now calls `importlib.invalidate_caches()` before re-probing. The first probe (before install) populates `sys.path_importer_cache` with negative-result entries for `embedded_external_libs/`, and those stale entries kept making the second probe fail even after pip wrote the files — leaving "Plugin disabled" errors with deps clearly on disk.
+- `_deps_importable()` no longer logs the expected first-probe failure as `Critical`. Only the post-install probe — which would indicate a real install problem — surfaces as a critical log entry. Adds a `log_failure` flag for callers that need the diagnostic.
+- On macOS, after pip succeeds the installer now runs `codesign --force --sign -` over every native `.so` / `.dylib` under `embedded_external_libs/`. Strips publisher Team IDs so QGIS (which has the `disable-library-validation` entitlement) can dlopen the native deps without macOS rejecting them.
+- `_load_provider_imports()` now logs the underlying exception and full traceback when the provider/dialog imports fail, instead of just disabling the plugin with a generic "Error importing dependencies" message.
+- Add-layer dialog now applies the initial Table-vs-SQL widget enabled state at construction. Previously the table combo stayed disabled until the user manually toggled the radio (the `setChecked(True)` call fired before `connect()`, so the `toggled` signal never reached the handler).
+- Re-clicking the toolbar action now `raise_()`s and `activateWindow()`s the add-layer dialog, so it comes back to the front when hidden behind the main QGIS window (macOS in particular — `show()` alone is a no-op when the dialog is technically already visible).
+
 ## [0.2.10] - 2026-04-27
 
 ### Fixed
