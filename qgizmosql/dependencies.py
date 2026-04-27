@@ -36,9 +36,14 @@ REQUIREMENTS_FILE: Path = DIR_PLUGIN_ROOT / "requirements.txt"
 
 
 def _deps_importable() -> bool:
+    # Probe every entry in requirements.txt, not just the headline packages.
+    # adbc_driver_gizmosql imports the importlib_resources backport at
+    # connect time; if a partial system install has adbc + pyarrow but is
+    # missing the backport, we'd silently skip the prompt and fail later.
     site.addsitedir(str(EMBEDDED_LIBS_DIR))
     try:
         import adbc_driver_gizmosql  # noqa: F401
+        import importlib_resources  # noqa: F401
         import pyarrow  # noqa: F401
     except ImportError:
         return False

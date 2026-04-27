@@ -2,6 +2,12 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.7] - 2026-04-27
+
+### Fixed
+
+- The first-launch dependency check in `dependencies.py` now probes `importlib_resources` in addition to `adbc_driver_gizmosql` and `pyarrow`. On systems where a partial install of the headline packages exists elsewhere on `sys.path` but is missing the backport, the previous check silently returned success — leaving the user with a working plugin UI that crashed on Connect with `No module named 'importlib_resources'`.
+
 ## [0.2.6] - 2026-04-27
 
 ### Fixed
