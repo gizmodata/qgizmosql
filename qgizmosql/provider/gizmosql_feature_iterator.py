@@ -216,9 +216,41 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
                 push=False,
             )
 
-        self._result = self._provider.con()
-        self._result.execute(final_query)
+        # Stream the result as Arrow record batches instead of pulling row
+        # tuples one at a time. ADBC has already received the data as Arrow
+        # over Flight; converting batch-at-a-time to Python lists is markedly
+        # cheaper than per-row dbapi.fetchone() bookkeeping. See issue #2 for
+        # the related max-message-size fix.
+        self._cursor = self._provider.con().cursor()
+        self._cursor.execute(final_query)
+        self._reader = self._cursor.fetch_record_batch_reader()
+        # Cached row-oriented snapshot of the current Arrow record batch.
+        # We materialise the batch's columns to Python lists once per batch
+        # so per-row access is a plain list lookup.
+        self._batch_cols: list[list[Any]] | None = None
+        self._batch_row_idx: int = 0
+        self._batch_num_rows: int = 0
         self._index = 0
+
+    def _load_next_batch(self) -> bool:
+        """Pull the next Arrow record batch from the reader and materialise
+        its columns to Python lists for fast row-indexed access. Returns
+        False once the stream is exhausted.
+        """
+        if self._reader is None:
+            return False
+        try:
+            batch = self._reader.read_next_batch()
+        except StopIteration:
+            return False
+        if batch is None or batch.num_rows == 0:
+            return False
+        self._batch_cols = [
+            batch.column(i).to_pylist() for i in range(batch.num_columns)
+        ]
+        self._batch_num_rows = batch.num_rows
+        self._batch_row_idx = 0
+        return True
 
     def fetchFeature(self, f: QgsFeature) -> bool:
         """fetch next feature, return true on success
@@ -228,42 +260,49 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
         :return: True if success
         :rtype: bool
         """
-        next_result = self._result.fetchone()
-
-        if not next_result or not self._provider.isValid():
+        if not self._provider.isValid() or self._reader is None:
             f.setValid(False)
             return False
+
+        if self._batch_row_idx >= self._batch_num_rows:
+            if not self._load_next_batch():
+                f.setValid(False)
+                return False
+
+        cols = self._batch_cols
+        row = self._batch_row_idx
 
         f.setFields(self._provider.fields())
         f.setValid(True)
 
         if not self._request_no_geometry:
-            geometry = QgsGeometry()
-            geometry.fromWkb(next_result[self.index_geom_column])
-            f.setGeometry(geometry)
-            self.geometryToDestinationCrs(f, self._transform)
+            wkb = cols[self.index_geom_column][row]
+            if wkb is not None:
+                geometry = QgsGeometry()
+                geometry.fromWkb(wkb)
+                f.setGeometry(geometry)
+                self.geometryToDestinationCrs(f, self._transform)
 
-        f.setId(next_result[-1])
+        f.setId(cols[-1][row])
 
         # set attributes
         if self._attributes_need_conversion:
-            # Some attributes need to be converted
             if self._request_sub_attributes:
                 for idx, attr_idx in enumerate(self._request.subsetOfAttributes()):
-                    attribute = self._attributes_converters[idx](next_result[idx])
+                    attribute = self._attributes_converters[idx](cols[idx][row])
                     f.setAttribute(attr_idx, attribute)
             else:
-                for idx, attribute in enumerate(next_result[: self.index_geom_column]):
-                    converted_attribute = self._attributes_converters[idx](attribute)
-                    f.setAttribute(idx, converted_attribute)
+                for idx in range(self.index_geom_column):
+                    converted = self._attributes_converters[idx](cols[idx][row])
+                    f.setAttribute(idx, converted)
         else:
-            # No need for conversion, the values can directly be used
             if self._request_sub_attributes:
                 for idx, attr_idx in enumerate(self._request.subsetOfAttributes()):
-                    f.setAttribute(attr_idx, next_result[idx])
+                    f.setAttribute(attr_idx, cols[idx][row])
             else:
-                f.setAttributes(list(next_result[: self.index_geom_column]))
+                f.setAttributes([cols[idx][row] for idx in range(self.index_geom_column)])
 
+        self._batch_row_idx += 1
         self._index += 1
         return True
 
@@ -297,10 +336,15 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
     def close(self) -> bool:
         """end of iterating: free the resources / lock"""
         self._index = -1
-        if getattr(self, "_result", None) is not None:
-            try:
-                self._result.close()
-            except Exception:
-                pass
-            self._result = None
+        for attr in ("_reader", "_cursor"):
+            obj = getattr(self, attr, None)
+            if obj is not None:
+                try:
+                    obj.close()
+                except Exception:
+                    pass
+                setattr(self, attr, None)
+        self._batch_cols = None
+        self._batch_num_rows = 0
+        self._batch_row_idx = 0
         return True

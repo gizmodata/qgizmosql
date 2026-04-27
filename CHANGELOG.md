@@ -2,6 +2,16 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.12] - 2026-04-27
+
+### Changed
+
+- Feature iterator now streams Arrow record batches (`cursor.fetch_record_batch_reader()`) instead of pulling rows one at a time via `dbapi.fetchone()`. Each batch is materialised once with `Array.to_pylist()`; per-row access becomes a plain Python list lookup. Skips per-row dbapi bookkeeping and avoids the underlying driver re-walking the same Arrow buffers for every cell. Bigger layers feel snappier; the gain grows with row count.
+
+### Fixed
+
+- Set the Flight SQL gRPC max-receive-message-size to 1 GiB (`adbc.flight.sql.client_option.with_max_msg_size`) on every connection, replacing gRPC's 16 MB default. Previously, fetching a wide or large layer would fail with `ResourceExhausted: grpc: received message larger than max` partway through the cursor (#2). Overridable via the `QGIZMOSQL_MAX_FLIGHT_MSG_SIZE` env var if a deployment ever needs more than 1 GiB.
+
 ## [0.2.11] - 2026-04-27
 
 ### Fixed

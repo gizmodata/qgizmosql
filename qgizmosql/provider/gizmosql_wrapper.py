@@ -9,6 +9,7 @@ References:
 """
 
 # standard
+import os
 from typing import Any, Optional, Union
 from urllib.parse import parse_qsl, urlencode, urlparse
 
@@ -29,9 +30,17 @@ from qgizmosql.__about__ import DIR_PLUGIN_ROOT
 
 site.addsitedir(str(DIR_PLUGIN_ROOT / "embedded_external_libs"))
 
+from adbc_driver_flightsql import ConnectionOptions  # type: ignore  # noqa: E402
 from adbc_driver_gizmosql import dbapi as gizmosql_dbapi  # type: ignore  # noqa: E402
 
 PlgLogger.log(message="adbc-driver-gizmosql loaded.")
+
+# gRPC default is 16 MB per message, which trips ResourceExhausted on
+# wide / large layers (e.g. issue #2 hit 26 MB). Bump to 1 GiB; keep this
+# tunable via a private env var if a user ever needs more.
+_MAX_FLIGHT_MSG_SIZE: int = int(
+    os.environ.get("QGIZMOSQL_MAX_FLIGHT_MSG_SIZE", str(1024 * 1024 * 1024))
+)
 
 
 # Default Flight SQL port used by the GizmoSQL Docker image.
@@ -268,6 +277,11 @@ class GizmoSqlTools:
         try:
             raw_conn = gizmosql_dbapi.connect(
                 self.conn_config.flight_uri,
+                conn_kwargs={
+                    ConnectionOptions.WITH_MAX_MSG_SIZE.value: str(
+                        _MAX_FLIGHT_MSG_SIZE
+                    ),
+                },
                 **self.conn_config.connect_kwargs(),
             )
             self.conn = _ConnectionAdapter(raw_conn)

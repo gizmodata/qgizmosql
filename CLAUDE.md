@@ -150,7 +150,7 @@ Upload at https://plugins.qgis.org/plugins/add/.
 - [ ] Remove `experimental=True` from `metadata.txt`
 
 **Nice-to-haves**
-- [ ] Arrow record-batch streaming in the feature iterator (perf win for big layers)
+- [x] ~~Arrow record-batch streaming in the feature iterator (perf win for big layers)~~ — done in v0.2.12.
 - [ ] QGIS-environment integration tests in CI (`pytest-qgis` or a headless QGIS Docker image)
 - [ ] OAuth/SSO manual smoke test — needs GizmoSQL Enterprise Edition server
 - [ ] Rename `mappings.py` symbols `*_duckdb_*` → `*_type_*` for clarity (cosmetic)

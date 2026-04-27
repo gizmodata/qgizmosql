@@ -27,6 +27,7 @@ qgisMaximumVersion=5.99
 # versioning
 version=0.1.0-DEV
 changelog=
+    0.2.12 - Stream Arrow record batches in the feature iterator (perf win on big layers); bump Flight SQL gRPC max-message-size from 16 MB to 1 GiB (#2).
     0.2.11 - Invalidate import caches after pip install so the post-install probe finds freshly-written modules; ad-hoc re-sign native dylibs on macOS; quiet the pre-install probe; surface real exception on import failure; fix initial Table/SQL enabled state; raise+activate re-clicked dialog.
     0.2.10 - Pass PYTHONHOME/PYTHONPATH to the pip subprocess so QGIS's bundled python can bootstrap standalone; log pip failures with the right Qgis.MessageLevel enum on Qt6.
     0.2.9 - Use the bundled python interpreter (not sys.executable) to drive pip on macOS — sys.executable in QGIS is QGIS itself, so the previous code was launching a 2nd QGIS instance with pip args.
