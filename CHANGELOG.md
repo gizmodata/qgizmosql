@@ -2,6 +2,13 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.8] - 2026-04-27
+
+### Fixed
+
+- The first-launch dependency installer no longer freezes QGIS while pip downloads. `dependencies.py` now drives pip via `QProcess` and pumps the Qt event loop in a `QApplication.processEvents()` while-loop, so the `QProgressDialog` stays responsive for the full ~60 MB download instead of looking like a hang.
+- Pass `--no-input --disable-pip-version-check` to pip so it can never block on a prompt or stall on a version check that wants user input.
+
 ## [0.2.7] - 2026-04-27
 
 ### Fixed

@@ -13,13 +13,12 @@ Subsequent launches find the deps on sys.path (the wrapper adds
 from __future__ import annotations
 
 import site
-import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
 
 # PyQGIS
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import Qt, QProcess
 from qgis.PyQt.QtWidgets import (
     QApplication,
     QMessageBox,
@@ -52,14 +51,15 @@ def _deps_importable() -> bool:
 
 def _pip_install(parent: Optional[QWidget]) -> bool:
     EMBEDDED_LIBS_DIR.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        sys.executable,
+    args = [
         "-m",
         "pip",
         "install",
         "--target",
         str(EMBEDDED_LIBS_DIR),
         "--upgrade",
+        "--no-input",
+        "--disable-pip-version-check",
         "--requirement",
         str(REQUIREMENTS_FILE),
     ]
@@ -76,22 +76,29 @@ def _pip_install(parent: Optional[QWidget]) -> bool:
     progress.setWindowModality(Qt.WindowModality.ApplicationModal)
     progress.setMinimumDuration(0)
     progress.show()
-    QApplication.processEvents()
 
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    finally:
-        progress.close()
+    # QProcess instead of subprocess.run so the Qt event loop keeps spinning
+    # while pip downloads — otherwise the modal dialog appears frozen for
+    # the full ~60 MB download and users assume QGIS hung.
+    proc = QProcess(parent)
+    proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+    proc.start(sys.executable, args)
 
-    if result.returncode != 0:
+    output_chunks: list[str] = []
+    while proc.state() != QProcess.ProcessState.NotRunning:
+        QApplication.processEvents()
+        if proc.waitForReadyRead(50):
+            output_chunks.append(bytes(proc.readAll()).decode("utf-8", "replace"))
+
+    # Drain anything left in the buffers after the process exits.
+    output_chunks.append(bytes(proc.readAll()).decode("utf-8", "replace"))
+    progress.close()
+
+    output = "".join(output_chunks)
+    exit_code = proc.exitCode()
+    if proc.exitStatus() != QProcess.ExitStatus.NormalExit or exit_code != 0:
         PlgLogger.log(
-            message=f"pip install failed (exit {result.returncode}):\n"
-            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+            message=f"pip install failed (exit {exit_code}):\n{output}",
             log_level=2,  # Critical
             push=True,
         )
@@ -99,7 +106,7 @@ def _pip_install(parent: Optional[QWidget]) -> bool:
             parent,
             "qgizmosql: dependency install failed",
             "Could not install pyarrow / adbc-driver-gizmosql.\n\n"
-            f"pip exit code: {result.returncode}\n\n"
+            f"pip exit code: {exit_code}\n\n"
             "See the QGIS Python console / message log for full output. "
             "You can also install manually:\n\n"
             f"  {sys.executable} -m pip install --target \\\n"
