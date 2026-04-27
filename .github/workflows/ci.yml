@@ -4,8 +4,26 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+    # Docs-only pushes don't change anything we lint, test, or package.
+    # Skip the run entirely so CI minutes go to substantive changes.
+    # Tag pushes are matched by `tags:` above and are NOT filtered by
+    # `paths-ignore` — releases always run.
+    paths-ignore:
+      - "**.md"
+      - "CHANGELOG.md"
+      - "README.md"
+      - "CLAUDE.md"
+      - ".gitignore"
+      - "docs/**"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "CHANGELOG.md"
+      - "README.md"
+      - "CLAUDE.md"
+      - ".gitignore"
+      - "docs/**"
   workflow_dispatch:
 
 jobs:
