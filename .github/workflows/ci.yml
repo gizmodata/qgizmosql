@@ -10,14 +10,33 @@ on:
 
 jobs:
   lint:
+    # Mirrors the plugins.qgis.org automated review checks so we don't have
+    # to re-tag every time their scanner finds something we could have caught
+    # locally: flake8 (style/quality), bandit (security), and a permission
+    # check that no .py file is marked executable.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install flake8
-      - run: flake8 qgizmosql --count --show-source --statistics
+      - run: pip install flake8 bandit
+      - name: flake8
+        run: flake8 qgizmosql --count --show-source --statistics
+      - name: bandit (security scan)
+        # plugins.qgis.org runs Bandit and surfaces B608 findings. Match it
+        # here. Use the same `# nosec` markers we already have inline.
+        run: bandit -r qgizmosql --skip B101 --exclude qgizmosql/embedded_external_libs
+      - name: No executable .py files
+        # plugins.qgis.org flags any *.py with the +x bit as suspicious.
+        run: |
+          set -euo pipefail
+          bad=$(find qgizmosql -name "*.py" -perm -u+x || true)
+          if [[ -n "$bad" ]]; then
+            echo "ERROR: these Python files have +x set; chmod -x them:"
+            echo "$bad"
+            exit 1
+          fi
 
   test:
     runs-on: ubuntu-latest
