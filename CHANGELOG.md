@@ -2,6 +2,14 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.6] - 2026-04-27
+
+### Fixed
+
+- First-launch dependency install now succeeds end-to-end on systems that already have a partial `adbc_driver_gizmosql` install elsewhere on `sys.path`. Two changes:
+  - `qgizmosql/requirements.txt` now pins `importlib_resources==7.1.0` — the `adbc_driver_gizmosql` package imports the backport explicitly, but pip's resolver skips it on Python ≥ 3.9, so the installer was leaving systems half-broken.
+  - `qgizmosql/provider/gizmosql_wrapper.py` now unconditionally prepends `embedded_external_libs/` to `sys.path` before importing `adbc_driver_gizmosql` (previously only on import failure). Guarantees freshly-installed transitive deps are found even when a partial copy of the parent package exists elsewhere.
+
 ## [0.2.5] - 2026-04-27
 
 ### Changed

@@ -18,29 +18,20 @@ from qgis.core import Qgis, QgsApplication, QgsAuthMethodConfig
 # plugin
 from qgizmosql.toolbelt.log_handler import PlgLogger
 
-# conditional imports — prefer the Python env's copy, fall back to the plugin's
-# embedded_external_libs directory (how QGIS on Windows ships extra deps).
-try:
-    from adbc_driver_gizmosql import dbapi as gizmosql_dbapi  # type: ignore
+# Always make the plugin's embedded_external_libs/ directory the FIRST entry
+# on sys.path before importing adbc_driver_gizmosql / pyarrow. This way, any
+# transitive deps the plugin's installer downloaded (e.g. importlib_resources)
+# are found alongside their parent package, instead of falling back to a
+# partial install elsewhere on the system that's missing them.
+import site
 
-    PlgLogger.log(message="adbc-driver-gizmosql loaded from Python installation.")
-except Exception:
-    PlgLogger.log(
-        message="Import from Python installation failed. Trying to load from "
-        "embedded external libs.",
-        log_level=Qgis.MessageLevel.Info,
-        push=False,
-    )
-    import site
+from qgizmosql.__about__ import DIR_PLUGIN_ROOT
 
-    from qgizmosql.__about__ import DIR_PLUGIN_ROOT
+site.addsitedir(str(DIR_PLUGIN_ROOT / "embedded_external_libs"))
 
-    site.addsitedir(str(DIR_PLUGIN_ROOT / "embedded_external_libs"))
-    from adbc_driver_gizmosql import dbapi as gizmosql_dbapi  # type: ignore
+from adbc_driver_gizmosql import dbapi as gizmosql_dbapi  # type: ignore  # noqa: E402
 
-    PlgLogger.log(
-        message="adbc-driver-gizmosql loaded from embedded external libs."
-    )
+PlgLogger.log(message="adbc-driver-gizmosql loaded.")
 
 
 # Default Flight SQL port used by the GizmoSQL Docker image.
