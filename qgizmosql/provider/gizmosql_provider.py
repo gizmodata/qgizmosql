@@ -411,9 +411,13 @@ class GizmoSqlProvider(QgsVectorDataProvider):
         return f"{self._schema or 'main'}.{self._table}" in view_list
 
     def uniqueValues(self, fieldIndex: int, limit: int = -1) -> set:
+        # column_name comes from QgsFields, populated by self.fields() from
+        # information_schema responses for the validated _table/_schema; it
+        # cannot carry user-controlled SQL. _from_clause is built from
+        # regex-validated identifiers (see _safe_identifier above).
         column_name = self.fields().field(fieldIndex).name()
         query = (
-            f"select distinct {column_name} from {self._from_clause} "
+            f"select distinct {column_name} from {self._from_clause} "  # nosec B608
             f"order by {column_name}"
         )
         if limit >= 0:
@@ -435,9 +439,13 @@ class GizmoSqlProvider(QgsVectorDataProvider):
     ) -> bool:
         if subsetstring:
             try:
+                # Trust boundary: `subsetstring` is a SQL fragment supplied by
+                # QGIS / the user via QgsVectorLayer.setSubsetString(). We
+                # smoke-test that the server can parse it. _from_clause is
+                # composed of regex-validated identifiers.
                 with self._con.cursor() as cur:
                     cur.execute(
-                        f"select count(*) from {self._from_clause} "
+                        f"select count(*) from {self._from_clause} "  # nosec B608
                         f"WHERE {subsetstring} LIMIT 0"
                     )
             except Exception as e:
