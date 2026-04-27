@@ -2,6 +2,13 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.10] - 2026-04-27
+
+### Fixed
+
+- `dependencies.py` now logs pip failures with `Qgis.MessageLevel.Critical` (the proper enum) instead of a raw `int`. QGIS 4 / Qt6 rejects ints with `TypeError: argument 'level' has unexpected type 'int'`, which was masking the actual pip-failure message.
+- Pass `PYTHONHOME` and `PYTHONPATH` to the pip subprocess via `QProcessEnvironment`. QGIS's bundled `python3.12` on macOS can't bootstrap standalone — its stdlib lives at `Contents/Frameworks/lib/python3.12` while a fresh interpreter would expect `Contents/lib/python3.12`. Inheriting the running interpreter's prefix + path lets pip find its own stdlib + pip module.
+
 ## [0.2.9] - 2026-04-27
 
 ### Fixed

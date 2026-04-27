@@ -18,8 +18,11 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+import os
+
 # PyQGIS
-from qgis.PyQt.QtCore import Qt, QProcess
+from qgis.core import Qgis
+from qgis.PyQt.QtCore import Qt, QProcess, QProcessEnvironment
 from qgis.PyQt.QtWidgets import (
     QApplication,
     QMessageBox,
@@ -109,6 +112,17 @@ def _pip_install(parent: Optional[QWidget]) -> bool:
     # the full ~60 MB download and users assume QGIS hung.
     proc = QProcess(parent)
     proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+
+    # On macOS, QGIS's bundled python can't bootstrap standalone (PYTHONHOME
+    # layout has stdlib at Contents/Frameworks/lib/python3.12 but sys.prefix
+    # would otherwise look in Contents/lib/python3.12). Inherit the running
+    # interpreter's sys.prefix and sys.path so the subprocess can find its
+    # stdlib + pip.
+    env = QProcessEnvironment.systemEnvironment()
+    env.insert("PYTHONHOME", sys.prefix)
+    env.insert("PYTHONPATH", os.pathsep.join(p for p in sys.path if p))
+    proc.setProcessEnvironment(env)
+
     proc.start(python_exe, args)
 
     output_chunks: list[str] = []
@@ -126,7 +140,7 @@ def _pip_install(parent: Optional[QWidget]) -> bool:
     if proc.exitStatus() != QProcess.ExitStatus.NormalExit or exit_code != 0:
         PlgLogger.log(
             message=f"pip install failed (exit {exit_code}):\n{output}",
-            log_level=2,  # Critical
+            log_level=Qgis.MessageLevel.Critical,
             push=True,
         )
         QMessageBox.critical(
