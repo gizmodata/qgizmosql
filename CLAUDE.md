@@ -96,6 +96,12 @@ qgizmosql/
 **Submission to [plugins.qgis.org](https://plugins.qgis.org/plugins/add/)** is a manual
 web upload requiring osgeo.org SSO — can't be automated from CI. Not yet done.
 
+**Before every tag**, update both:
+1. `CHANGELOG.md` — add a new `## [X.Y.Z] — YYYY-MM-DD` section with Added / Changed / Fixed / Security buckets (Keep-a-Changelog format).
+2. `qgizmosql/metadata.txt` — prepend a one-line summary to the `changelog=` field (this is what shows up in the QGIS plugin manager).
+
+Skipping either is a real footgun — the QGIS reviewer surfaces the metadata.txt changelog to users, and an empty changelog field looks abandoned.
+
 ## TODO
 
 **Blocking a 1.0.0 release**

@@ -2,7 +2,71 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.5] — 2026-04-27
+
+### Changed
+
+- Refactor 7 multi-line binary expressions (introduce intermediate variables) so neither W503 nor W504 fires — plugins.qgis.org enforces both, which are mutually exclusive at any operator/line boundary.
+- Local CI now also gates on both W503 and W504.
+
+## [0.2.4] — 2026-04-27
+
+### Changed
+
+- Adopt modern PEP 8 line-break-before-binary-operator style (W503 ignored, W504 enforced) to match plugins.qgis.org's flake8 config.
+
+## [0.2.3] — 2026-04-27
+
+### Added
+
+- Mirror the plugins.qgis.org automated review checks in local CI:
+  - Bandit security scan, gated on Medium+ severity (matches their threshold).
+  - Detect Python files marked executable (`+x` permission).
+
+### Changed
+
+- Drop W503 from flake8 ignore list and fix violations.
+
+### Fixed
+
+- Strip executable bits from `__init__.py`, `plugin_main.py`, `gui/dlg_settings.py`, `toolbelt/log_handler.py`, `toolbelt/preferences.py`.
+
+## [0.2.2] — 2026-04-27
+
+### Security
+
+- Annotate remaining trust-boundary SQL sites in `uniqueValues` and `setSubsetString` with `# nosec B608` and rationale.
+
+## [0.2.1] — 2026-04-27
+
+### Security
+
+- SQL injection hardening (response to plugins.qgis.org Bandit B608 findings):
+  - `_safe_identifier()` validates table, schema, and column names against `^[A-Za-z_][A-Za-z0-9_]*$` at construction time.
+  - Three `information_schema` queries (geometry column, primary key, fields) now use bind parameters via `cursor.execute(operation=…, parameters=[…])`.
+  - Identifier-only and explicit-trust-boundary sites annotated with `# nosec B608` plus a comment naming the trust boundary.
+
+## [0.2.0] — 2026-04-27
+
+### Changed
+
+- Switch dependency strategy from "bundled" to "installed at first launch":
+  - New `qgizmosql/dependencies.py` prompts the user via `QMessageBox` and runs `pip install --target embedded_external_libs/ -r requirements.txt` using QGIS's own Python.
+  - `qgizmosql/requirements.txt` pins `adbc-driver-gizmosql==1.1.5` and `pyarrow==23.0.1`.
+- Slim plugin ZIP (~250 KB) is the artifact submitted to plugins.qgis.org; a per-platform offline-install ZIP (linux-x86_64, macos-arm64, windows-x86_64) is also built and attached to each GitHub release.
+- Drop deprecated `supportsQt6=True` from `metadata.txt` (QGIS 4 compatibility now follows from `qgisMaximumVersion`).
+
+### Added
+
+- Include `LICENSE` (GPLv2+) inside the plugin ZIP — required by plugins.qgis.org.
+
+## [0.1.1] — 2026-04-24
+
+### Added
+
+- CI: ship an unversioned `qgizmosql.zip` alongside the versioned asset so `releases/latest/download/qgizmosql.zip` resolves without knowing the version.
+
+## [0.1.0] — 2026-04-24
 
 ### Added
 

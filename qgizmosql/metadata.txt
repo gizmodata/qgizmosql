@@ -27,6 +27,14 @@ qgisMaximumVersion=5.99
 # versioning
 version=0.1.0-DEV
 changelog=
+    0.2.5 - Refactor multi-line binary exprs to satisfy both W503 and W504.
+    0.2.4 - Modern PEP 8 break-before-operator style (W504 compliance).
+    0.2.3 - Mirror plugins.qgis.org checks in CI (bandit, +x detection); drop W503 ignore.
+    0.2.2 - Annotate remaining trust-boundary SQL sites (# nosec B608).
+    0.2.1 - SQL injection hardening: identifier validation, bind params, trust boundaries.
+    0.2.0 - Install native deps at first launch instead of bundling. Slim plugin ZIP for plugins.qgis.org submission. Per-platform offline-install ZIPs for air-gapped users. Include LICENSE in package.
+    0.1.1 - CI: ship an unversioned qgizmosql.zip alongside the versioned asset.
+    0.1.0 - Initial fork from QDuckDB. Replace embedded DuckDB with ADBC Flight SQL client against a remote GizmoSQL server. QGIS Auth Manager integration; experimental.
 
 [upstream]
 forked_from=https://gitlab.com/Oslandia/qgis/qduckdb
