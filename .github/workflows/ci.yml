@@ -101,8 +101,6 @@ jobs:
         include:
           - os: ubuntu-latest
             label: linux-x86_64
-          - os: macos-13
-            label: macos-x86_64
           - os: macos-14
             label: macos-arm64
           - os: windows-latest
