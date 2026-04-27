@@ -2,7 +2,9 @@
 name=qgizmosql
 about=QGIS plugin for browsing spatial data from a GizmoSQL (Arrow Flight SQL) server.<br/>
     Connect to a remote or local GizmoSQL service, pick a table, and add it as a QGIS layer — no raw DuckDB file required.
-    Supports password and OAuth/SSO authentication via the adbc-driver-gizmosql Python client.
+    Supports password and OAuth/SSO authentication via the adbc-driver-gizmosql Python client.<br/>
+    <b>Upgrading?</b> Fully quit and relaunch QGIS after reinstalling — Python caches the old plugin code in the same session.
+    For dev iteration, the Plugin Reloader plugin can refresh qgizmosql without a full restart.
 category=Database
 description=Adds a QGIS data provider that reads geographic layers from a GizmoSQL server over Arrow Flight SQL.
 

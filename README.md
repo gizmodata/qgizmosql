@@ -74,6 +74,12 @@ To load the DuckDB `spatial` extension on startup, add `--env INIT_SQL="INSTALL 
 
 The plugin bundles `adbc-driver-gizmosql` and its dependencies on Windows, so no manual `pip install` is needed. On macOS/Linux, if QGIS's Python doesn't already have the driver, the plugin will install it to its own subdirectory on first activation.
 
+#### ⚠️ Upgrading: restart QGIS after a reinstall
+
+Python's import system caches modules in `sys.modules`, and QGIS doesn't fully purge that cache when you uninstall + reinstall a plugin in the same session. **After upgrading qgizmosql, fully quit QGIS and relaunch it** — otherwise QGIS keeps running the old code even though the new files are on disk.
+
+If you're iterating on the plugin during development and want to skip the QGIS-restart cycle, install the **[Plugin Reloader](https://plugins.qgis.org/plugins/plugin_reloader/)** plugin. It purges qgizmosql from `sys.modules` and re-imports the freshly-installed code without restarting QGIS — `Plugins → Plugin Reloader → Reload (Ctrl+F5)`.
+
 ### 4. Connect and add a layer
 
 1. **Plugins → qgizmosql → Add GizmoSQL Layer**
