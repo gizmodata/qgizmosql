@@ -38,8 +38,8 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
         self._transform = QgsCoordinateTransform()
 
         if (
-            self._request.destinationCrs().isValid() and
-            self._request.destinationCrs() != source._provider.crs()
+            self._request.destinationCrs().isValid()
+            and self._request.destinationCrs() != source._provider.crs()
         ):
             self._transform = QgsCoordinateTransform(
                 source._provider.crs(),
@@ -89,8 +89,8 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
 
             # The primary key column must be added if it is not present in the field list.
             if (
-                self._provider.primary_key() != -1 and
-                self._provider.primary_key() not in idx_required
+                self._provider.primary_key() != -1
+                and self._provider.primary_key() not in idx_required
             ):
                 idx_required.append(self._provider.primary_key())
 
@@ -112,8 +112,8 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
         # Create fid/fids list
         feature_id_list = None
         if (
-            self._request.filterType() == QgsFeatureRequest.FilterType.FilterFid or
-            self._request.filterType() == QgsFeatureRequest.FilterType.FilterFids
+            self._request.filterType() == QgsFeatureRequest.FilterType.FilterFid
+            or self._request.filterType() == QgsFeatureRequest.FilterType.FilterFids
         ):
             feature_id_list = (
                 [self._request.filterFid()]
