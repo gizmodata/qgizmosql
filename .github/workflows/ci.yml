@@ -61,6 +61,11 @@ jobs:
           echo "version=${ver}" >> "$GITHUB_OUTPUT"
           echo "Resolved version: ${ver}"
 
+      - name: Stage LICENSE inside the plugin folder
+        # plugins.qgis.org rejects packages that don't carry a LICENSE file at
+        # <plugin>/LICENSE, so copy the repo-root one in before zipping.
+        run: cp LICENSE qgizmosql/LICENSE
+
       - name: Build slim plugin ZIP (versioned + unversioned)
         # Two zips — same bytes, two filenames:
         #   qgizmosql-X.Y.Z.zip — nice per-release asset
@@ -124,6 +129,10 @@ jobs:
         run: |
           ver=$(awk -F= '/^version=/{print $2}' qgizmosql/metadata.txt)
           echo "version=${ver}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage LICENSE inside the plugin folder
+        shell: bash
+        run: cp LICENSE qgizmosql/LICENSE
 
       - name: Install pinned runtime deps into embedded_external_libs
         shell: bash
