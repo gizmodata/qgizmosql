@@ -99,14 +99,10 @@ class PlgLogger(logging.Handler):
         """
         # if not debug mode and not push, let's ignore INFO, SUCCESS and TEST
         debug_mode = plg_prefs_hdlr.PlgOptionsManager.get_plg_settings().debug_mode
-        if (
-            not debug_mode
-            and not push
-            and (
-                log_level < Qgis.MessageLevel.Warning
-                or log_level > Qgis.MessageLevel.Critical
-            )
-        ):
+        below_warn = log_level < Qgis.MessageLevel.Warning
+        above_critical = log_level > Qgis.MessageLevel.Critical
+        out_of_warn_range = below_warn or above_critical
+        if not debug_mode and not push and out_of_warn_range:
             return
 
         # ensure message is a string

@@ -167,10 +167,8 @@ class GizmoSqlProvider(QgsVectorDataProvider):
         return self._is_valid
 
     def capabilities(self) -> QgsVectorDataProvider.Capabilities:
-        return (
-            QgsVectorDataProvider.Capability.CreateSpatialIndex
-            | QgsVectorDataProvider.Capability.SelectAtId
-        )
+        cap = QgsVectorDataProvider.Capability
+        return cap.CreateSpatialIndex | cap.SelectAtId
 
     # -- connection ------------------------------------------------------------
 

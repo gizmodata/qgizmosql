@@ -37,13 +37,11 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
         self._request = request if request is not None else QgsFeatureRequest()
         self._transform = QgsCoordinateTransform()
 
-        if (
-            self._request.destinationCrs().isValid()
-            and self._request.destinationCrs() != source._provider.crs()
-        ):
+        dest_crs = self._request.destinationCrs()
+        if dest_crs.isValid() and dest_crs != source._provider.crs():
             self._transform = QgsCoordinateTransform(
                 source._provider.crs(),
-                self._request.destinationCrs(),
+                dest_crs,
                 self._request.transformContext(),
             )
 
@@ -88,11 +86,9 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
             idx_required = [idx for idx in self._request.subsetOfAttributes()]
 
             # The primary key column must be added if it is not present in the field list.
-            if (
-                self._provider.primary_key() != -1
-                and self._provider.primary_key() not in idx_required
-            ):
-                idx_required.append(self._provider.primary_key())
+            pk = self._provider.primary_key()
+            if pk != -1 and pk not in idx_required:
+                idx_required.append(pk)
 
             list_field_names = [
                 self._provider.fields()[idx].name() for idx in idx_required
@@ -111,15 +107,13 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
 
         # Create fid/fids list
         feature_id_list = None
-        if (
-            self._request.filterType() == QgsFeatureRequest.FilterType.FilterFid
-            or self._request.filterType() == QgsFeatureRequest.FilterType.FilterFids
-        ):
-            feature_id_list = (
-                [self._request.filterFid()]
-                if self._request.filterType() == QgsFeatureRequest.FilterType.FilterFid
-                else self._request.filterFids()
-            )
+        ft = self._request.filterType()
+        ft_type = QgsFeatureRequest.FilterType
+        if ft in (ft_type.FilterFid, ft_type.FilterFids):
+            if ft == ft_type.FilterFid:
+                feature_id_list = [self._request.filterFid()]
+            else:
+                feature_id_list = self._request.filterFids()
 
         where_clause_list = []
         if feature_id_list:
