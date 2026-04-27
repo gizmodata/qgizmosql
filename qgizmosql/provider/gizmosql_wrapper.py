@@ -30,7 +30,7 @@ from qgizmosql.__about__ import DIR_PLUGIN_ROOT
 
 site.addsitedir(str(DIR_PLUGIN_ROOT / "embedded_external_libs"))
 
-from adbc_driver_flightsql import ConnectionOptions  # type: ignore  # noqa: E402
+from adbc_driver_flightsql import DatabaseOptions  # type: ignore  # noqa: E402
 from adbc_driver_gizmosql import dbapi as gizmosql_dbapi  # type: ignore  # noqa: E402
 
 PlgLogger.log(message="adbc-driver-gizmosql loaded.")
@@ -277,8 +277,8 @@ class GizmoSqlTools:
         try:
             raw_conn = gizmosql_dbapi.connect(
                 self.conn_config.flight_uri,
-                conn_kwargs={
-                    ConnectionOptions.WITH_MAX_MSG_SIZE.value: str(
+                db_kwargs={
+                    DatabaseOptions.WITH_MAX_MSG_SIZE.value: str(
                         _MAX_FLIGHT_MSG_SIZE
                     ),
                 },

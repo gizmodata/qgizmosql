@@ -86,6 +86,17 @@ _adbc_pkg.dbapi = _adbc_dbapi
 sys.modules.setdefault("adbc_driver_gizmosql", _adbc_pkg)
 sys.modules.setdefault("adbc_driver_gizmosql.dbapi", _adbc_dbapi)
 
+_flight_pkg = types.ModuleType("adbc_driver_flightsql")
+
+
+class _DatabaseOptions:
+    class WITH_MAX_MSG_SIZE:
+        value = "adbc.flight.sql.client_option.with_max_msg_size"
+
+
+_flight_pkg.DatabaseOptions = _DatabaseOptions
+sys.modules.setdefault("adbc_driver_flightsql", _flight_pkg)
+
 # Now the import is safe.
 from qgizmosql.provider.gizmosql_wrapper import (  # noqa: E402
     DEFAULT_GIZMOSQL_PORT,

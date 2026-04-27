@@ -221,9 +221,10 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
         # over Flight; converting batch-at-a-time to Python lists is markedly
         # cheaper than per-row dbapi.fetchone() bookkeeping. See issue #2 for
         # the related max-message-size fix.
-        self._cursor = self._provider.con().cursor()
+        # _provider.con() already returns a cursor (see GizmoSqlProvider.con).
+        self._cursor = self._provider.con()
         self._cursor.execute(final_query)
-        self._reader = self._cursor.fetch_record_batch_reader()
+        self._reader = self._cursor.fetch_record_batch()
         # Cached row-oriented snapshot of the current Arrow record batch.
         # We materialise the batch's columns to Python lists once per batch
         # so per-row access is a plain list lookup.
