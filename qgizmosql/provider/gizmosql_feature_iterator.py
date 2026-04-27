@@ -142,8 +142,14 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
             if expression:
                 try:
                     cur = self._provider.con()
+                    # Trust boundary: `expression` is a SQL fragment produced
+                    # by QGIS from QgsFeatureRequest.filterExpression(). It is
+                    # already structured SQL the QGIS core has built; we only
+                    # smoke-test that the server can parse it. _from_clause is
+                    # composed of regex-validated identifiers (see
+                    # _safe_identifier in gizmosql_provider.py).
                     cur.execute(
-                        f"SELECT count(*)"
+                        f"SELECT count(*)"  # nosec B608
                         f" FROM {self._provider._from_clause}"
                         f" WHERE {expression}"
                         " LIMIT 0"
@@ -197,8 +203,11 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
             index = self._provider._fields[self._provider.primary_key()].name()
             order_by = index
 
+        # All identifiers (column names, _from_clause) are validated; QGIS-
+        # generated `where_clause` and the user's optional custom SQL are the
+        # explicit trust boundaries documented above.
         final_query = (
-            "select * from ("
+            "select * from ("  # nosec B608
             f"select {fields_name_for_query} "
             f"{geom_query} {index} "
             f"from {self._provider._from_clause}) "

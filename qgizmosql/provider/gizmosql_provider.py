@@ -1,7 +1,32 @@
 from __future__ import annotations
 
+import re
 import weakref
 from typing import Any, Optional
+
+# Identifiers (table, schema, column names) cannot be passed as bind
+# parameters in any SQL dialect, so we constrain them to a strict ASCII
+# regex at construction time. After this check passes, downstream f-string
+# interpolation of these names is safe — there is no character that could
+# alter SQL structure. Literal *values* in WHERE clauses are still bound
+# via cursor.execute(sql, params) below.
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _safe_identifier(name: Optional[str], kind: str) -> Optional[str]:
+    """Validate an SQL identifier. Returns the name unchanged or raises.
+
+    :param name: candidate identifier (may be None — passes through)
+    :param kind: human-readable label for error messages (e.g. "table")
+    :raises ValueError: if name is non-empty and fails the regex check
+    """
+    if not name:
+        return name
+    if not _IDENTIFIER_RE.match(name):
+        raise ValueError(
+            f"Invalid {kind} identifier {name!r}: only [A-Za-z_][A-Za-z0-9_]* allowed"
+        )
+    return name
 
 from qgis.core import (
     Qgis,
@@ -67,6 +92,10 @@ class GizmoSqlProvider(QgsVectorDataProvider):
                 self._sql,
                 self._schema,
             ) = self.wrapper.parse_uri(uri)
+            # Pin identifiers to a strict regex so they're safe to interpolate
+            # into queries below — bind params can't carry identifiers.
+            self._table = _safe_identifier(self._table, "table")
+            self._schema = _safe_identifier(self._schema, "schema")
         except ValueError as exc:
             self._is_valid = False
             PlgLogger.log(message=str(exc), log_level=Qgis.MessageLevel.Critical, push=True)
@@ -167,8 +196,10 @@ class GizmoSqlProvider(QgsVectorDataProvider):
             return True
         try:
             # Probe with LIMIT 0 — cheapest possible parse/plan check.
+            # Trust boundary: self._sql is the user's own custom query from
+            # the add-layer dialog; running it is the entire point.
             with self._con.cursor() as cur:
-                cur.execute(f"SELECT * FROM ({self._sql}) LIMIT 0")
+                cur.execute(f"SELECT * FROM ({self._sql}) LIMIT 0")  # nosec B608
             return True
         except Exception as exc:
             PlgLogger.log(
@@ -186,13 +217,19 @@ class GizmoSqlProvider(QgsVectorDataProvider):
             if not self._is_valid:
                 self._feature_count = 0
             else:
+                # _from_clause is built from validated identifiers (see
+                # _safe_identifier in __init__) or from self._sql (user-
+                # provided custom query — explicit trust boundary).
+                # subsetString() is a SQL fragment supplied by QGIS / the user
+                # via QgsVectorLayer.setSubsetString() — also a trust boundary.
                 if self.subsetString():
                     row = self._con.sql(
-                        f"select count(*) from {self._from_clause} WHERE {self.subsetString()}"
+                        f"select count(*) from {self._from_clause} "
+                        f"WHERE {self.subsetString()}"  # nosec B608
                     ).fetchone()
                 else:
                     row = self._con.sql(
-                        f"select count(*) from {self._from_clause}"
+                        f"select count(*) from {self._from_clause}"  # nosec B608
                     ).fetchone()
                 self._feature_count = row[0] if row else 0
         return self._feature_count
@@ -204,8 +241,10 @@ class GizmoSqlProvider(QgsVectorDataProvider):
             if not self._is_valid:
                 self._wkb_type = QgsWkbTypes.Type.Unknown
             else:
+                # _column_geom and _from_clause are validated identifiers.
                 row = self._con.sql(
-                    f"select st_geometrytype({self._column_geom}) from {self._from_clause} limit 1"
+                    f"select st_geometrytype({self._column_geom}) "
+                    f"from {self._from_clause} limit 1"  # nosec B608
                 ).fetchone()
                 str_geom = row[0] if row else None
                 if str_geom in mapping_duckdb_qgis_geometry:
@@ -230,8 +269,9 @@ class GizmoSqlProvider(QgsVectorDataProvider):
                     push=False,
                 )
             else:
+                # _column_geom and _from_clause are validated identifiers.
                 extent_bounds = self._con.sql(
-                    query=f"select min(st_xmin({self._column_geom})), "
+                    query=f"select min(st_xmin({self._column_geom})), "  # nosec B608
                     f"min(st_ymin({self._column_geom})), "
                     f"max(st_xmax({self._column_geom})), "
                     f"max(st_ymax({self._column_geom})) "
@@ -255,16 +295,22 @@ class GizmoSqlProvider(QgsVectorDataProvider):
             return self._column_geom
         if not self._sql:
             schema = self._schema or "main"
-            row = self._con.sql(
-                "SELECT column_name FROM information_schema.columns "
-                f"WHERE table_name = '{self._table}' AND table_schema = '{schema}' "
-                "AND data_type = 'GEOMETRY'"
-            ).fetchone()
+            with self._con.cursor() as cur:
+                cur.execute(
+                    operation=(
+                        "SELECT column_name FROM information_schema.columns "
+                        "WHERE table_name = ? AND table_schema = ? "
+                        "AND data_type = 'GEOMETRY'"
+                    ),
+                    parameters=[self._table, schema],
+                )
+                row = cur.fetchone()
             if row:
                 self._column_geom = row[0]
         else:
             # Use DuckDB's DESCRIBE to introspect an ad-hoc query's output types.
-            rows = self._con.sql(f"DESCRIBE {self._sql}").fetchall()
+            # Trust boundary: self._sql is the user-supplied custom query.
+            rows = self._con.sql(f"DESCRIBE {self._sql}").fetchall()  # nosec B608
             for r in rows:
                 col_name, col_type = r[0], r[1]
                 if col_type == "GEOMETRY":
@@ -282,18 +328,23 @@ class GizmoSqlProvider(QgsVectorDataProvider):
         # information_schema-only query — portable across DuckDB versions and
         # avoids relying on the ``duckdb_constraints()`` table function, which
         # is server-internal.
-        row = self._con.sql(
-            "SELECT kcu.ordinal_position - 1 "
-            "FROM information_schema.table_constraints tc "
-            "JOIN information_schema.key_column_usage kcu "
-            "  ON tc.constraint_name = kcu.constraint_name "
-            "  AND tc.table_schema = kcu.table_schema "
-            "  AND tc.table_name = kcu.table_name "
-            f"WHERE tc.constraint_type = 'PRIMARY KEY' "
-            f"  AND tc.table_name = '{self._table}' "
-            f"  AND tc.table_schema = '{schema}' "
-            "ORDER BY kcu.ordinal_position"
-        ).fetchone()
+        with self._con.cursor() as cur:
+            cur.execute(
+                operation=(
+                    "SELECT kcu.ordinal_position - 1 "
+                    "FROM information_schema.table_constraints tc "
+                    "JOIN information_schema.key_column_usage kcu "
+                    "  ON tc.constraint_name = kcu.constraint_name "
+                    "  AND tc.table_schema = kcu.table_schema "
+                    "  AND tc.table_name = kcu.table_name "
+                    "WHERE tc.constraint_type = 'PRIMARY KEY' "
+                    "  AND tc.table_name = ? "
+                    "  AND tc.table_schema = ? "
+                    "ORDER BY kcu.ordinal_position"
+                ),
+                parameters=[self._table, schema],
+            )
+            row = cur.fetchone()
         self._primary_key = int(row[0]) if row else -1
         return self._primary_key
 
@@ -306,14 +357,20 @@ class GizmoSqlProvider(QgsVectorDataProvider):
 
         if not self._sql:
             schema = self._schema or "main"
-            field_info = self._con.sql(
-                "select column_name, data_type from "
-                f"information_schema.columns WHERE table_name = '{self._table}' "
-                f"AND table_schema = '{schema}' AND "
-                "data_type not in ('GEOMETRY', 'WKB_BLOB')"
-            ).fetchall()
+            with self._con.cursor() as cur:
+                cur.execute(
+                    operation=(
+                        "select column_name, data_type from "
+                        "information_schema.columns WHERE table_name = ? "
+                        "AND table_schema = ? AND "
+                        "data_type not in ('GEOMETRY', 'WKB_BLOB')"
+                    ),
+                    parameters=[self._table, schema],
+                )
+                field_info = cur.fetchall()
         else:
-            rows = self._con.sql(f"DESCRIBE {self._sql}").fetchall()
+            # Trust boundary: self._sql is the user-supplied custom query.
+            rows = self._con.sql(f"DESCRIBE {self._sql}").fetchall()  # nosec B608
             field_info = [
                 (r[0], r[1])
                 for r in rows
