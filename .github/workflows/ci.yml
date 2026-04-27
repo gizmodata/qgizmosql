@@ -24,9 +24,14 @@ jobs:
       - name: flake8
         run: flake8 qgizmosql --count --show-source --statistics
       - name: bandit (security scan)
-        # plugins.qgis.org runs Bandit and surfaces B608 findings. Match it
-        # here. Use the same `# nosec` markers we already have inline.
-        run: bandit -r qgizmosql --skip B101 --exclude qgizmosql/embedded_external_libs
+        # plugins.qgis.org runs Bandit but only surfaces Medium+ severity
+        # findings (B608 SQL-injection is the canonical example). Match
+        # that filter here so our CI gates on what they actually report.
+        # Inline `# nosec` markers still suppress specific checks.
+        run: |
+          bandit -r qgizmosql \
+            --severity-level medium \
+            --exclude qgizmosql/embedded_external_libs
       - name: No executable .py files
         # plugins.qgis.org flags any *.py with the +x bit as suspicious.
         run: |
