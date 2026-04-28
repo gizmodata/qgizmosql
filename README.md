@@ -41,7 +41,7 @@ A user of GizmoSQL asked for this in [gizmosql#160](https://github.com/gizmodata
 
 ### 2. Start a GizmoSQL server (skip if you already have one)
 
-The fastest way to get a server running locally — with a TPC-H sample database pre-loaded:
+The fastest way to get a server running locally:
 
 ```bash
 docker run --name gizmosql \
