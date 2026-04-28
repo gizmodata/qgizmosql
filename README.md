@@ -54,7 +54,7 @@ docker run --name gizmosql \
            --env GIZMOSQL_USERNAME="gizmosql_user" \
            --env GIZMOSQL_PASSWORD="gizmosql_password" \
            --env PRINT_QUERIES="1" \
-           --pull missing \
+           --pull always \
            gizmodata/gizmosql:latest
 ```
 
@@ -88,7 +88,7 @@ docker run --name gizmosql \
                (4, 'London',        ST_Point(-0.1276,  51.5074)),
                (5, 'Tokyo',         ST_Point(139.6917, 35.6895));
            " \
-           --pull missing \
+           --pull always \
            gizmodata/gizmosql:latest
 ```
 
