@@ -2,6 +2,22 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-04-28
+
+### Changed
+
+- Lowered `qgisMinimumVersion` from `4.0.0` to `3.40.0` so the plugin installs on the current QGIS LTR (3.40 *Bratislava*) in addition to latest stable. The provider already branches on `Qgis.QGIS_VERSION_INT` to use `QVariant` types on QGIS < 3.38, so QMetaType-only call sites continue to work on 3.40+. Closes #1.
+
+### Added
+
+- CI now publishes the slim plugin ZIP to [plugins.qgis.org](https://plugins.qgis.org/plugins/qgizmosql/) automatically on every `v*` tag, using `secrets.QGIS_PLUGIN_TOKEN` (Personal Access Token) and `vars.QGIS_PLUGIN_USERNAME` for HTTP basic auth against the official `plugin_upload.py` XML-RPC endpoint.
+- README badge linking to the plugin's page on plugins.qgis.org.
+- README: optional `INIT_SQL_COMMANDS` snippet that seeds a 5-row `cities` `GEOMETRY` table inside the GizmoSQL container so first-time users have something to add as a layer immediately.
+
+### Removed
+
+- README: dropped the manual `INSTALL spatial; LOAD spatial;` hint — GizmoSQL loads the DuckDB `spatial` extension automatically on startup.
+
 ## [0.2.12] - 2026-04-27
 
 ### Changed

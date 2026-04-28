@@ -23,12 +23,13 @@ tracker=https://github.com/gizmodata/qgizmosql/issues
 # experimental flag
 deprecated=False
 experimental=True
-qgisMinimumVersion=4.0.0
+qgisMinimumVersion=3.40.0
 qgisMaximumVersion=5.99
 
 # versioning
 version=0.1.0-DEV
 changelog=
+    0.3.0 - Lower qgisMinimumVersion to 3.40 LTS (Bratislava) so the plugin installs on both LTS and latest stable QGIS (#1); CI now publishes the slim ZIP to plugins.qgis.org automatically on v* tags.
     0.2.12 - Stream Arrow record batches in the feature iterator (perf win on big layers); bump Flight SQL gRPC max-message-size from 16 MB to 1 GiB (#2).
     0.2.11 - Invalidate import caches after pip install so the post-install probe finds freshly-written modules; ad-hoc re-sign native dylibs on macOS; quiet the pre-install probe; surface real exception on import failure; fix initial Table/SQL enabled state; raise+activate re-clicked dialog.
     0.2.10 - Pass PYTHONHOME/PYTHONPATH to the pip subprocess so QGIS's bundled python can bootstrap standalone; log pip failures with the right Qgis.MessageLevel enum on Qt6.

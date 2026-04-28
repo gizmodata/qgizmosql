@@ -5,6 +5,7 @@ Browse and visualize spatial data from a **[GizmoSQL](https://gizmodata.com/gizm
 > **Status: 🚧 Early development.** This plugin is being forked from [QDuckDB](https://gitlab.com/Oslandia/qgis/qduckdb) (Oslandia, GPLv2+) and is having its DuckDB embedded-file connection layer swapped for the **[`adbc-driver-gizmosql`](https://pypi.org/project/adbc-driver-gizmosql/)** client, which speaks Arrow Flight SQL to a GizmoSQL server. Track progress in [Issues](https://github.com/gizmodata/qgizmosql/issues).
 
 [![Download latest](https://img.shields.io/github/v/release/gizmodata/qgizmosql?label=download%20latest%20ZIP&color=2ea44f)](https://github.com/gizmodata/qgizmosql/releases/latest/download/qgizmosql.zip)
+[![QGIS Plugin Repository](https://img.shields.io/badge/QGIS%20Plugin-experimental-589632?logo=qgis&logoColor=white)](https://plugins.qgis.org/plugins/qgizmosql/)
 [![CI](https://github.com/gizmodata/qgizmosql/actions/workflows/ci.yml/badge.svg)](https://github.com/gizmodata/qgizmosql/actions/workflows/ci.yml)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](LICENSE)
 
@@ -34,7 +35,7 @@ A user of GizmoSQL asked for this in [gizmosql#160](https://github.com/gizmodata
 
 ### 1. Prerequisites
 
-- **QGIS ≥ 3.34.6** (with Python 3.12 bundled — `3.34.5` and earlier are not supported)
+- **QGIS ≥ 3.40 LTR** *Bratislava* — works on the current LTR and on the latest stable QGIS
 - A running **GizmoSQL server** — see the 30-second Docker recipe below
 - Network access from your QGIS machine to the GizmoSQL server (default port `31337`)
 
@@ -57,14 +58,34 @@ docker run --name gizmosql \
            gizmodata/gizmosql:latest
 ```
 
-To load the DuckDB `spatial` extension on startup, add `--env INIT_SQL="INSTALL spatial; LOAD spatial;"` (or run those statements from your first query).
+GizmoSQL loads the DuckDB `spatial` extension automatically — nothing extra to do.
+
+#### Optional: seed a tiny sample spatial table on startup
+
+If you don't already have a spatial table to point QGIS at, you can use the `INIT_SQL_COMMANDS` env var to have GizmoSQL run a `CREATE TABLE` + `INSERT`s the moment it boots. Add this to the `docker run` above (after `--env PRINT_QUERIES="1"`):
+
+```bash
+           --env INIT_SQL_COMMANDS="
+             CREATE TABLE IF NOT EXISTS cities (
+               id     INTEGER,
+               name   VARCHAR,
+               geom   GEOMETRY
+             );
+             INSERT INTO cities VALUES
+               (1, 'Charlotte',     ST_Point(-80.8431, 35.2271)),
+               (2, 'San Francisco', ST_Point(-122.4194, 37.7749)),
+               (3, 'New York',      ST_Point(-74.0060, 40.7128)),
+               (4, 'London',        ST_Point(-0.1276,  51.5074)),
+               (5, 'Tokyo',         ST_Point(139.6917, 35.6895));
+           " \
 
 ### 3. Install the QGIS plugin
 
-**From the QGIS Plugin Repository** (once published):
+**From the QGIS Plugin Repository** ([qgizmosql on plugins.qgis.org](https://plugins.qgis.org/plugins/qgizmosql/)):
 
 1. In QGIS: **Plugins → Manage and Install Plugins…**
-2. Search for `qgizmosql` and click **Install**
+2. Make sure **Settings → Show also experimental plugins** is checked (qgizmosql is currently flagged experimental).
+3. Search for `qgizmosql` and click **Install**
 
 **From a ZIP (pre-release / development)**:
 
@@ -72,7 +93,7 @@ To load the DuckDB `spatial` extension on startup, add `--env INIT_SQL="INSTALL 
 2. In QGIS: **Plugins → Manage and Install Plugins… → Install from ZIP**
 3. Select the ZIP and click **Install Plugin**
 
-The plugin bundles `adbc-driver-gizmosql` and its dependencies on Windows, so no manual `pip install` is needed. On macOS/Linux, if QGIS's Python doesn't already have the driver, the plugin will install it to its own subdirectory on first activation.
+On first activation, the plugin checks for `pyarrow` + `adbc-driver-gizmosql` and, if either is missing, pip-installs them into its own `embedded_external_libs/` subdirectory — no manual `pip install` required. Air-gapped users can skip the network step by grabbing a per-platform **offline** ZIP from [Releases](https://github.com/gizmodata/qgizmosql/releases) instead.
 
 #### ⚠️ Upgrading: restart QGIS after a reinstall
 
