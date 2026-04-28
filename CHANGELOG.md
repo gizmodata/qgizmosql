@@ -2,6 +2,14 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-04-28
+
+### Fixed
+
+- CI publish-plugin job: switched from the legacy XML-RPC `/plugins/RPC2/` upload (which only accepts the account password and 403'd on PATs) to the v2 token endpoint `POST /plugins/api/qgizmosql/version/add/` with `Authorization: Bearer <JWT>`. Treats HTTP 201 as success and surfaces the response body on failure.
+- CI gating: `release` now `needs: [package, package-offline, publish-plugin]` so a failed plugins.qgis.org upload no longer leaves a public GitHub Release pointing at a tag that didn't ship to the store.
+- CI ordering: `actions/checkout@v4` now runs before `actions/download-artifact@v4` in `publish-plugin` (checkout's clean step was wiping the freshly-downloaded `dist/qgizmosql.zip`).
+
 ## [0.3.0] - 2026-04-28
 
 ### Changed
