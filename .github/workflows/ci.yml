@@ -202,7 +202,10 @@ jobs:
   release:
     # Publishes a GitHub Release with both the slim ZIP (for plugins.qgis.org
     # submission) and the per-platform offline ZIPs attached, on every v* tag.
-    needs: [package, package-offline]
+    # Gated on publish-plugin: if plugins.qgis.org refuses the upload (duplicate
+    # version, auth fail, outage) we don't want a public GH Release pointing at
+    # a tag whose store entry is empty. Re-tag/fix-forward instead.
+    needs: [package, package-offline, publish-plugin]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -256,7 +259,8 @@ jobs:
     # Access Token instead of a password. The official plugin_upload.py speaks
     # XML-RPC to https://plugins.qgis.org/plugins/RPC2/ with HTTP basic auth —
     # username is the plugins.qgis.org account, "password" is the PAT.
-    needs: [package, release]
+    # Runs BEFORE the GitHub Release job — see the comment on `release:`.
+    needs: [package]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
