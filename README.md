@@ -1,13 +1,13 @@
 # qgizmosql — QGIS plugin for GizmoSQL
 
-Browse and visualize spatial data from a **[GizmoSQL](https://gizmodata.com/gizmosql)** server directly in QGIS — no raw DuckDB file required. Connect to a remote (or local) GizmoSQL Arrow Flight SQL service, pick a table, and add it as a QGIS layer.
-
-> **Status: 🚧 Early development.** This plugin is being forked from [QDuckDB](https://gitlab.com/Oslandia/qgis/qduckdb) (Oslandia, GPLv2+) and is having its DuckDB embedded-file connection layer swapped for the **[`adbc-driver-gizmosql`](https://pypi.org/project/adbc-driver-gizmosql/)** client, which speaks Arrow Flight SQL to a GizmoSQL server. Track progress in [Issues](https://github.com/gizmodata/qgizmosql/issues).
-
 [![Download latest](https://img.shields.io/github/v/release/gizmodata/qgizmosql?label=download%20latest%20ZIP&color=2ea44f)](https://github.com/gizmodata/qgizmosql/releases/latest/download/qgizmosql.zip)
 [![QGIS Plugin Repository](https://img.shields.io/badge/QGIS%20Plugin-experimental-589632?logo=qgis&logoColor=white)](https://plugins.qgis.org/plugins/qgizmosql/)
 [![CI](https://github.com/gizmodata/qgizmosql/actions/workflows/ci.yml/badge.svg)](https://github.com/gizmodata/qgizmosql/actions/workflows/ci.yml)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPLv2%2B-blue.svg)](LICENSE)
+
+Browse and visualize spatial data from a **[GizmoSQL](https://gizmodata.com/gizmosql)** server directly in QGIS — no raw DuckDB file required. Connect to a remote (or local) GizmoSQL Arrow Flight SQL service, pick a table, and add it as a QGIS layer.
+
+> **Status: 🚧 Early development.** This plugin is being forked from [QDuckDB](https://gitlab.com/Oslandia/qgis/qduckdb) (Oslandia, GPLv2+) and is having its DuckDB embedded-file connection layer swapped for the **[`adbc-driver-gizmosql`](https://pypi.org/project/adbc-driver-gizmosql/)** client, which speaks Arrow Flight SQL to a GizmoSQL server. Track progress in [Issues](https://github.com/gizmodata/qgizmosql/issues).
 
 > **Install in QGIS:** click the green badge above to grab `qgizmosql.zip`, then in QGIS go to **Plugins → Manage and Install Plugins → Install from ZIP** and pick the file.
 
@@ -62,9 +62,19 @@ GizmoSQL loads the DuckDB `spatial` extension automatically — nothing extra to
 
 #### Optional: seed a tiny sample spatial table on startup
 
-If you don't already have a spatial table to point QGIS at, you can use the `INIT_SQL_COMMANDS` env var to have GizmoSQL run a `CREATE TABLE` + `INSERT`s the moment it boots. Add this to the `docker run` above (after `--env PRINT_QUERIES="1"`):
+If you don't already have a spatial table to point QGIS at, use the `INIT_SQL_COMMANDS` env var to have GizmoSQL run a `CREATE TABLE` + `INSERT`s the moment it boots. Stop the previous container first (`docker rm -f gizmosql`) and run:
 
 ```bash
+docker run --name gizmosql \
+           --detach \
+           --rm \
+           --tty \
+           --init \
+           --publish 31337:31337 \
+           --env TLS_ENABLED="1" \
+           --env GIZMOSQL_USERNAME="gizmosql_user" \
+           --env GIZMOSQL_PASSWORD="gizmosql_password" \
+           --env PRINT_QUERIES="1" \
            --env INIT_SQL_COMMANDS="
              CREATE TABLE IF NOT EXISTS cities (
                id     INTEGER,
@@ -78,6 +88,11 @@ If you don't already have a spatial table to point QGIS at, you can use the `INI
                (4, 'London',        ST_Point(-0.1276,  51.5074)),
                (5, 'Tokyo',         ST_Point(139.6917, 35.6895));
            " \
+           --pull missing \
+           gizmodata/gizmosql:latest
+```
+
+Once QGIS is connected, pick the `cities` table with `geom` as the geometry column to render the five points on the map.
 
 ### 3. Install the QGIS plugin
 
