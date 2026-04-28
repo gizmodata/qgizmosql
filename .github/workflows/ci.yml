@@ -255,48 +255,50 @@ jobs:
           fail_on_unmatched_files: true
 
   publish-plugin:
-    # Push the slim ZIP to plugins.qgis.org on every v* tag, using a Personal
-    # Access Token instead of a password. The official plugin_upload.py speaks
-    # XML-RPC to https://plugins.qgis.org/plugins/RPC2/ with HTTP basic auth —
-    # username is the plugins.qgis.org account, "password" is the PAT.
+    # Push the slim ZIP to plugins.qgis.org on every v* tag.
+    # Uses the v2 token API (POST /plugins/api/<pkg>/version/add/) with a
+    # plugin-scoped JWT Bearer token minted at
+    # https://plugins.qgis.org/plugins/qgizmosql/tokens/create/ — no username
+    # needed. The legacy XML-RPC /plugins/RPC2/ endpoint is account-password
+    # only and rejects PATs with 403, which is why we don't use it.
     # Runs BEFORE the GitHub Release job — see the comment on `release:`.
     needs: [package]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      # Checkout MUST come before download-artifact: actions/checkout@v4
-      # cleans the workspace, which would otherwise nuke dist/ after we just
-      # populated it.
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Download slim plugin ZIP
         uses: actions/download-artifact@v4
         with:
           name: qgizmosql-plugin-zip
           path: dist
 
-      - name: Upload to plugins.qgis.org
+      - name: Upload to plugins.qgis.org (v2 token API)
         env:
-          QGIS_PLUGIN_USERNAME: ${{ vars.QGIS_PLUGIN_USERNAME }}
           QGIS_PLUGIN_TOKEN: ${{ secrets.QGIS_PLUGIN_TOKEN }}
         run: |
           set -euo pipefail
-          if [[ -z "${QGIS_PLUGIN_USERNAME:-}" || -z "${QGIS_PLUGIN_TOKEN:-}" ]]; then
-            echo "ERROR: vars.QGIS_PLUGIN_USERNAME and secrets.QGIS_PLUGIN_TOKEN must be set." >&2
+          if [[ -z "${QGIS_PLUGIN_TOKEN:-}" ]]; then
+            echo "ERROR: secrets.QGIS_PLUGIN_TOKEN must be set." >&2
             exit 1
           fi
-          # Upload the unversioned slim ZIP — same bytes as the versioned one,
-          # and metadata.txt inside carries the actual version string.
-          # scripts/plugin_upload.py is vendored from QGIS Plugin Builder
-          # (g-sherman/Qgis-Plugin-Builder) — plugins.qgis.org's static
-          # /scripts/plugin_upload.py URL 404s, so we keep our own copy.
           ZIP="dist/qgizmosql.zip"
           ls -lh "$ZIP"
-          python3 scripts/plugin_upload.py \
-            --username "$QGIS_PLUGIN_USERNAME" \
-            --password "$QGIS_PLUGIN_TOKEN" \
-            "$ZIP"
+          # Success = HTTP 302 redirect to the plugin's absolute URL.
+          # Auth/permission failure = 403. Anything else = treat as failure.
+          # -i prints headers, -o body so we can show context on failure;
+          # don't use -L (we want to *see* the 302 rather than follow it).
+          HTTP_CODE=$(curl -sS -o response.body -w '%{http_code}' \
+            -X POST \
+            -H "Authorization: Bearer ${QGIS_PLUGIN_TOKEN}" \
+            -F "package=@${ZIP}" \
+            "https://plugins.qgis.org/plugins/api/qgizmosql/version/add/")
+          echo "HTTP ${HTTP_CODE}"
+          echo "---- response body ----"
+          cat response.body || true
+          echo
+          echo "-----------------------"
+          if [[ "${HTTP_CODE}" != "302" ]]; then
+            echo "ERROR: plugins.qgis.org rejected the upload (expected 302)." >&2
+            exit 1
+          fi
+          echo "Upload accepted."
