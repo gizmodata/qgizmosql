@@ -283,10 +283,9 @@ jobs:
           fi
           ZIP="dist/qgizmosql.zip"
           ls -lh "$ZIP"
-          # Success = HTTP 302 redirect to the plugin's absolute URL.
-          # Auth/permission failure = 403. Anything else = treat as failure.
-          # -i prints headers, -o body so we can show context on failure;
-          # don't use -L (we want to *see* the 302 rather than follow it).
+          # Success = HTTP 201 Created with JSON {"success": true, ...}.
+          # Auth/permission failure = 403. Validation errors return 4xx with
+          # a JSON error body. -o captures body so we can surface it on fail.
           HTTP_CODE=$(curl -sS -o response.body -w '%{http_code}' \
             -X POST \
             -H "Authorization: Bearer ${QGIS_PLUGIN_TOKEN}" \
@@ -297,8 +296,8 @@ jobs:
           cat response.body || true
           echo
           echo "-----------------------"
-          if [[ "${HTTP_CODE}" != "302" ]]; then
-            echo "ERROR: plugins.qgis.org rejected the upload (expected 302)." >&2
+          if [[ "${HTTP_CODE}" != "201" && "${HTTP_CODE}" != "200" ]]; then
+            echo "ERROR: plugins.qgis.org rejected the upload (HTTP ${HTTP_CODE})." >&2
             exit 1
           fi
-          echo "Upload accepted."
+          echo "Upload accepted (HTTP ${HTTP_CODE})."
