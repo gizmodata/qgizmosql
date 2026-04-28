@@ -29,6 +29,7 @@ qgisMaximumVersion=5.99
 # versioning
 version=0.1.0-DEV
 changelog=
+    0.4.0 - Plumb catalog through the layer URI and provider: dialog picker now shows catalog.schema.table; the internal _gizmosql_system catalog is filtered from the picker; information_schema lookups bind table_catalog so tables outside the connection's default catalog resolve to the right one. Live integration tests against a real GizmoSQL container (Docker fixture locally + GitHub Actions services in CI).
     0.3.1 - CI publish fixes: switch to plugins.qgis.org v2 token API (Bearer JWT, plugin-scoped); gate GitHub Release on publish success; fix workspace-clean order so the slim ZIP survives into the upload step.
     0.3.0 - Lower qgisMinimumVersion to 3.40 LTS (Bratislava) so the plugin installs on both LTS and latest stable QGIS (#1); CI now publishes the slim ZIP to plugins.qgis.org automatically on v* tags.
     0.2.12 - Stream Arrow record batches in the feature iterator (perf win on big layers); bump Flight SQL gRPC max-message-size from 16 MB to 1 GiB (#2).
