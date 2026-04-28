@@ -149,9 +149,3 @@ def test_information_schema_is_qualifiable_by_catalog(gizmosql_conn_config):
     )
 
 
-def pytest_configure(config):
-    """Register the `integration` marker so `pytest -m integration` works
-    without an `unknown mark` warning, and so users can `-m 'not integration'`
-    to skip in non-integration environments.
-    """
-    config.addinivalue_line("markers", "integration: hits a live GizmoSQL server")

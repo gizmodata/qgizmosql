@@ -103,7 +103,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install ADBC driver + pytest
-        run: pip install pytest adbc-driver-gizmosql adbc-driver-flightsql
+        # pytest-cov is required because setup.cfg's [tool:pytest] addopts
+        # carries --cov flags; without it pytest aborts with exit 4.
+        run: pip install pytest pytest-cov adbc-driver-gizmosql adbc-driver-flightsql
       - name: Run integration tests
         run: python -m pytest tests/integration -v -m integration
 
