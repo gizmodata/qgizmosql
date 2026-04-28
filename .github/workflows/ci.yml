@@ -270,10 +270,7 @@ jobs:
           name: qgizmosql-plugin-zip
           path: dist
 
-      - name: Fetch official plugin_upload.py
-        run: |
-          curl -fsSL -o plugin_upload.py \
-            https://plugins.qgis.org/static/scripts/plugin_upload.py
+      - uses: actions/checkout@v4
 
       - name: Upload to plugins.qgis.org
         env:
@@ -287,9 +284,12 @@ jobs:
           fi
           # Upload the unversioned slim ZIP — same bytes as the versioned one,
           # and metadata.txt inside carries the actual version string.
+          # scripts/plugin_upload.py is vendored from QGIS Plugin Builder
+          # (g-sherman/Qgis-Plugin-Builder) — plugins.qgis.org's static
+          # /scripts/plugin_upload.py URL 404s, so we keep our own copy.
           ZIP="dist/qgizmosql.zip"
           ls -lh "$ZIP"
-          python3 plugin_upload.py \
+          python3 scripts/plugin_upload.py \
             --username "$QGIS_PLUGIN_USERNAME" \
             --password "$QGIS_PLUGIN_TOKEN" \
             "$ZIP"
