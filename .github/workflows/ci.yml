@@ -264,6 +264,11 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
+      # Checkout MUST come before download-artifact: actions/checkout@v4
+      # cleans the workspace, which would otherwise nuke dist/ after we just
+      # populated it.
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -273,8 +278,6 @@ jobs:
         with:
           name: qgizmosql-plugin-zip
           path: dist
-
-      - uses: actions/checkout@v4
 
       - name: Upload to plugins.qgis.org
         env:
