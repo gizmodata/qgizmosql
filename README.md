@@ -133,24 +133,53 @@ The table is streamed to QGIS as Arrow record batches and rendered as a vector l
 
 ## PyQGIS usage (scripting)
 
-You can also add layers programmatically from the QGIS Python console:
+You can also add layers programmatically from the QGIS Python console. The plugin's URI scheme is `gizmosql://` (the `grpc+tls://` form is only for the dialog's *Host* field — internally the plugin reassembles a `gizmosql://` URI before opening the layer):
 
 ```python
-from qgis.core import QgsVectorLayer, QgsProject
+from qgis.core import QgsProject, QgsProviderRegistry, QgsVectorLayer
 
-uri = (
-    "grpc+tls://localhost:31337"
-    "?username=gizmosql_user"
-    "&password=gizmosql_password"
-    "&tls_skip_verify=true"
-    "&table=public.my_spatial_table"
-    "&geom_column=geom"
-)
-layer = QgsVectorLayer(uri, "my_spatial_table", "gizmosql")
+metadata = QgsProviderRegistry.instance().providerMetadata("gizmosql")
+uri = metadata.encodeUri({
+    "host": "localhost",
+    "port": "31337",
+    "use_tls": "1",
+    "tls_skip_verify": "1",
+    "auth_type": "password",
+    "username": "gizmosql_user",
+    "password": "gizmosql_password",
+    "schema": "main",
+    "table": "cities",
+    # Optional — when omitted, the provider resolves the connection's
+    # current_database() at first query. Set it explicitly to address
+    # a non-default attached catalog.
+    # "catalog": "memory",
+    # Optional — re-project on the QGIS side. Server geometries are
+    # passed through; provider auto-detects the GEOMETRY column.
+    # "epsg": "4326",
+})
+layer = QgsVectorLayer(uri, "cities", "gizmosql")
 QgsProject.instance().addMapLayer(layer)
 ```
 
-For OAuth/SSO, replace the username/password with `auth_type=external` — a browser window will open for login.
+`schema` and `table` must each be a single SQL identifier (the strict `[A-Za-z_][A-Za-z0-9_]*` form) — fully-qualified `schema.table` strings are rejected. The geometry column is detected automatically from `information_schema.columns WHERE data_type = 'GEOMETRY'`, so there is no `geom_column=` parameter to set.
+
+For **password auth via QGIS Auth Manager** (the recommended way to avoid embedding credentials in saved project files), drop `username` / `password` and pass `authcfg` instead — e.g. `"authcfg": "abc1234"` where the value is the auth-config ID.
+
+For **OAuth/SSO**, replace `auth_type=password` with `auth_type=external` — a browser window will open for login.
+
+You can also build the URI with the wrapper's `build_uri` helper, which is what the dialog uses internally:
+
+```python
+from qgizmosql.provider.gizmosql_wrapper import GizmoSqlConnConfig, GizmoSqlTools
+
+cfg = GizmoSqlConnConfig(
+    host="localhost", port=31337, use_tls=True, tls_skip_verify=True,
+    username="gizmosql_user", password="gizmosql_password",
+)
+uri = GizmoSqlTools.build_uri(cfg, schema="main", table="cities", catalog="memory")
+layer = QgsVectorLayer(uri, "cities", "gizmosql")
+QgsProject.instance().addMapLayer(layer)
+```
 
 ---
 

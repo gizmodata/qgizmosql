@@ -36,7 +36,9 @@ class GizmoSqlProviderMetadata(QgsProviderMetadata):
 
         Required keys: ``host``. Optional: ``port`` (default 31337),
         ``use_tls``, ``tls_skip_verify``, ``auth_type``, ``authcfg``,
-        ``username``, ``password``, ``schema``, ``table``, ``sql``, ``epsg``.
+        ``username``, ``password``, ``catalog``, ``schema``, ``table``,
+        ``sql``, ``epsg``. ``catalog`` defaults to the connection's
+        ``current_database()`` when omitted.
         """
         host = parts.get("host")
         if not host:
