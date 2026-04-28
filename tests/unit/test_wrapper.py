@@ -12,92 +12,18 @@ from __future__ import annotations
 
 import os
 import sys
-import types
 import unittest
 
-# Repo root on sys.path so ``import qgizmosql.*`` resolves against the real
-# package — the stubs below only fill in the qgis / adbc bits.
-_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _REPO_ROOT not in sys.path:
-    sys.path.insert(0, _REPO_ROOT)
+# Bring tests/_stubs.py into scope so we can install minimal qgis + ADBC
+# shims (shared with integration tests). Then import the wrapper safely.
+_TESTS_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _TESTS_ROOT not in sys.path:
+    sys.path.insert(0, _TESTS_ROOT)
 
+from _stubs import install as _install_stubs  # noqa: E402
 
-def _install_qgis_stubs() -> None:
-    """Install minimal stubs for the ``qgis.core`` and ``qgizmosql.toolbelt``
-    symbols the wrapper touches at import time.
+_install_stubs()
 
-    The wrapper module only uses these for side-effect logging, so dummy
-    implementations are enough to exercise parse_uri / build_uri / config.
-    """
-    # qgis.core stubs
-    qgis = types.ModuleType("qgis")
-    qgis_core = types.ModuleType("qgis.core")
-
-    class _MessageLevel:
-        NoLevel = 0
-        Info = 1
-        Warning = 2
-        Critical = 3
-        Success = 4
-
-    class _Qgis:
-        MessageLevel = _MessageLevel
-
-    class _QgsApplication:
-        @staticmethod
-        def authManager():
-            return None  # tests that need it patch this
-
-    class _QgsAuthMethodConfig:
-        def __init__(self):
-            self._cfg = {}
-
-        def config(self, key):
-            return self._cfg.get(key)
-
-    qgis_core.Qgis = _Qgis
-    qgis_core.QgsApplication = _QgsApplication
-    qgis_core.QgsAuthMethodConfig = _QgsAuthMethodConfig
-    sys.modules.setdefault("qgis", qgis)
-    sys.modules["qgis.core"] = qgis_core
-
-    # Stub the real qgizmosql.toolbelt.log_handler — it imports PlgLogger from
-    # QGIS internals we don't want to pull in. Replace with a no-op before the
-    # wrapper module is imported.
-    log_handler_mod = types.ModuleType("qgizmosql.toolbelt.log_handler")
-
-    class _PlgLogger:
-        @staticmethod
-        def log(**kwargs):
-            pass
-
-    log_handler_mod.PlgLogger = _PlgLogger
-    sys.modules["qgizmosql.toolbelt.log_handler"] = log_handler_mod
-
-
-_install_qgis_stubs()
-
-# Stub adbc_driver_gizmosql so the wrapper's top-level import doesn't fail in
-# environments where the real driver isn't on sys.path (CI without install).
-_adbc_pkg = types.ModuleType("adbc_driver_gizmosql")
-_adbc_dbapi = types.ModuleType("adbc_driver_gizmosql.dbapi")
-_adbc_dbapi.connect = lambda *a, **kw: None  # overridden in integration tests
-_adbc_pkg.dbapi = _adbc_dbapi
-sys.modules.setdefault("adbc_driver_gizmosql", _adbc_pkg)
-sys.modules.setdefault("adbc_driver_gizmosql.dbapi", _adbc_dbapi)
-
-_flight_pkg = types.ModuleType("adbc_driver_flightsql")
-
-
-class _DatabaseOptions:
-    class WITH_MAX_MSG_SIZE:
-        value = "adbc.flight.sql.client_option.with_max_msg_size"
-
-
-_flight_pkg.DatabaseOptions = _DatabaseOptions
-sys.modules.setdefault("adbc_driver_flightsql", _flight_pkg)
-
-# Now the import is safe.
 from qgizmosql.provider.gizmosql_wrapper import (  # noqa: E402
     DEFAULT_GIZMOSQL_PORT,
     GizmoSqlConnConfig,
@@ -155,7 +81,7 @@ class TestParseUri(unittest.TestCase):
             "&auth_type=password&username=u&password=p"
             "&schema=main&table=cities&epsg=4326"
         )
-        conf, table, epsg, sql, schema = w.parse_uri(uri)
+        conf, table, epsg, sql, schema, catalog = w.parse_uri(uri)
         self.assertEqual(conf.host, "localhost")
         self.assertEqual(conf.port, 31337)
         self.assertTrue(conf.use_tls)
@@ -166,11 +92,12 @@ class TestParseUri(unittest.TestCase):
         self.assertEqual(schema, "main")
         self.assertEqual(epsg, "4326")
         self.assertIsNone(sql)
+        self.assertIsNone(catalog)
 
     def test_authcfg_uri(self):
         w = GizmoSqlTools()
         uri = "gizmosql://h:31337?authcfg=abc1234&table=t"
-        conf, table, _, _, _ = w.parse_uri(uri)
+        conf, table, _, _, _, _ = w.parse_uri(uri)
         self.assertEqual(conf.authcfg, "abc1234")
         self.assertIsNone(conf.username)
         self.assertIsNone(conf.password)
@@ -179,7 +106,7 @@ class TestParseUri(unittest.TestCase):
     def test_sql_uri_strips_trailing_semicolon(self):
         w = GizmoSqlTools()
         uri = "gizmosql://h:31337?sql=SELECT+1+FROM+t;"
-        _, _, _, sql, _ = w.parse_uri(uri)
+        _, _, _, sql, _, _ = w.parse_uri(uri)
         self.assertEqual(sql, "SELECT 1 FROM t")
 
     def test_bad_scheme_rejected(self):
@@ -194,8 +121,29 @@ class TestParseUri(unittest.TestCase):
 
     def test_default_port(self):
         w = GizmoSqlTools()
-        conf, _, _, _, _ = w.parse_uri("gizmosql://h?table=t")
+        conf, _, _, _, _, _ = w.parse_uri("gizmosql://h?table=t")
         self.assertEqual(conf.port, DEFAULT_GIZMOSQL_PORT)
+
+    def test_catalog_round_trips(self):
+        """A URI with `catalog=` round-trips through parse_uri unmolested."""
+        w = GizmoSqlTools()
+        uri = (
+            "gizmosql://h:31337?authcfg=abc1234"
+            "&catalog=mycat&schema=public&table=cities"
+        )
+        conf, table, _, _, schema, catalog = w.parse_uri(uri)
+        self.assertEqual(conf.authcfg, "abc1234")
+        self.assertEqual(catalog, "mycat")
+        self.assertEqual(schema, "public")
+        self.assertEqual(table, "cities")
+
+    def test_catalog_absent_yields_none(self):
+        """No catalog in URI → parse_uri returns None for catalog."""
+        w = GizmoSqlTools()
+        _, _, _, _, _, catalog = w.parse_uri(
+            "gizmosql://h:31337?schema=main&table=t"
+        )
+        self.assertIsNone(catalog)
 
 
 class TestBuildUri(unittest.TestCase):
@@ -229,7 +177,7 @@ class TestBuildUri(unittest.TestCase):
             original, table="streets", schema="gis", epsg="3857"
         )
         w = GizmoSqlTools()
-        conf, table, epsg, sql, schema = w.parse_uri(uri)
+        conf, table, epsg, sql, schema, catalog = w.parse_uri(uri)
         self.assertEqual(conf.host, "example.internal")
         self.assertEqual(conf.port, 12345)
         self.assertFalse(conf.use_tls)
@@ -239,6 +187,63 @@ class TestBuildUri(unittest.TestCase):
         self.assertEqual(schema, "gis")
         self.assertEqual(epsg, "3857")
         self.assertIsNone(sql)
+        self.assertIsNone(catalog)
+
+    def test_round_trip_with_catalog(self):
+        """build_uri(catalog=...) → parse_uri returns the same catalog."""
+        conf = GizmoSqlConnConfig(host="h", authcfg="abc1234")
+        uri = GizmoSqlTools.build_uri(
+            conf, table="cities", schema="public", catalog="mycat"
+        )
+        # build_uri must include catalog= in the query string
+        self.assertIn("catalog=mycat", uri)
+        w = GizmoSqlTools()
+        _, table, _, _, schema, catalog = w.parse_uri(uri)
+        self.assertEqual(catalog, "mycat")
+        self.assertEqual(schema, "public")
+        self.assertEqual(table, "cities")
+
+    def test_build_uri_omits_catalog_when_absent(self):
+        """No catalog kwarg → no catalog= in the resulting URI."""
+        conf = GizmoSqlConnConfig(host="h", authcfg="abc1234")
+        uri = GizmoSqlTools.build_uri(conf, table="t", schema="s")
+        self.assertNotIn("catalog=", uri)
+
+
+class TestListTablesQuery(unittest.TestCase):
+    """Pinning the shape of the SQL_QUERIES['list_tables'] string.
+
+    These are string-level assertions — they don't run the SQL — but they
+    catch regressions like 'someone reverted the _gizmosql_system filter'
+    or 'someone dropped the catalog. prefix' without needing a live server.
+    """
+
+    def test_returns_three_part_name(self):
+        sql = GizmoSqlTools.SQL_QUERIES["list_tables"]
+        self.assertIn("table_catalog", sql)
+        self.assertIn("table_schema", sql)
+        self.assertIn("table_name", sql)
+        # Must be a single concat of all three (catalog FIRST), not a 2-part.
+        self.assertIn(
+            "concat(table_catalog, '.', table_schema, '.', table_name)",
+            sql,
+        )
+
+    def test_excludes_gizmosql_system_catalog(self):
+        sql = GizmoSqlTools.SQL_QUERIES["list_tables"]
+        self.assertIn("_gizmosql_system", sql)
+        self.assertIn("table_catalog NOT IN", sql)
+
+    def test_excludes_information_schema_and_pg_catalog(self):
+        sql = GizmoSqlTools.SQL_QUERIES["list_tables"]
+        self.assertIn("information_schema", sql)
+        self.assertIn("pg_catalog", sql)
+
+    def test_results_are_ordered(self):
+        # Ordering matters for the dialog UX — the combo would otherwise
+        # surface tables in whatever order the server happens to return.
+        sql = GizmoSqlTools.SQL_QUERIES["list_tables"]
+        self.assertIn("ORDER BY", sql.upper())
 
 
 if __name__ == "__main__":

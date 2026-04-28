@@ -2,6 +2,17 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The connection dialog's table picker now shows tables qualified by catalog (`catalog.schema.table`), and the GizmoSQL `_gizmosql_system` internal catalog (along with `information_schema` / `pg_catalog`) is filtered out.
+- The provider URI now accepts an optional `catalog=` parameter; both `parse_uri` and `build_uri` round-trip it. When absent, the provider lazily resolves the connection's `current_database()` so single-catalog deployments are unchanged.
+- All `information_schema` lookups in the provider (column list, primary key, geometry probe, view detection) are now bound by `table_catalog` as well as `table_schema` and `table_name`, so picking a table from a non-default catalog returns rows from the correct catalog instead of silently falling back to the connection's default.
+- Integration test suite under `tests/integration/` with a session-scoped pytest fixture that spins up `gizmodata/gizmosql:latest` via the Docker SDK on **non-default host ports** (41337/41338) so it coexists with a developer's local GizmoSQL on the standard 31337/31338. Reuses an existing server on the test port if one is already up. Mirrored by a CI `integration` job in `.github/workflows/ci.yml` using GitHub Actions `services:` (no Docker SDK needed in CI).
+- `tests/_stubs.py`: shared qgis / ADBC stub installer used by unit and integration tests.
+- New unit coverage: catalog parsing/round-trip in `parse_uri`/`build_uri`; the SQL-string shape of `SQL_QUERIES["list_tables"]`; the dialog's qualified-table-name parser (`split_qualified_table`).
+
 ## [0.3.1] - 2026-04-28
 
 ### Fixed

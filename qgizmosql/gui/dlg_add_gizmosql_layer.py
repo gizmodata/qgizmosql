@@ -34,6 +34,7 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from qgizmosql.__about__ import DIR_PLUGIN_ROOT
+from qgizmosql.gui._table_name import split_qualified_table
 from qgizmosql.provider.gizmosql_wrapper import (
     DEFAULT_GIZMOSQL_PORT,
     GizmoSqlConnConfig,
@@ -241,6 +242,7 @@ class LoadGizmoSqlLayerDialog(QDialog):
         conn_config = self._current_conn_config()
         epsg = (self._crs_select.crs().authid() or "").replace("EPSG:", "") or None
 
+        catalog: Optional[str] = None
         schema: Optional[str] = None
         table: Optional[str] = None
         sql: Optional[str] = None
@@ -250,10 +252,7 @@ class LoadGizmoSqlLayerDialog(QDialog):
             full = self._table_combo.currentText()
             if not full:
                 return
-            if "." in full:
-                schema, table = full.split(".", 1)
-            else:
-                schema, table = "main", full
+            catalog, schema, table = split_qualified_table(full)
             layer_name = full
         else:
             sql = self._sql_edit.toPlainText().strip()
@@ -262,7 +261,7 @@ class LoadGizmoSqlLayerDialog(QDialog):
             layer_name = "gizmosql_query"
 
         metadata = QgsProviderRegistry.instance().providerMetadata("gizmosql")
-        parts = {
+        uri_parts = {
             "host": conn_config.host,
             "port": str(conn_config.port),
             "use_tls": "1" if conn_config.use_tls else "0",
@@ -270,17 +269,19 @@ class LoadGizmoSqlLayerDialog(QDialog):
             "auth_type": conn_config.auth_type,
         }
         if conn_config.authcfg:
-            parts["authcfg"] = conn_config.authcfg
-        if table:
-            parts["table"] = table
+            uri_parts["authcfg"] = conn_config.authcfg
+        if catalog:
+            uri_parts["catalog"] = catalog
         if schema:
-            parts["schema"] = schema
+            uri_parts["schema"] = schema
+        if table:
+            uri_parts["table"] = table
         if sql:
-            parts["sql"] = sql
+            uri_parts["sql"] = sql
         if epsg:
-            parts["epsg"] = epsg
+            uri_parts["epsg"] = epsg
 
-        uri = metadata.encodeUri(parts)
+        uri = metadata.encodeUri(uri_parts)
         layer = QgsVectorLayer(uri, layer_name, "gizmosql")
         if not layer.isValid():
             self._status_label.setStyleSheet("color: #a00;")

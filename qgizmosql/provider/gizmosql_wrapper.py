@@ -233,9 +233,15 @@ class GizmoSqlTools:
     SQL_QUERIES: dict = {
         "connection_alive": "SELECT 1;",
         "list_tables": (
-            "SELECT concat(table_schema, '.', table_name) AS table_name "
+            # Three-part name (catalog.schema.table) so the dialog can show
+            # which catalog each table lives in. Hide GizmoSQL's internal
+            # _gizmosql_system catalog and the standard SQL system schemas.
+            "SELECT concat(table_catalog, '.', table_schema, '.', table_name) "
+            "       AS table_name "
             "FROM information_schema.tables "
-            "WHERE table_schema NOT IN ('information_schema', 'pg_catalog')"
+            "WHERE table_catalog NOT IN ('_gizmosql_system') "
+            "  AND table_schema  NOT IN ('information_schema', 'pg_catalog') "
+            "ORDER BY 1"
         ),
         "list_schemas": (
             "SELECT schema_name FROM information_schema.schemata "
@@ -252,6 +258,7 @@ class GizmoSqlTools:
         self._epsg_code: Optional[str] = None
         self._sql: Optional[str] = None
         self._schema: Optional[str] = None
+        self._catalog: Optional[str] = None
 
     # -- CONNECT / CLOSE / ALIVE -----------------------------------------------
 
@@ -392,7 +399,7 @@ class GizmoSqlTools:
     # Example URI:
     #   gizmosql://host:31337?use_tls=1&tls_skip_verify=1&auth_type=password
     #       &username=gizmosql_user&password=gizmosql_password
-    #       &schema=main&table=my_spatial_table&epsg=4326
+    #       &catalog=memory&schema=main&table=my_spatial_table&epsg=4326
 
     URI_SCHEME = "gizmosql"
 
@@ -402,10 +409,11 @@ class GizmoSqlTools:
         Optional[str],
         Optional[str],
         Optional[str],
+        Optional[str],
     ]:
         """Parse a qgizmosql layer URI.
 
-        :return: (conn_config, table, epsg, sql, schema)
+        :return: (conn_config, table, epsg, sql, schema, catalog)
         """
         parsed = urlparse(uri)
         if parsed.scheme and parsed.scheme != self.URI_SCHEME:
@@ -439,6 +447,7 @@ class GizmoSqlTools:
         epsg = q.get("epsg") or None
         sql = q.get("sql") or None
         schema = q.get("schema") or None
+        catalog = q.get("catalog") or None
 
         # Trailing-semicolon workaround: we don't support multi-statement transactions.
         if sql:
@@ -450,18 +459,20 @@ class GizmoSqlTools:
         self._epsg_code = epsg
         self._sql = sql
         self._schema = schema
+        self._catalog = catalog
 
         PlgLogger.log(
             message=(
                 f"URI parsed: host={conn_config.display_name()} "
-                f"auth={conn_config.auth_type} table={table} schema={schema} "
+                f"auth={conn_config.auth_type} catalog={catalog} "
+                f"schema={schema} table={table} "
                 f"epsg={epsg} sql={'<set>' if sql else None}"
             ),
             log_level=Qgis.MessageLevel.NoLevel,
             push=False,
         )
 
-        return conn_config, table, epsg, sql, schema
+        return conn_config, table, epsg, sql, schema, catalog
 
     @staticmethod
     def build_uri(
@@ -470,6 +481,7 @@ class GizmoSqlTools:
         schema: Optional[str] = None,
         epsg: Optional[str] = None,
         sql: Optional[str] = None,
+        catalog: Optional[str] = None,
     ) -> str:
         """Build a layer URI from a connection config and layer bits."""
         params: dict = {
@@ -486,10 +498,12 @@ class GizmoSqlTools:
                 params["username"] = conn_config.username
             if conn_config.password:
                 params["password"] = conn_config.password
-        if table:
-            params["table"] = table
+        if catalog:
+            params["catalog"] = catalog
         if schema:
             params["schema"] = schema
+        if table:
+            params["table"] = table
         if epsg:
             params["epsg"] = epsg
         if sql:

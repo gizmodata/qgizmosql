@@ -92,11 +92,13 @@ class GizmoSqlProvider(QgsVectorDataProvider):
                 self._epsg,
                 self._sql,
                 self._schema,
+                self._catalog,
             ) = self.wrapper.parse_uri(uri)
             # Pin identifiers to a strict regex so they're safe to interpolate
             # into queries below — bind params can't carry identifiers.
             self._table = _safe_identifier(self._table, "table")
             self._schema = _safe_identifier(self._schema, "schema")
+            self._catalog = _safe_identifier(self._catalog, "catalog")
         except ValueError as exc:
             self._is_valid = False
             PlgLogger.log(message=str(exc), log_level=Qgis.MessageLevel.Critical, push=True)
@@ -128,8 +130,20 @@ class GizmoSqlProvider(QgsVectorDataProvider):
                 return
             self._from_clause = f"({self._sql})"
         else:
+            # Default to the connection's current catalog when none was
+            # supplied — keeps single-catalog deployments unchanged while
+            # making cross-catalog picks work the moment the URI carries
+            # `catalog=...`. We resolve once, here, so every information_schema
+            # probe below has a real catalog name to bind.
+            if not self._catalog:
+                with self._con.cursor() as cur:
+                    cur.execute("SELECT current_database()")
+                    self._catalog = cur.fetchone()[0]
+                self._catalog = _safe_identifier(self._catalog, "catalog")
             schema = self._schema or "main"
-            self._from_clause = f'"{schema}"."{self._table}"'
+            self._from_clause = (
+                f'"{self._catalog}"."{schema}"."{self._table}"'
+            )
 
         self.get_geometry_column()
 
@@ -298,10 +312,10 @@ class GizmoSqlProvider(QgsVectorDataProvider):
                 cur.execute(
                     operation=(
                         "SELECT column_name FROM information_schema.columns "
-                        "WHERE table_name = ? AND table_schema = ? "
-                        "AND data_type = 'GEOMETRY'"
+                        "WHERE table_catalog = ? AND table_schema = ? "
+                        "AND table_name = ? AND data_type = 'GEOMETRY'"
                     ),
-                    parameters=[self._table, schema],
+                    parameters=[self._catalog, schema, self._table],
                 )
                 row = cur.fetchone()
             if row:
@@ -333,15 +347,19 @@ class GizmoSqlProvider(QgsVectorDataProvider):
                     "SELECT kcu.ordinal_position - 1 "
                     "FROM information_schema.table_constraints tc "
                     "JOIN information_schema.key_column_usage kcu "
-                    "  ON tc.constraint_name = kcu.constraint_name "
+                    "  ON tc.constraint_catalog = kcu.constraint_catalog "
+                    "  AND tc.constraint_schema = kcu.constraint_schema "
+                    "  AND tc.constraint_name = kcu.constraint_name "
+                    "  AND tc.table_catalog = kcu.table_catalog "
                     "  AND tc.table_schema = kcu.table_schema "
                     "  AND tc.table_name = kcu.table_name "
                     "WHERE tc.constraint_type = 'PRIMARY KEY' "
-                    "  AND tc.table_name = ? "
+                    "  AND tc.table_catalog = ? "
                     "  AND tc.table_schema = ? "
+                    "  AND tc.table_name = ? "
                     "ORDER BY kcu.ordinal_position"
                 ),
-                parameters=[self._table, schema],
+                parameters=[self._catalog, schema, self._table],
             )
             row = cur.fetchone()
         self._primary_key = int(row[0]) if row else -1
@@ -359,12 +377,13 @@ class GizmoSqlProvider(QgsVectorDataProvider):
             with self._con.cursor() as cur:
                 cur.execute(
                     operation=(
-                        "select column_name, data_type from "
-                        "information_schema.columns WHERE table_name = ? "
-                        "AND table_schema = ? AND "
-                        "data_type not in ('GEOMETRY', 'WKB_BLOB')"
+                        "SELECT column_name, data_type "
+                        "FROM information_schema.columns "
+                        "WHERE table_catalog = ? AND table_schema = ? "
+                        "AND table_name = ? "
+                        "AND data_type NOT IN ('GEOMETRY', 'WKB_BLOB')"
                     ),
-                    parameters=[self._table, schema],
+                    parameters=[self._catalog, schema, self._table],
                 )
                 field_info = cur.fetchall()
         else:
@@ -401,12 +420,22 @@ class GizmoSqlProvider(QgsVectorDataProvider):
     def is_view(self) -> bool:
         if self._sql:
             return False
-        query = (
-            "SELECT concat(table_schema,'.',table_name) as table_name "
-            "FROM information_schema.tables WHERE table_type = 'VIEW'"
-        )
-        view_list = [row[0] for row in self._con.sql(query).fetchall()]
-        return f"{self._schema or 'main'}.{self._table}" in view_list
+        # Bind catalog/schema/table — information_schema.tables spans all
+        # attached catalogs, so we must qualify by all three to avoid a
+        # false positive when a same-named view lives in another catalog.
+        with self._con.cursor() as cur:
+            cur.execute(
+                operation=(
+                    "SELECT 1 FROM information_schema.tables "
+                    "WHERE table_type = 'VIEW' "
+                    "  AND table_catalog = ? "
+                    "  AND table_schema  = ? "
+                    "  AND table_name    = ? "
+                    "LIMIT 1"
+                ),
+                parameters=[self._catalog, self._schema or "main", self._table],
+            )
+            return cur.fetchone() is not None
 
     def uniqueValues(self, fieldIndex: int, limit: int = -1) -> set:
         # column_name comes from QgsFields, populated by self.fields() from
