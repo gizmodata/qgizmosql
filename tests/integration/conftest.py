@@ -1,19 +1,10 @@
 """Shared fixtures for qgizmosql integration tests.
 
-Three execution modes — all expose the same fixtures:
-
-* **Local dev with Docker SDK installed**: a session-scoped fixture starts
-  a ``gizmodata/gizmosql:latest`` container on a *non-default* host port
-  (so it can coexist with a GizmoSQL the developer is already running on
-  31337), polls its logs for readiness, and tears it down at session end.
-
-* **Local dev with a server already up on the host**: if ``$GIZMOSQL_TEST_PORT``
-  (default 41337) is already listening, the fixture reuses it and skips
-  Docker entirely. Mirrors the pattern in ``ibis-sqlflite/tests/conftest.py``.
-
-* **CI (GitHub Actions ``services:``)**: when ``GIZMOSQL_TEST_HOST`` is set
-  in the environment, the fixture is a no-op — a sidecar container is
-  already running and reachable at ``$GIZMOSQL_TEST_HOST:$GIZMOSQL_TEST_PORT``.
+The GizmoSQL server is started as a managed subprocess via the
+[`gizmosql`](https://pypi.org/project/gizmosql/) PyPI package — no
+Docker required. ``gizmosql.Server(...)`` auto-picks a free port so
+the test server can coexist with a developer's local GizmoSQL on the
+default 31337/31338 without any port juggling.
 
 Pure-Python tests (no QGIS, no native deps) live in ``tests/unit``;
 this directory is exclusively for tests that talk to a real server.
@@ -21,123 +12,87 @@ this directory is exclusively for tests that talk to a real server.
 
 from __future__ import annotations
 
+import datetime
 import os
-import socket
 import sys
-import time
+from pathlib import Path
 from typing import Iterator
 
 import pytest
 
-# Use non-default host ports so the test container can coexist with a
-# regular GizmoSQL the developer is already running locally on the
-# defaults. The container internally keeps its own defaults (31337 Flight
-# SQL, 31338 health-check); only the *published* host port shifts.
-# (OAuth port 31339 is Enterprise-only and not exposed by tests.)
-GIZMOSQL_HOST_PORT = 41337
-GIZMOSQL_HEALTH_HOST_PORT = 41338
-GIZMOSQL_CONTAINER_PORT = 31337
-GIZMOSQL_HEALTH_CONTAINER_PORT = 31338
-GIZMOSQL_IMAGE = "gizmodata/gizmosql:latest"
+
 GIZMOSQL_USERNAME = "gizmosql_user"
 GIZMOSQL_PASSWORD = "gizmosql_password"
-CONTAINER_NAME = "qgizmosql-test"
-READY_LOG = "GizmoSQL server - started"
 
 
-def _port_is_listening(port: int, host: str = "localhost") -> bool:
-    """Return True if something is already accepting TCP on ``host:port``."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(1)
-        return s.connect_ex((host, port)) == 0
+def _generate_self_signed_tls_cert(out_dir: Path) -> tuple[Path, Path]:
+    """Mint a self-signed RSA cert + key for ``localhost`` so the
+    GizmoSQL test server's Flight SQL endpoint is reachable over
+    ``grpc+tls://``."""
+    from cryptography import x509  # noqa: PLC0415
+    from cryptography.hazmat.primitives import hashes, serialization  # noqa: PLC0415
+    from cryptography.hazmat.primitives.asymmetric import rsa  # noqa: PLC0415
+    from cryptography.x509.oid import NameOID  # noqa: PLC0415
 
-
-def _wait_for_log(container, ready: str, timeout: int = 60) -> None:
-    """Poll a docker-py Container until ``ready`` shows up in its logs."""
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        if ready in container.logs().decode("utf-8", errors="replace"):
-            return
-        time.sleep(1)
-    raise TimeoutError(
-        f"GizmoSQL container did not log {ready!r} within {timeout}s"
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")])
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - datetime.timedelta(minutes=1))
+        .not_valid_after(now + datetime.timedelta(days=1))
+        .add_extension(
+            x509.SubjectAlternativeName([x509.DNSName("localhost")]),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
     )
+    cert_path = out_dir / "tls_cert.pem"
+    key_path = out_dir / "tls_key.pem"
+    cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    key_path.write_bytes(
+        key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+    )
+    return cert_path, key_path
 
 
 @pytest.fixture(scope="session")
-def gizmosql_host() -> str:
-    """Hostname tests should connect to. ``localhost`` for both modes."""
-    return os.environ.get("GIZMOSQL_TEST_HOST", "localhost")
+def gizmosql_server(tmp_path_factory) -> Iterator:
+    """Start a GizmoSQL server as a managed subprocess for the session."""
+    gizmosql = pytest.importorskip(
+        "gizmosql",
+        reason="install `pip install gizmosql` to run integration tests",
+    )
+
+    tls_dir = tmp_path_factory.mktemp("tls")
+    tls_dir.chmod(0o700)
+    tls_cert, tls_key = _generate_self_signed_tls_cert(tls_dir)
+
+    with gizmosql.Server(
+        username=GIZMOSQL_USERNAME,
+        password=GIZMOSQL_PASSWORD,
+        extra_args=["--tls", str(tls_cert), str(tls_key)],
+        extra_env={"PRINT_QUERIES": "0"},
+    ) as srv:
+        yield srv
 
 
 @pytest.fixture(scope="session")
-def gizmosql_port() -> int:
-    """Host-side TCP port that the Flight SQL endpoint is exposed on."""
-    return int(os.environ.get("GIZMOSQL_TEST_PORT", str(GIZMOSQL_HOST_PORT)))
+def gizmosql_host(gizmosql_server) -> str:
+    return gizmosql_server.host
 
 
 @pytest.fixture(scope="session")
-def gizmosql_server(gizmosql_port: int) -> Iterator[None]:
-    """Ensure a GizmoSQL server is running before any test executes.
-
-    * CI: ``GIZMOSQL_TEST_HOST`` is set → trust the harness, yield.
-    * Local with server already running on the configured port → reuse, yield.
-    * Otherwise → spin up a container via the Docker SDK and clean up on exit.
-    """
-    if os.environ.get("GIZMOSQL_TEST_HOST"):
-        # Sidecar container in GitHub Actions is already up.
-        yield
-        return
-
-    if _port_is_listening(gizmosql_port):
-        # Developer already has a GizmoSQL listening on the test port — reuse.
-        yield
-        return
-
-    docker = pytest.importorskip(
-        "docker",
-        reason="install `pip install docker` to run integration tests locally",
-    )
-    client = docker.from_env()
-
-    # Best-effort: remove a stale container from a previous interrupted run,
-    # but reuse one that's still healthy.
-    try:
-        existing = client.containers.get(CONTAINER_NAME)
-        if existing.status == "running":
-            yield
-            return
-        existing.remove(force=True)
-    except Exception:
-        pass
-
-    container = client.containers.run(
-        image=GIZMOSQL_IMAGE,
-        name=CONTAINER_NAME,
-        detach=True,
-        remove=True,
-        tty=True,
-        init=True,
-        ports={
-            f"{GIZMOSQL_CONTAINER_PORT}/tcp": gizmosql_port,
-            f"{GIZMOSQL_HEALTH_CONTAINER_PORT}/tcp": GIZMOSQL_HEALTH_HOST_PORT,
-        },
-        environment={
-            "GIZMOSQL_USERNAME": GIZMOSQL_USERNAME,
-            "GIZMOSQL_PASSWORD": GIZMOSQL_PASSWORD,
-            "TLS_ENABLED": "1",
-            "PRINT_QUERIES": "0",
-            "DATABASE_FILENAME": ":memory:",
-        },
-    )
-    try:
-        _wait_for_log(container, READY_LOG)
-        yield
-    finally:
-        try:
-            container.stop()
-        except Exception:
-            pass
+def gizmosql_port(gizmosql_server) -> int:
+    return gizmosql_server.port
 
 
 @pytest.fixture(scope="session")
@@ -152,12 +107,11 @@ def gizmosql_credentials() -> dict:
 
 @pytest.fixture(scope="session")
 def gizmosql_conn_config(
-    gizmosql_server: None,
     gizmosql_host: str,
     gizmosql_port: int,
     gizmosql_credentials: dict,
 ):
-    """A ready-to-use ``GizmoSqlConnConfig`` against the test container."""
+    """A ready-to-use ``GizmoSqlConnConfig`` against the test server."""
     # Install qgis stubs before importing the wrapper (it pulls in qgis.core
     # at module top level, which won't exist on a CI box without QGIS).
     _tests_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

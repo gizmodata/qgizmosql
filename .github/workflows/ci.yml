@@ -71,41 +71,21 @@ jobs:
       - run: python -m unittest discover -s tests/unit -v
 
   integration:
-    # Live tests against a real GizmoSQL server. Mirrors the services-block
-    # pattern in sibling repos (flight-sql-client-js, gizmosql-jdbc-driver,
-    # ibis-sqlflite). The container exposes its default 31337 / 31338 on
-    # non-default host ports so a stale local GizmoSQL would never be hit.
+    # Live tests against a real GizmoSQL server. The fixture starts the
+    # server as a managed subprocess via the gizmosql PyPI package; no
+    # Docker service container is needed.
     runs-on: ubuntu-latest
-    services:
-      gizmosql:
-        image: gizmodata/gizmosql:latest
-        ports:
-          - 41337:31337
-          - 41338:31338
-        env:
-          GIZMOSQL_USERNAME: gizmosql_user
-          GIZMOSQL_PASSWORD: gizmosql_password
-          TLS_ENABLED: "1"
-          PRINT_QUERIES: "0"
-          DATABASE_FILENAME: ":memory:"
-        options: >-
-          --init
-          --health-cmd "bash -c '</dev/tcp/localhost/31337' 2>/dev/null"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      GIZMOSQL_TEST_HOST: localhost
-      GIZMOSQL_TEST_PORT: "41337"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install ADBC driver + pytest
+      - name: Install ADBC driver + pytest + gizmosql
         # pytest-cov is required because setup.cfg's [tool:pytest] addopts
         # carries --cov flags; without it pytest aborts with exit 4.
-        run: pip install pytest pytest-cov adbc-driver-gizmosql adbc-driver-flightsql
+        # gizmosql + cryptography power the integration-test fixture
+        # (subprocess server + self-signed TLS cert).
+        run: pip install pytest pytest-cov adbc-driver-gizmosql adbc-driver-flightsql 'gizmosql>=1.26.0,<2' 'cryptography>=42'
       - name: Run integration tests
         run: python -m pytest tests/integration -v -m integration
 

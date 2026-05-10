@@ -2,6 +2,24 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-05-10
+
+### Changed
+
+- Switched the integration-test fixture from a Docker-managed
+  `gizmodata/gizmosql:latest` container to the
+  [`gizmosql`](https://pypi.org/project/gizmosql/) PyPI package's
+  managed subprocess. The fixture now mints a session-scoped
+  self-signed TLS cert via `cryptography` and passes it through
+  `--tls`, preserving the `grpc+tls://` connection contract. The
+  three-mode docstring (Docker SDK / pre-running server / CI services)
+  collapses to a single mode — the package picks a free port on every
+  run, so the prior port-juggling (41337/41338) and `GIZMOSQL_TEST_*`
+  env-var indirection are no longer needed. The `services: gizmosql`
+  block in CI is removed; the integration step pip-installs `gizmosql`
+  + `cryptography` instead. Local development no longer requires
+  Docker.
+
 ## [0.4.0] - 2026-04-28
 
 ### Added
