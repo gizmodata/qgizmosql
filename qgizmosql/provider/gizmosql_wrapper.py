@@ -10,6 +10,14 @@ References:
 
 # standard
 import os
+from typing import Any, Optional, Union
+from urllib.parse import parse_qsl, urlencode, urlparse
+
+# PyQGIS
+from qgis.core import Qgis, QgsApplication, QgsAuthMethodConfig
+
+# plugin
+from qgizmosql.toolbelt.log_handler import PlgLogger
 
 # Always make the plugin's embedded_external_libs/ directory the FIRST entry
 # on sys.path before importing adbc_driver_gizmosql / pyarrow. This way, any
@@ -17,16 +25,8 @@ import os
 # are found alongside their parent package, instead of falling back to a
 # partial install elsewhere on the system that's missing them.
 import site
-from typing import Any, Optional, Union
-from urllib.parse import parse_qsl, urlencode, urlparse
-
-# PyQGIS
-from qgis.core import Qgis, QgsApplication, QgsAuthMethodConfig
 
 from qgizmosql.__about__ import DIR_PLUGIN_ROOT
-
-# plugin
-from qgizmosql.toolbelt.log_handler import PlgLogger
 
 site.addsitedir(str(DIR_PLUGIN_ROOT / "embedded_external_libs"))
 
@@ -285,7 +285,9 @@ class GizmoSqlTools:
             raw_conn = gizmosql_dbapi.connect(
                 self.conn_config.flight_uri,
                 db_kwargs={
-                    DatabaseOptions.WITH_MAX_MSG_SIZE.value: str(_MAX_FLIGHT_MSG_SIZE),
+                    DatabaseOptions.WITH_MAX_MSG_SIZE.value: str(
+                        _MAX_FLIGHT_MSG_SIZE
+                    ),
                 },
                 **self.conn_config.connect_kwargs(),
             )
@@ -364,7 +366,9 @@ class GizmoSqlTools:
                 elif results_fetcher == "no_output":
                     result = None
                 else:
-                    raise ValueError(f"Unknown results_fetcher: {results_fetcher!r}")
+                    raise ValueError(
+                        f"Unknown results_fetcher: {results_fetcher!r}"
+                    )
             PlgLogger.log(
                 message=(
                     f"Query succeeded on {self.conn_config.display_name()}: "
@@ -399,9 +403,7 @@ class GizmoSqlTools:
 
     URI_SCHEME = "gizmosql"
 
-    def parse_uri(
-        self, uri: str
-    ) -> tuple[
+    def parse_uri(self, uri: str) -> tuple[
         GizmoSqlConnConfig,
         Optional[str],
         Optional[str],
