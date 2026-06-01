@@ -239,7 +239,7 @@ class GizmoSqlTools:
             "SELECT concat(table_catalog, '.', table_schema, '.', table_name) "
             "       AS table_name "
             "FROM information_schema.tables "
-            "WHERE table_catalog NOT IN ('_gizmosql_system') "
+            "WHERE table_catalog NOT IN ('_gizmosql_system', '__ducklake_metadata_lakehouse') "
             "  AND table_schema  NOT IN ('information_schema', 'pg_catalog') "
             "ORDER BY 1"
         ),
