@@ -20,7 +20,11 @@ from typing import Optional
 
 import importlib
 import os
-import subprocess
+
+# subprocess is used solely to run macOS ``codesign`` with a fixed argument
+# list resolved to an absolute path via shutil.which() — never a shell, never
+# user-derived input.
+import subprocess  # nosec B404
 
 # PyQGIS
 from qgis.core import Qgis
@@ -108,10 +112,25 @@ def _adhoc_sign_native_libs(target: Path) -> None:
     accepts.
     """
     targets = list(target.rglob("*.so")) + list(target.rglob("*.dylib"))
+    if not targets:
+        return
+    codesign_exe = shutil.which("codesign")
+    if codesign_exe is None:
+        PlgLogger.log(
+            message=(
+                "codesign not found on PATH — skipping ad-hoc re-sign of "
+                "embedded native libraries"
+            ),
+            log_level=Qgis.MessageLevel.Warning,
+            push=False,
+        )
+        return
     for f in targets:
         try:
-            subprocess.run(
-                ["codesign", "--force", "--sign", "-", str(f)],
+            # Fixed argument list, absolute executable path, no shell — the
+            # only variable component is a Path we discovered ourselves.
+            subprocess.run(  # nosec B603
+                [codesign_exe, "--force", "--sign", "-", str(f)],
                 check=False,
                 capture_output=True,
             )

@@ -342,8 +342,15 @@ class GizmoSqlFeatureIterator(QgsAbstractFeatureIterator):
             if obj is not None:
                 try:
                     obj.close()
-                except Exception:
-                    pass
+                except Exception as exc:  # noqa: BLE001
+                    PlgLogger.log(
+                        message=(
+                            f"Ignored error closing feature-iterator "
+                            f"{attr.lstrip('_')}: {exc!r}"
+                        ),
+                        log_level=Qgis.MessageLevel.Warning,
+                        push=False,
+                    )
                 setattr(self, attr, None)
         self._batch_cols = None
         self._batch_num_rows = 0

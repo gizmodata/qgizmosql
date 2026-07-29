@@ -177,8 +177,12 @@ class _ConnectionAdapter:
     def close(self) -> None:
         try:
             self._conn.close()
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            PlgLogger.log(
+                message=f"Ignored error closing ADBC connection: {exc!r}",
+                log_level=Qgis.MessageLevel.Warning,
+                push=False,
+            )
 
     def __getattr__(self, item):
         # Fall through to the underlying ADBC connection for anything else.

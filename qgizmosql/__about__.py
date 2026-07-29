@@ -96,8 +96,16 @@ __version_info__: tuple = tuple(
 # ##################################
 if __name__ == "__main__":
     plugin_md = plugin_metadata_as_dict()
-    assert isinstance(plugin_md, dict)
-    assert plugin_md.get("general").get("name") == __title__
+    if not isinstance(plugin_md, dict):
+        raise TypeError(
+            f"plugin_metadata_as_dict() returned {type(plugin_md).__name__}, "
+            "expected dict"
+        )
+    md_name = plugin_md.get("general").get("name")
+    if md_name != __title__:
+        raise ValueError(
+            f"metadata.txt name {md_name!r} does not match __title__ {__title__!r}"
+        )
     print(f"Plugin: {__title__}")
     print(f"By: {__author__}")
     print(f"Version: {__version__}")

@@ -2,6 +2,26 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-07-29
+
+### Security
+
+- Remediated all findings from the plugins.qgis.org Bandit security scan
+  that blocked the v0.5.0 store upload:
+  - `__about__.py`: replaced the two `assert` statements in the
+    `__main__` block with explicit `if ... raise TypeError/ValueError`
+    checks (asserts are stripped under `python -O`).
+  - `dependencies.py`: the macOS ad-hoc `codesign` re-sign step now
+    resolves the executable to an absolute path via `shutil.which()` and
+    logs + skips cleanly when `codesign` is not on `PATH`; the call keeps
+    a fixed argument list with no shell. The unavoidable
+    `import subprocess` and the fully-pinned `subprocess.run` call carry
+    targeted, justified `# nosec B404` / `# nosec B603` annotations.
+  - Replaced the three silent `try/except/pass` blocks around connection,
+    cursor, and reader `close()` calls (`gizmosql_wrapper.py`,
+    `gizmosql_provider.py`, `gizmosql_feature_iterator.py`) with handlers
+    that log the swallowed exception through `PlgLogger` at Warning level.
+
 ## [0.5.0] - 2026-07-29
 
 ### Fixed

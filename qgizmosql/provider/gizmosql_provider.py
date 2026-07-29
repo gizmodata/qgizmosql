@@ -194,8 +194,12 @@ class GizmoSqlProvider(QgsVectorDataProvider):
         if self._con is not None and self.isValid():
             try:
                 self._con.close()
-            except Exception:
-                pass
+            except Exception as exc:  # noqa: BLE001
+                PlgLogger.log(
+                    message=f"Ignored error closing provider connection: {exc!r}",
+                    log_level=Qgis.MessageLevel.Warning,
+                    push=False,
+                )
             self._con = None
 
     def con(self) -> Optional[Any]:
