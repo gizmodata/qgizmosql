@@ -2,6 +2,17 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.2] - 2026-07-29
+
+### Changed
+
+- Bumped `adbc-driver-gizmosql` to 2.0.1 (`==2.0.1` in
+  `qgizmosql/requirements.txt`, floor `>=2.0.1` in
+  `requirements/embedded.txt`). 2.0.1 fixes geometry ingest —
+  `geoarrow.wkb` columns now ingest as `GEOMETRY` instead of `BLOB`, and
+  append-mode ingest into `GEOMETRY` tables works — directly relevant to
+  round-tripping spatial data with this plugin.
+
 ## [0.5.1] - 2026-07-29
 
 ### Security
