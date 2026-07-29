@@ -11,6 +11,8 @@ Browse and visualize spatial data from a **[GizmoSQL](https://gizmodata.com/gizm
 
 > **Install in QGIS:** click the green badge above to grab `qgizmosql.zip`, then in QGIS go to **Plugins → Manage and Install Plugins → Install from ZIP** and pick the file.
 
+> **New in v0.5.0:** the plugin runs on **`adbc-driver-gizmosql` 2.0**, powered by the new native **Go [GizmoSQL ADBC driver](https://github.com/gizmodata/gizmosql-adbc)** — same API as before, with DDL/DML immediate execution, `RETURNING` support, `gizmosql://` URIs, and OAuth/SSO provided by the shared Go driver library used across all languages.
+
 ---
 
 ## Why qgizmosql?

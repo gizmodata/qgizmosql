@@ -34,8 +34,8 @@ jobs:
     # check that no .py file is marked executable.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install flake8 bandit
@@ -64,8 +64,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: python -m unittest discover -s tests/unit -v
@@ -76,8 +76,8 @@ jobs:
     # Docker service container is needed.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install ADBC driver + pytest + gizmosql
@@ -85,7 +85,7 @@ jobs:
         # carries --cov flags; without it pytest aborts with exit 4.
         # gizmosql + cryptography power the integration-test fixture
         # (subprocess server + self-signed TLS cert).
-        run: pip install pytest pytest-cov adbc-driver-gizmosql adbc-driver-flightsql 'gizmosql>=1.26.0,<2' 'cryptography>=42'
+        run: pip install pytest pytest-cov adbc-driver-gizmosql 'gizmosql>=1.35.1,<2' 'cryptography>=49'
       - name: Run integration tests
         run: python -m pytest tests/integration -v -m integration
 
@@ -97,8 +97,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test, integration]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -142,7 +142,7 @@ jobs:
           cp "qgizmosql-${{ steps.meta.outputs.version }}.zip" "qgizmosql.zip"
           ls -lh qgizmosql*.zip
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: qgizmosql-plugin-zip
           path: qgizmosql*.zip
@@ -151,7 +151,7 @@ jobs:
       - name: Upload metadata.txt with synced version
         # The offline-package matrix needs the version-synced metadata.txt so
         # it doesn't have to redo the sed dance per platform.
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: synced-metadata
           path: qgizmosql/metadata.txt
@@ -173,13 +173,13 @@ jobs:
             label: windows-x86_64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Sync metadata.txt from package job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: synced-metadata
           path: qgizmosql/
@@ -212,7 +212,7 @@ jobs:
           ls -lh "$name"
           echo "ZIP_NAME=$name" >> "$GITHUB_ENV"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: qgizmosql-offline-${{ matrix.label }}
           path: ${{ env.ZIP_NAME }}
@@ -230,9 +230,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -265,7 +265,7 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/qgizmosql*.zip
           name: qgizmosql ${{ github.ref_name }}
@@ -286,7 +286,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download slim plugin ZIP
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: qgizmosql-plugin-zip
           path: dist

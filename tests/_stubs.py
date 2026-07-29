@@ -79,18 +79,11 @@ def install() -> None:
             adbc_dbapi = types.ModuleType("adbc_driver_gizmosql.dbapi")
             adbc_dbapi.connect = lambda *a, **kw: None
             adbc_pkg.dbapi = adbc_dbapi
-            sys.modules["adbc_driver_gizmosql"] = adbc_pkg
-            sys.modules["adbc_driver_gizmosql.dbapi"] = adbc_dbapi
-
-    if "adbc_driver_flightsql" not in sys.modules:
-        try:
-            import adbc_driver_flightsql  # noqa: F401
-        except ImportError:
-            flight_pkg = types.ModuleType("adbc_driver_flightsql")
 
             class _DatabaseOptions:
                 class WITH_MAX_MSG_SIZE:
                     value = "adbc.flight.sql.client_option.with_max_msg_size"
 
-            flight_pkg.DatabaseOptions = _DatabaseOptions
-            sys.modules["adbc_driver_flightsql"] = flight_pkg
+            adbc_pkg.DatabaseOptions = _DatabaseOptions
+            sys.modules["adbc_driver_gizmosql"] = adbc_pkg
+            sys.modules["adbc_driver_gizmosql.dbapi"] = adbc_dbapi

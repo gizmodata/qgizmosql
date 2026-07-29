@@ -2,6 +2,39 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Now runs on `adbc-driver-gizmosql` 2.0**, powered by the new native Go
+  [GizmoSQL ADBC driver](https://github.com/gizmodata/gizmosql-adbc). Same
+  Python API as 1.x, with DDL/DML immediate execution, `RETURNING` support,
+  `gizmosql://` URIs, and OAuth/SSO provided by the shared Go driver library
+  used across all languages. Pins bumped in `requirements/embedded.txt`
+  (`adbc-driver-gizmosql>=2.0.0`, `pyarrow>=25`) and
+  `qgizmosql/requirements.txt` (`adbc-driver-gizmosql==2.0.0`,
+  `pyarrow==25.0.0`).
+- `gizmosql_wrapper.py` now imports `DatabaseOptions` from
+  `adbc_driver_gizmosql` itself instead of `adbc_driver_flightsql` — the 2.0
+  driver no longer depends on `adbc-driver-flightsql`, so the old import
+  would break in the offline ZIP. The test stubs and the CI integration job
+  drop `adbc-driver-flightsql` accordingly.
+- If you have a local `qgizmosql/embedded_external_libs/` from a previous
+  install (it is git-ignored, populated per-machine), refresh it:
+  `python -m pip install --no-deps -U -r requirements/embedded.txt -t qgizmosql/embedded_external_libs`.
+- Raised remaining requirements floors to current stable versions:
+  `flake8-builtins>=3.1,<4` (cap `<3` was stale — 3.x is current),
+  `flake8-isort>=7,<8`, `flake8-qgis>=2.1,<3` (cap `<2` stale),
+  `isort>=8,<9` (cap `<6` stale), `pre-commit>=4,<5`,
+  `myst-parser>=5,<6`, `sphinx-autobuild==2025.*`,
+  `sphinx-copybutton>=0.5,<1`, `sphinx-rtd-theme>=3,<4`,
+  `sphinx-design>=0.7,<1` (cap `<0.6` stale), `qgis-plugin-ci>=2.10,<3`,
+  `pytest-cov>=7`, `packaging>=26`; CI integration job now installs
+  `gizmosql>=1.35.1,<2` and `cryptography>=49`.
+- Bumped GitHub Actions to current majors: `actions/checkout` v4 → v7,
+  `actions/setup-python` v5 → v7, `actions/upload-artifact` v4 → v7,
+  `actions/download-artifact` v4 → v8, `softprops/action-gh-release` v2 → v3.
+
 ## [0.4.2] - 2026-05-10
 
 ### Changed

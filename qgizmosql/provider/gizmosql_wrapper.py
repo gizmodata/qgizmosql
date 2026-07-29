@@ -30,7 +30,7 @@ from qgizmosql.__about__ import DIR_PLUGIN_ROOT
 
 site.addsitedir(str(DIR_PLUGIN_ROOT / "embedded_external_libs"))
 
-from adbc_driver_flightsql import DatabaseOptions  # type: ignore  # noqa: E402
+from adbc_driver_gizmosql import DatabaseOptions  # type: ignore  # noqa: E402
 from adbc_driver_gizmosql import dbapi as gizmosql_dbapi  # type: ignore  # noqa: E402
 
 PlgLogger.log(message="adbc-driver-gizmosql loaded.")
