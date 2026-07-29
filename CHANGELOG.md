@@ -2,7 +2,14 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.0] - 2026-07-29
+
+### Fixed
+
+- The table picker no longer lists the DuckLake internal
+  `__ducklake_metadata_lakehouse` catalog (#5, thanks @fromm1990); fixed the
+  missing end-of-file newline from that merge so `flake8` (and CI lint) pass
+  again.
 
 ### Changed
 
