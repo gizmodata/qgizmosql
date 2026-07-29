@@ -83,7 +83,13 @@ class LoadGizmoSqlLayerDialog(QDialog):
             "OAuth / SSO (Enterprise Edition)", userData="external"
         )
 
-        self._authcfg_select = QgsAuthConfigSelect(self, "basic")
+        # No dataprovider filter key: the 2nd argument filters the auth-method
+        # GUIs offered by the "+" (create) popup to methods registered for
+        # that *data provider* (e.g. "postgres"). qgizmosql has no registered
+        # provider key, so any non-empty value (the old "basic") matched no
+        # methods and the popup came up blank (issue #3). Empty shows all
+        # auth methods, including Basic authentication.
+        self._authcfg_select = QgsAuthConfigSelect(self)
         self._authcfg_hint = QLabel(
             "Pick or create a stored credential. The password will be saved "
             "encrypted by the QGIS Auth Manager, not in the project file."
@@ -151,6 +157,18 @@ class LoadGizmoSqlLayerDialog(QDialog):
         self._add_layer_btn.setIcon(QgsApplication.getThemeIcon("mActionAddLayer.svg"))
         self._add_layer_btn.setEnabled(False)
         root.addWidget(self._buttons)
+
+    def showEvent(self, event) -> None:  # noqa: N802 (Qt naming)
+        """Refresh the credential list every time the dialog is (re)shown.
+
+        The plugin caches this dialog instance, so auth configs created
+        elsewhere (e.g. Settings > Options > Authentication) while it exists
+        would otherwise not appear until QGIS restarts (issue #3 workaround
+        note). setConfigId() repopulates the selector, keeping the current
+        selection.
+        """
+        self._authcfg_select.setConfigId(self._authcfg_select.configId())
+        super().showEvent(event)
 
     def _wire_up(self) -> None:
         self._auth_type_combo.currentIndexChanged.connect(self._on_auth_type_changed)

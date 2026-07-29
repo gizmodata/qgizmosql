@@ -2,6 +2,22 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.3] - 2026-07-29
+
+### Fixed
+
+- The credential "+" button in the Add GizmoSQL Layer dialog opened a blank
+  auth-config popup (#3). `QgsAuthConfigSelect` was constructed with
+  `"basic"` as its dataprovider filter key — that argument filters the
+  offered auth-method GUIs by *data provider* (e.g. `"postgres"`), and no
+  method is registered for a `"basic"` provider, so the create dialog had
+  nothing to show. The filter is now omitted, so the popup offers the full
+  method list (Basic authentication, etc.) just like the PostgreSQL
+  connection dialog.
+- Auth configs created outside the dialog (Settings > Options >
+  Authentication) now appear without restarting QGIS: the cached dialog
+  refreshes its credential list every time it is shown (#3).
+
 ## [0.5.2] - 2026-07-29
 
 ### Changed

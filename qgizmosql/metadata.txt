@@ -29,6 +29,7 @@ qgisMaximumVersion=5.99
 # versioning
 version=0.1.0-DEV
 changelog=
+    0.5.3 - Fix the credential "+" button opening a blank auth-config popup in the Add GizmoSQL Layer dialog (#3): drop the bogus dataprovider filter so all auth methods (incl. Basic authentication) are offered, and refresh the credential list on every dialog show so configs created in Settings appear without restarting QGIS.
     0.5.2 - Bump adbc-driver-gizmosql to 2.0.1: geometry-ingest fix (geoarrow.wkb columns ingest as GEOMETRY instead of BLOB; append-mode ingest into GEOMETRY tables works).
     0.5.1 - Security-scan remediation for the plugins.qgis.org Bandit review: replace asserts with explicit raises, resolve codesign to an absolute path with clean failure handling, and log (instead of silently ignoring) errors swallowed while closing connections/cursors/readers.
     0.5.0 - Run on adbc-driver-gizmosql 2.0, powered by the new native Go GizmoSQL ADBC driver (same API; DDL/DML immediate execution, RETURNING support, gizmosql:// URIs, OAuth/SSO from the shared Go driver library). Refresh all dependency pins and CI action versions.
