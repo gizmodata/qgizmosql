@@ -6,5 +6,5 @@
 # python -m pip install --no-deps -U -r requirements/embedded.txt -t qgizmosql/embedded_external_libs
 # -----------------------
 
-adbc-driver-gizmosql>=2.0.1
+adbc-driver-gizmosql>=2.0.8
 pyarrow>=25

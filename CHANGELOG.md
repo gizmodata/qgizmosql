@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.4] - 2026-08-24
+
+### Changed
+- Require `adbc-driver-gizmosql` == 2.0.8 (bundled). v2.0.8 fixes geometry-aware bulk ingest against GizmoSQL >= 1.37.0 (which now creates `GEOMETRY` columns server-side); earlier driver builds fail there with `No function matches 'st_geomfromwkb(GEOMETRY)'`.
+
 ## [0.5.3] - 2026-07-29
 
 ### Fixed

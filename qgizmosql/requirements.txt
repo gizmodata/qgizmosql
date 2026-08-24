@@ -1,4 +1,4 @@
-adbc-driver-gizmosql==2.0.1
+adbc-driver-gizmosql==2.0.8
 pyarrow==25.0.0
 # adbc_driver_gizmosql imports the backport explicitly, so pin it even on
 # Python >= 3.9 where stdlib importlib.resources would otherwise suffice.
