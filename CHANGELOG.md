@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.5] - 2026-09-09
+
+### Changed
+- Require `adbc-driver-gizmosql` == 2.0.13 (bundled). v2.0.13 fixes parameterized DDL/DML issued via `cursor.execute(sql, params)` (an `INSERT`/`UPDATE`/`DELETE` with bound parameters) being silently lost or interrupted: bound statements skipped the driver's immediate-execution routing and ran lazily on the server. They now execute immediately, matching the literal form.
+
 ## [0.5.4] - 2026-08-24
 
 ### Changed
