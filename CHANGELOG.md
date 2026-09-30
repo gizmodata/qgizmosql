@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.6] - 2026-09-30
+
+### Changed
+- Require `adbc-driver-gizmosql` == 2.0.14 (bundled). v2.0.14 is a maintenance release: current Go dependencies (arrow-go 18.8.0, grpc 1.84.0, OpenTelemetry 1.46.0) built with Go 1.26.8.
+
 ## [0.5.5] - 2026-09-09
 
 ### Changed

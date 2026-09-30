@@ -29,6 +29,7 @@ qgisMaximumVersion=5.99
 # versioning
 version=0.1.0-DEV
 changelog=
+    0.5.6 - Bump adbc-driver-gizmosql to 2.0.14: maintenance release with current Go dependencies (arrow-go 18.8.0, grpc 1.84.0), built with Go 1.26.8.
     0.5.5 - Bump adbc-driver-gizmosql to 2.0.13: parameterized INSERT/UPDATE/DELETE via execute(sql, params) now executes immediately instead of being silently lost or interrupted.
     0.5.4 - Bump adbc-driver-gizmosql to 2.0.8: geometry-aware bulk ingest against GizmoSQL >= 1.37.0 (server-side GEOMETRY columns).
     0.5.3 - Fix the credential "+" button opening a blank auth-config popup in the Add GizmoSQL Layer dialog (#3): drop the bogus dataprovider filter so all auth methods (incl. Basic authentication) are offered, and refresh the credential list on every dialog show so configs created in Settings appear without restarting QGIS.
